@@ -1,0 +1,16 @@
+<UserControl x:Class="GoldShopWpf.Views.BackupView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d">
+    <Grid>
+        <Border Style="{StaticResource CardContainer}" HorizontalAlignment="Left" VerticalAlignment="Top">
+            <StackPanel>
+                <TextBlock Text="{DynamicResource NavBackup}" FontSize="18" FontWeight="SemiBold" />
+                <TextBlock Text="{DynamicResource BtnBackup}" Foreground="{StaticResource MutedTextBrush}" Margin="0,4,0,12" />
+                <Button Content="{DynamicResource BtnBackup}" Style="{StaticResource PrimaryButton}" Width="180" Command="{Binding BackupCommand}" ToolTip="{DynamicResource BtnBackup}" />
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

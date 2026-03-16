@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="GoldShopCore/GoldShopCore.csproj" />
+  <Project Path="GoldShopWpf/GoldShopWpf.csproj" />
+</Solution>

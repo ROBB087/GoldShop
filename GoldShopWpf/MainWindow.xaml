@@ -1,0 +1,115 @@
+<Window x:Class="GoldShopWpf.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:GoldShopWpf.ViewModels"
+        xmlns:views="clr-namespace:GoldShopWpf.Views"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        mc:Ignorable="d"
+        Title="Gold Shop Supplier Accounting" Height="820" Width="1260" WindowStartupLocation="CenterScreen">
+    <Window.DataContext>
+        <vm:MainViewModel />
+    </Window.DataContext>
+
+    <Window.Resources>
+        <DataTemplate DataType="{x:Type vm:DashboardViewModel}">
+            <views:DashboardView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:SuppliersViewModel}">
+            <views:SuppliersView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:SupplierDetailsViewModel}">
+            <views:SupplierDetailsView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:TransactionsViewModel}">
+            <views:TransactionsView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:WeeklyReportViewModel}">
+            <views:WeeklyReportView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:StatementViewModel}">
+            <views:StatementView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:BackupViewModel}">
+            <views:BackupView />
+        </DataTemplate>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="240" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <Border Background="{DynamicResource SidebarBackgroundBrush}" Grid.Column="0">
+            <StackPanel Margin="16">
+                <StackPanel Orientation="Horizontal" Margin="0,10,0,24">
+                    <materialDesign:PackIcon Kind="Home" Width="26" Height="26" Foreground="{StaticResource GoldBrush}" />
+                    <TextBlock Text="{DynamicResource LblAppTitle}" Foreground="{DynamicResource SidebarTextBrush}" FontSize="18" FontWeight="SemiBold" Margin="10,0,0,0" />
+                </StackPanel>
+
+                <Button Style="{StaticResource SidebarButton}" Command="{Binding ShowDashboardCommand}" ToolTip="Go to dashboard" Margin="0,0,0,8">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="Home" Width="18" Height="18" Margin="0,0,10,0" Foreground="{DynamicResource SidebarTextBrush}" />
+                        <TextBlock Text="{DynamicResource NavDashboard}" Foreground="{DynamicResource SidebarTextBrush}" />
+                    </StackPanel>
+                </Button>
+                <Button Style="{StaticResource SidebarButton}" Command="{Binding ShowSuppliersCommand}" ToolTip="View suppliers" Margin="0,0,0,8">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="AccountGroup" Width="18" Height="18" Margin="0,0,10,0" Foreground="{DynamicResource SidebarTextBrush}" />
+                        <TextBlock Text="{DynamicResource NavSuppliers}" Foreground="{DynamicResource SidebarTextBrush}" />
+                    </StackPanel>
+                </Button>
+                <Button Style="{StaticResource SidebarButton}" Command="{Binding ShowTransactionsCommand}" ToolTip="View all transactions" Margin="0,0,0,8">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="Cash" Width="18" Height="18" Margin="0,0,10,0" Foreground="{DynamicResource SidebarTextBrush}" />
+                        <TextBlock Text="{DynamicResource NavTransactions}" Foreground="{DynamicResource SidebarTextBrush}" />
+                    </StackPanel>
+                </Button>
+                <Button Style="{StaticResource SidebarButton}" Command="{Binding ShowSupplierDetailsCommand}" ToolTip="Supplier details page" Margin="0,0,0,8">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="AccountDetails" Width="18" Height="18" Margin="0,0,10,0" Foreground="{DynamicResource SidebarTextBrush}" />
+                        <TextBlock Text="{DynamicResource NavSupplierDetails}" Foreground="{DynamicResource SidebarTextBrush}" />
+                    </StackPanel>
+                </Button>
+                <Button Style="{StaticResource SidebarButton}" Command="{Binding ShowWeeklyReportCommand}" ToolTip="Weekly report" Margin="0,0,0,8">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="ChartLine" Width="18" Height="18" Margin="0,0,10,0" Foreground="{DynamicResource SidebarTextBrush}" />
+                        <TextBlock Text="{DynamicResource NavWeeklyReport}" Foreground="{DynamicResource SidebarTextBrush}" />
+                    </StackPanel>
+                </Button>
+                <Button Style="{StaticResource SidebarButton}" Command="{Binding ShowStatementCommand}" ToolTip="Printable statement" Margin="0,0,0,8">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="FileDocumentOutline" Width="18" Height="18" Margin="0,0,10,0" Foreground="{DynamicResource SidebarTextBrush}" />
+                        <TextBlock Text="{DynamicResource NavStatement}" Foreground="{DynamicResource SidebarTextBrush}" />
+                    </StackPanel>
+                </Button>
+                <Button Style="{StaticResource SidebarButton}" Command="{Binding ShowBackupCommand}" ToolTip="Backup database">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="Database" Width="18" Height="18" Margin="0,0,10,0" Foreground="{DynamicResource SidebarTextBrush}" />
+                        <TextBlock Text="{DynamicResource NavBackup}" Foreground="{DynamicResource SidebarTextBrush}" />
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+        </Border>
+
+        <DockPanel Grid.Column="1" Background="{DynamicResource AppBackgroundBrush}">
+            <Border Background="#FFFFFF" DockPanel.Dock="Top" Padding="20" BorderBrush="#EEE" BorderThickness="0,0,0,1">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="{Binding PageTitle}" FontSize="20" FontWeight="SemiBold" />
+                    <StackPanel Orientation="Horizontal" Grid.Column="1">
+                        <Button Content="{DynamicResource BtnBackup}" Style="{StaticResource GhostButton}" Margin="0,0,8,0" Command="{Binding BackupCommand}" ToolTip="{DynamicResource BtnBackup}" />
+                        <Button Content="{DynamicResource BtnToggleLang}" Style="{StaticResource GhostButton}" Command="{Binding ToggleLanguageCommand}" ToolTip="Switch language" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <ContentControl Content="{Binding CurrentPage}" Style="{StaticResource PageTransition}" Margin="16" />
+        </DockPanel>
+    </Grid>
+</Window>

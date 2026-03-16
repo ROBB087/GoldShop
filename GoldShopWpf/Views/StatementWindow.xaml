@@ -1,0 +1,39 @@
+<Window x:Class="GoldShopWpf.Views.StatementWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="{DynamicResource LblStatementTitle}" Height="600" Width="820" WindowStartupLocation="CenterOwner">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Border Style="{StaticResource CardContainer}" Grid.Row="0">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <StackPanel Orientation="Horizontal" Grid.Row="0" Margin="0,0,0,8">
+                    <Image x:Name="LogoImage" Width="60" Height="60" Margin="0,0,12,0" Visibility="Collapsed" />
+                    <TextBlock Text="{DynamicResource LblStatementTitle}" FontSize="20" FontWeight="SemiBold" VerticalAlignment="Center" />
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" Grid.Row="1">
+                    <TextBlock Text="{DynamicResource LblFrom}" VerticalAlignment="Center" Margin="0,0,8,0" />
+                    <DatePicker x:Name="FromDate" Width="140" />
+                    <TextBlock Text="{DynamicResource LblTo}" VerticalAlignment="Center" Margin="16,0,8,0" />
+                    <DatePicker x:Name="ToDate" Width="140" />
+                    <Button Content="{DynamicResource BtnApply}" Margin="16,0,0,0" Click="OnGenerate" />
+                    <Button Content="{DynamicResource BtnPrint}" Margin="8,0,0,0" Click="OnPrint" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Border Style="{StaticResource CardContainer}" Grid.Row="1">
+            <TextBox x:Name="StatementText" IsReadOnly="True" TextWrapping="NoWrap" FontFamily="{DynamicResource AppFontFamily}" FontSize="12"
+                     VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" />
+        </Border>
+    </Grid>
+</Window>
