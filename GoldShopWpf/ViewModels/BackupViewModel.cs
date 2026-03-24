@@ -1,5 +1,6 @@
 using System.IO;
 using GoldShopCore.Data;
+using GoldShopWpf.Services;
 
 namespace GoldShopWpf.ViewModels;
 
@@ -16,15 +17,15 @@ public class BackupViewModel : ViewModelBase
     {
         var dialog = new Microsoft.Win32.SaveFileDialog
         {
-            Title = "Save Database Backup",
-            Filter = "SQLite Database (*.db)|*.db|All Files (*.*)|*.*",
+            Title = UiText.L("MsgSaveBackupDialogTitle"),
+            Filter = UiText.L("FilterSqlite"),
             FileName = $"goldshop-backup-{DateTime.Now:yyyyMMdd}.db"
         };
 
         if (dialog.ShowDialog() == true)
         {
             File.Copy(Database.DbFilePath, dialog.FileName, true);
-            System.Windows.MessageBox.Show("Backup created.", "Backup", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+            System.Windows.MessageBox.Show(UiText.L("MsgBackupCreated"), UiText.L("TitleBackup"), System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
         }
     }
 }

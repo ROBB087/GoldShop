@@ -15,6 +15,7 @@ public class MainViewModel : ViewModelBase
     public TransactionsViewModel Transactions { get; }
     public WeeklyReportViewModel WeeklyReport { get; }
     public StatementViewModel Statement { get; }
+    public NotesViewModel Notes { get; }
     public BackupViewModel Backup { get; }
 
     public ViewModelBase CurrentPage
@@ -35,6 +36,7 @@ public class MainViewModel : ViewModelBase
     public RelayCommand ShowSupplierDetailsCommand { get; }
     public RelayCommand ShowWeeklyReportCommand { get; }
     public RelayCommand ShowStatementCommand { get; }
+    public RelayCommand ShowNotesCommand { get; }
     public RelayCommand ShowBackupCommand { get; }
     public RelayCommand BackupCommand { get; }
     public RelayCommand ToggleLanguageCommand { get; }
@@ -47,14 +49,20 @@ public class MainViewModel : ViewModelBase
         Transactions = new TransactionsViewModel();
         WeeklyReport = new WeeklyReportViewModel();
         Statement = new StatementViewModel();
+        Notes = new NotesViewModel();
         Backup = new BackupViewModel();
 
         ShowDashboardCommand = new RelayCommand(_ => Navigate(Dashboard, L("NavDashboard")));
         ShowSuppliersCommand = new RelayCommand(_ => Navigate(Suppliers, L("NavSuppliers")));
         ShowTransactionsCommand = new RelayCommand(_ => Navigate(Transactions, L("NavTransactions")));
-        ShowSupplierDetailsCommand = new RelayCommand(_ => Navigate(SupplierDetails, L("NavSupplierDetails")));
+        ShowSupplierDetailsCommand = new RelayCommand(_ =>
+        {
+            SupplierDetails.LoadAll();
+            Navigate(SupplierDetails, L("NavSupplierDetails"));
+        });
         ShowWeeklyReportCommand = new RelayCommand(_ => Navigate(WeeklyReport, L("NavWeeklyReport")));
         ShowStatementCommand = new RelayCommand(_ => Navigate(Statement, L("NavStatement")));
+        ShowNotesCommand = new RelayCommand(_ => Navigate(Notes, L("NavNotes")));
         ShowBackupCommand = new RelayCommand(_ => Navigate(Backup, L("NavBackup")));
 
         BackupCommand = new RelayCommand(_ => BackupDatabase());
@@ -63,11 +71,19 @@ public class MainViewModel : ViewModelBase
         Suppliers.OpenDetailsRequested += supplier =>
         {
             SupplierDetails.LoadForSupplier(supplier);
-            Navigate(SupplierDetails, "Supplier Details");
+            Navigate(SupplierDetails, L("NavSupplierDetails"));
         };
 
-        Dashboard.OpenQuickAddSupplier += () => Suppliers.AddCommand.Execute(null);
-        Dashboard.OpenQuickAddTransaction += () => Transactions.AddCommand.Execute(null);
+        Dashboard.OpenQuickAddSupplier += () =>
+        {
+            Navigate(Suppliers, L("NavSuppliers"));
+            Suppliers.AddCommand.Execute(null);
+        };
+        Dashboard.OpenQuickAddTransaction += () =>
+        {
+            Navigate(Transactions, L("NavTransactions"));
+            Transactions.AddCommand.Execute(null);
+        };
 
         CurrentPage = Dashboard;
         PageTitle = L("NavDashboard");
@@ -88,6 +104,10 @@ public class MainViewModel : ViewModelBase
                 {
                     details.LoadForSupplier(details.Supplier);
                 }
+                else
+                {
+                    details.LoadAll();
+                }
                 break;
             case TransactionsViewModel transactions:
                 transactions.Load();
@@ -95,30 +115,30 @@ public class MainViewModel : ViewModelBase
             case WeeklyReportViewModel report:
                 report.Load();
                 break;
+            case NotesViewModel notes:
+                notes.Load();
+                break;
         }
 
         PageTitle = title;
         CurrentPage = page;
     }
 
-    private static string L(string key)
-    {
-        return System.Windows.Application.Current.TryFindResource(key)?.ToString() ?? key;
-    }
+    private static string L(string key) => UiText.L(key);
 
     private void BackupDatabase()
     {
         var dialog = new Microsoft.Win32.SaveFileDialog
         {
-            Title = "Save Database Backup",
-            Filter = "SQLite Database (*.db)|*.db|All Files (*.*)|*.*",
+            Title = UiText.L("MsgSaveBackupDialogTitle"),
+            Filter = UiText.L("FilterSqlite"),
             FileName = $"goldshop-backup-{DateTime.Now:yyyyMMdd}.db"
         };
 
         if (dialog.ShowDialog() == true)
         {
             File.Copy(Database.DbFilePath, dialog.FileName, true);
-            System.Windows.MessageBox.Show("Backup created.", "Backup", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+            System.Windows.MessageBox.Show(UiText.L("MsgBackupCreated"), UiText.L("TitleBackup"), System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
         }
     }
 
@@ -135,6 +155,7 @@ public class MainViewModel : ViewModelBase
             case TransactionsViewModel: PageTitle = L("NavTransactions"); break;
             case WeeklyReportViewModel: PageTitle = L("NavWeeklyReport"); break;
             case StatementViewModel: PageTitle = L("NavStatement"); break;
+            case NotesViewModel: PageTitle = L("NavNotes"); break;
             case BackupViewModel: PageTitle = L("NavBackup"); break;
         }
 

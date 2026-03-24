@@ -6,6 +6,7 @@ namespace GoldShopWpf.ViewModels;
 
 public class TransactionsViewModel : ViewModelBase
 {
+    private const int AllTradersId = 0;
     private DateTime? _fromDate = DateTime.Today.AddDays(-30);
     private DateTime? _toDate = DateTime.Today;
     private string _searchText = string.Empty;
@@ -84,19 +85,23 @@ public class TransactionsViewModel : ViewModelBase
     {
         if (FromDate.HasValue && ToDate.HasValue && FromDate > ToDate)
         {
-            var msg = LocalizationService.CurrentLanguage == "ar"
-                ? "تاريخ البداية يجب أن يكون قبل تاريخ النهاية"
-                : "From date must be before To date.";
-            System.Windows.MessageBox.Show(msg, "Validation", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+            System.Windows.MessageBox.Show(UiText.L("MsgFromBeforeTo"), UiText.L("TitleValidation"), System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
             return;
         }
 
+        var selectedSupplierId = SelectedSupplier?.Id;
         Suppliers.Clear();
         Transactions.Clear();
         FilteredTransactions.Clear();
 
         var supplierService = AppServices.SupplierService;
         var suppliers = supplierService.GetSuppliers();
+        Suppliers.Add(new SupplierListItem
+        {
+            Id = AllTradersId,
+            Name = UiText.L("LblAllSuppliers")
+        });
+
         foreach (var supplier in suppliers)
         {
             Suppliers.Add(new SupplierListItem
@@ -120,6 +125,7 @@ public class TransactionsViewModel : ViewModelBase
                 SupplierName = supplierLookup.TryGetValue(transaction.SupplierId, out var name) ? name : string.Empty,
                 Date = transaction.Date,
                 Type = transaction.Type,
+                Category = transaction.Category,
                 OriginalWeight = transaction.OriginalWeight,
                 OriginalKarat = transaction.OriginalKarat,
                 Equivalent21 = transaction.Equivalent21,
@@ -134,6 +140,9 @@ public class TransactionsViewModel : ViewModelBase
             });
         }
 
+        SelectedSupplier = Suppliers.FirstOrDefault(s => s.Id == selectedSupplierId)
+            ?? Suppliers.FirstOrDefault();
+
         ApplyFilter();
     }
 
@@ -144,7 +153,9 @@ public class TransactionsViewModel : ViewModelBase
 
         foreach (var transaction in Transactions)
         {
-            if (SelectedSupplier != null && transaction.SupplierId != SelectedSupplier.Id)
+            if (SelectedSupplier != null &&
+                SelectedSupplier.Id != AllTradersId &&
+                transaction.SupplierId != SelectedSupplier.Id)
             {
                 continue;
             }
@@ -163,7 +174,8 @@ public class TransactionsViewModel : ViewModelBase
 
     private void AddTransaction()
     {
-        var dialog = new Views.TransactionWindow((int?)null, Suppliers);
+        var selectedSupplierId = SelectedSupplier?.Id > 0 ? SelectedSupplier.Id : (int?)null;
+        var dialog = new Views.TransactionWindow(selectedSupplierId, GetPopupSuppliers());
         if (dialog.ShowDialog() == true)
         {
             SaveTransaction(dialog, null);
@@ -177,12 +189,15 @@ public class TransactionsViewModel : ViewModelBase
             return;
         }
 
-        var dialog = new Views.TransactionWindow(SelectedTransaction, Suppliers);
+        var dialog = new Views.TransactionWindow(SelectedTransaction, GetPopupSuppliers());
         if (dialog.ShowDialog() == true)
         {
             SaveTransaction(dialog, SelectedTransaction.Id);
         }
     }
+
+    private List<SupplierListItem> GetPopupSuppliers()
+        => Suppliers.Where(s => s.Id != AllTradersId).ToList();
 
     private void SaveTransaction(Views.TransactionWindow dialog, int? transactionId)
     {
@@ -194,7 +209,7 @@ public class TransactionsViewModel : ViewModelBase
                     transactionId.Value,
                     dialog.SupplierId,
                     dialog.TransactionDate,
-                    dialog.TransactionType,
+                    dialog.TransactionCategory,
                     dialog.OriginalWeight,
                     dialog.OriginalKarat,
                     dialog.ManufacturingPerGram,
@@ -206,7 +221,7 @@ public class TransactionsViewModel : ViewModelBase
                 AppServices.TransactionService.AddTransaction(
                     dialog.SupplierId,
                     dialog.TransactionDate,
-                    dialog.TransactionType,
+                    dialog.TransactionCategory,
                     dialog.OriginalWeight,
                     dialog.OriginalKarat,
                     dialog.ManufacturingPerGram,
@@ -218,7 +233,7 @@ public class TransactionsViewModel : ViewModelBase
         }
         catch (ArgumentException ex)
         {
-            System.Windows.MessageBox.Show(ex.Message, "Validation", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+            System.Windows.MessageBox.Show(UiText.LocalizeException(ex.Message), UiText.L("TitleValidation"), System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
         }
     }
 
@@ -230,8 +245,8 @@ public class TransactionsViewModel : ViewModelBase
         }
 
         var result = System.Windows.MessageBox.Show(
-            "Delete this transaction?",
-            "Confirm Delete",
+            UiText.L("MsgDeleteTransactionConfirmShort"),
+            UiText.L("TitleConfirmDelete"),
             System.Windows.MessageBoxButton.YesNo,
             System.Windows.MessageBoxImage.Warning);
 

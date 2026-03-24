@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Windows;
 using GoldShopCore.Models;
+using GoldShopWpf.Services;
 
 namespace GoldShopWpf.Views;
 
@@ -17,17 +18,25 @@ public partial class DiscountWindow : Window
         InitializeComponent();
         TypeCombo.ItemsSource = new[]
         {
-            new DiscountOption("Manufacturing", DiscountType.Manufacturing),
-            new DiscountOption("Improvement", DiscountType.Improvement)
+            new DiscountOption(UiText.L("LblTotalManufacturing"), DiscountType.Manufacturing),
+            new DiscountOption(UiText.L("LblTotalImprovement"), DiscountType.Improvement)
         };
         TypeCombo.SelectedIndex = 0;
     }
 
     private void OnSave(object sender, RoutedEventArgs e)
     {
+        if (!decimal.TryParse(AmountText.Text, NumberStyles.Number, CultureInfo.CurrentCulture, out _))
+        {
+            MessageBox.Show(this, UiText.L("MsgAmountInvalid"), UiText.L("TitleValidation"), MessageBoxButton.OK, MessageBoxImage.Warning);
+            AmountText.Focus();
+            return;
+        }
+
         if (Amount <= 0)
         {
-            MessageBox.Show(this, "Discount amount must be greater than zero.", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show(this, UiText.L("MsgDiscountGreaterThanZero"), UiText.L("TitleValidation"), MessageBoxButton.OK, MessageBoxImage.Warning);
+            AmountText.Focus();
             return;
         }
 

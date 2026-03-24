@@ -1,5 +1,6 @@
 using System.Windows;
 using GoldShopCore.Models;
+using GoldShopWpf.Services;
 
 namespace GoldShopWpf.Views;
 
@@ -14,7 +15,9 @@ public partial class SupplierWindow : Window
     public SupplierWindow(Supplier? supplier = null)
     {
         InitializeComponent();
-        Title = supplier == null ? "Add Trader" : "Edit Trader";
+        var isNew = supplier == null;
+        Title = UiText.L(isNew ? "WindowAddTrader" : "WindowEditTrader");
+        HeaderTitleText.Text = Title;
 
         if (supplier != null)
         {
@@ -30,9 +33,32 @@ public partial class SupplierWindow : Window
     {
         if (string.IsNullOrWhiteSpace(NameText.Text))
         {
-            MessageBox.Show(this, "Name is required.", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show(this, UiText.L("MsgNameRequired"), UiText.L("TitleValidation"), MessageBoxButton.OK, MessageBoxImage.Warning);
+            NameText.Focus();
             return;
         }
+
+        if (SupplierName.Length > 120)
+        {
+            MessageBox.Show(this, UiText.L("MsgNameTooLong"), UiText.L("TitleValidation"), MessageBoxButton.OK, MessageBoxImage.Warning);
+            NameText.Focus();
+            return;
+        }
+
+        if (!string.IsNullOrWhiteSpace(SupplierPhone) && SupplierPhone.Length > 25)
+        {
+            MessageBox.Show(this, UiText.L("MsgPhoneInvalid"), UiText.L("TitleValidation"), MessageBoxButton.OK, MessageBoxImage.Warning);
+            PhoneText.Focus();
+            return;
+        }
+
+        if (!string.IsNullOrWhiteSpace(WorkerPhone) && WorkerPhone.Length > 25)
+        {
+            MessageBox.Show(this, UiText.L("MsgWorkerPhoneInvalid"), UiText.L("TitleValidation"), MessageBoxButton.OK, MessageBoxImage.Warning);
+            WorkerPhoneText.Focus();
+            return;
+        }
+
         DialogResult = true;
     }
 

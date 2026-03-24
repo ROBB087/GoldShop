@@ -13,6 +13,8 @@
 
   <ItemGroup>
     <Resource Include="Resources\\appicon.png" />
+    <Resource Include="Resources\\logo.png" />
+    <Content Include="Resources\\appicon.ico" />
   </ItemGroup>
 
   <PropertyGroup>
@@ -21,6 +23,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
+    <ApplicationIcon>Resources\appicon.ico</ApplicationIcon>
   </PropertyGroup>
 
 </Project>

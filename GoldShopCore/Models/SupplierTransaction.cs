@@ -12,6 +12,7 @@ public class SupplierTransaction
     public int SupplierId { get; set; }
     public DateTime Date { get; set; }
     public TransactionType Type { get; set; }
+    public string Category { get; set; } = TransactionCategories.GoldOutbound;
     public string? Description { get; set; }
     public decimal OriginalWeight { get; set; }
     public int OriginalKarat { get; set; }

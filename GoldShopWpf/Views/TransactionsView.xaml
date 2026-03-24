@@ -1,4 +1,4 @@
-﻿<UserControl x:Class="GoldShopWpf.Views.TransactionsView"
+<UserControl x:Class="GoldShopWpf.Views.TransactionsView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -8,91 +8,162 @@
     <Grid Margin="8">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <Border Style="{StaticResource CardContainer}" Grid.Row="0">
+        <Border Grid.Row="0"
+                Margin="0,0,0,18"
+                Padding="28"
+                CornerRadius="28"
+                BorderBrush="#E7E3F6"
+                BorderThickness="1">
+            <Border.Background>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                    <GradientStop Color="#FBFAFF" Offset="0" />
+                    <GradientStop Color="#F2EEFF" Offset="1" />
+                </LinearGradientBrush>
+            </Border.Background>
             <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="220" />
-                    <ColumnDefinition Width="24" />
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="160" />
-                    <ColumnDefinition Width="24" />
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="160" />
                     <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <TextBlock Grid.Row="0" Grid.Column="0" Text="{DynamicResource LblTrader}" VerticalAlignment="Center" Margin="5" />
-                <ComboBox Grid.Row="0" Grid.Column="1" ItemsSource="{Binding Suppliers}" SelectedItem="{Binding SelectedSupplier}" DisplayMemberPath="Name" Margin="5" />
-
-                <TextBlock Grid.Row="0" Grid.Column="3" Text="{DynamicResource LblFrom}" VerticalAlignment="Center" Margin="5" />
-                <DatePicker Grid.Row="0" Grid.Column="4" SelectedDate="{Binding FromDate}" Width="140" Margin="5" materialDesign:HintAssist.Hint="من" />
-
-                <TextBlock Grid.Row="0" Grid.Column="6" Text="{DynamicResource LblTo}" VerticalAlignment="Center" Margin="5" />
-                <DatePicker Grid.Row="0" Grid.Column="7" SelectedDate="{Binding ToDate}" Width="140" Margin="5" materialDesign:HintAssist.Hint="إلى" />
-
-                <StackPanel Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="8" Orientation="Horizontal" Margin="5,6,5,0">
-                    <materialDesign:PackIcon Kind="Magnify" Width="20" Height="20" VerticalAlignment="Center" Margin="0,0,8,0" />
-                    <TextBox Width="240" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" ToolTip="{DynamicResource LblSearch}" materialDesign:HintAssist.Hint="{DynamicResource LblSearch}" />
-                    <Button Content="{DynamicResource BtnRefresh}" Style="{StaticResource GhostButton}" Margin="12,0,0,0" Command="{Binding RefreshCommand}" ToolTip="{DynamicResource BtnRefresh}" />
+                <StackPanel>
+                    <TextBlock Text="{DynamicResource NavTransactions}" FontSize="28" FontWeight="SemiBold" Margin="0,0,0,8" />
+                    <TextBlock Text="{DynamicResource LblTransactionsSub}"
+                               FontSize="15"
+                               Foreground="#5B4C7A"
+                               Margin="0,0,0,18" />
+                    <WrapPanel>
+                        <StackPanel Width="260" Margin="0,0,16,0">
+                            <TextBlock Text="{DynamicResource LblTrader}" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource MutedTextBrush}" Margin="0,0,0,6" />
+                            <ComboBox ItemsSource="{Binding Suppliers}" SelectedItem="{Binding SelectedSupplier}" DisplayMemberPath="Name" Margin="0" />
+                        </StackPanel>
+                        <StackPanel Width="220" Margin="0,0,16,0">
+                            <TextBlock Text="{DynamicResource LblFrom}" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource MutedTextBrush}" Margin="0,0,0,6" />
+                            <DatePicker SelectedDate="{Binding FromDate}" Width="220" Margin="0" />
+                        </StackPanel>
+                        <StackPanel Width="220">
+                            <TextBlock Text="{DynamicResource LblTo}" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource MutedTextBrush}" Margin="0,0,0,6" />
+                            <DatePicker SelectedDate="{Binding ToDate}" Width="220" Margin="0" />
+                        </StackPanel>
+                    </WrapPanel>
                 </StackPanel>
 
-                <StackPanel Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="9" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
-                    <Button Command="{Binding AddCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,12,0" ToolTip="{DynamicResource BtnAddTransaction}">
+                <WrapPanel Grid.Column="1" VerticalAlignment="Top">
+                    <Button Command="{Binding AddCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,10,0" MinWidth="164">
                         <StackPanel Orientation="Horizontal">
-                            <materialDesign:PackIcon Kind="Cash" Width="18" Height="18" Margin="0,0,6,0" />
+                            <materialDesign:PackIcon Kind="CashFast" Width="18" Height="18" Margin="0,0,6,0" />
                             <TextBlock Text="{DynamicResource BtnAddTransaction}" />
                         </StackPanel>
                     </Button>
-                    <Button Command="{Binding EditCommand}" Style="{StaticResource GhostButton}" Margin="0,0,12,0" ToolTip="{DynamicResource BtnEdit}">
+                    <Button Command="{Binding EditCommand}" Style="{StaticResource GhostButton}" Margin="0,0,10,0" MinWidth="118">
                         <StackPanel Orientation="Horizontal">
                             <materialDesign:PackIcon Kind="Pencil" Width="18" Height="18" Margin="0,0,6,0" />
                             <TextBlock Text="{DynamicResource BtnEdit}" />
                         </StackPanel>
                     </Button>
-                    <Button Command="{Binding DeleteCommand}" Style="{StaticResource GhostButton}" ToolTip="{DynamicResource BtnDelete}">
+                    <Button Command="{Binding DeleteCommand}" Style="{StaticResource GhostButton}" MinWidth="118">
                         <StackPanel Orientation="Horizontal">
                             <materialDesign:PackIcon Kind="Delete" Width="18" Height="18" Margin="0,0,6,0" Foreground="#D32F2F" />
                             <TextBlock Text="{DynamicResource BtnDelete}" />
                         </StackPanel>
                     </Button>
+                </WrapPanel>
+            </Grid>
+        </Border>
+
+        <Border Grid.Row="1"
+                Style="{StaticResource CardContainer}"
+                Margin="0,0,0,18"
+                BorderBrush="#E7ECF2">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <Border Background="#F7F8FC"
+                        BorderBrush="#E6EAF2"
+                        BorderThickness="1"
+                        CornerRadius="18"
+                        Padding="14,10">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="Magnify" Width="20" Height="20" VerticalAlignment="Center" Margin="0,0,8,0" />
+                        <TextBox Width="260"
+                                 Margin="0"
+                                 Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                 ToolTip="{DynamicResource LblSearch}"
+                                 materialDesign:HintAssist.Hint="{DynamicResource LblSearch}" />
+                    </StackPanel>
+                </Border>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <Border Padding="12,8"
+                            CornerRadius="14"
+                            Background="#F6F8FC"
+                            BorderBrush="#E3EAF5"
+                            BorderThickness="1"
+                            Margin="0,0,12,0">
+                        <TextBlock FontWeight="SemiBold"
+                                   Foreground="#4D5B73">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Text" Value="{Binding FilteredTransactions.Count, StringFormat=Rows: {0}}" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=UserControl}, Path=FlowDirection}" Value="RightToLeft">
+                                            <Setter Property="Text" Value="{Binding FilteredTransactions.Count, StringFormat=عدد الصفوف: {0}}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </Border>
+                    <Button Content="{DynamicResource BtnRefresh}" Style="{StaticResource GhostButton}" Command="{Binding RefreshCommand}" ToolTip="{DynamicResource BtnRefresh}" />
                 </StackPanel>
             </Grid>
         </Border>
 
-        <Border Style="{StaticResource CardContainer}" Grid.Row="1">
-            <DataGrid ItemsSource="{Binding FilteredTransactions}" SelectedItem="{Binding SelectedTransaction}" AutoGenerateColumns="False"
-                      CanUserAddRows="False" IsReadOnly="True" CanUserSortColumns="True" SelectionMode="Single" SelectionUnit="FullRow">
-                <DataGrid.Columns>
-                    <DataGridTextColumn Header="{DynamicResource LblDate}" Binding="{Binding Date, StringFormat={}{0:yyyy-MM-dd}}" Width="130" MinWidth="130" ElementStyle="{StaticResource GridCellTextStyle}" />
-                    <DataGridTextColumn Header="{DynamicResource LblTrader}" Binding="{Binding SupplierName}" Width="2*" MinWidth="150" ElementStyle="{StaticResource GridCellTextStyle}" />
-                    <DataGridTextColumn Header="{DynamicResource LblType}" Binding="{Binding Type, Converter={StaticResource TransactionTypeToLabelConverter}}" Width="*" MinWidth="110">
-                        <DataGridTextColumn.ElementStyle>
-                            <Style TargetType="TextBlock" BasedOn="{StaticResource GridCellTextStyle}">
-                                <Setter Property="Foreground" Value="{Binding Type, Converter={StaticResource TransactionTypeToBrushConverter}}" />
-                                <Setter Property="FontWeight" Value="SemiBold" />
-                            </Style>
-                        </DataGridTextColumn.ElementStyle>
-                    </DataGridTextColumn>
-                    <DataGridTextColumn Header="{DynamicResource LblWeight}" Binding="{Binding OriginalWeight, Converter={StaticResource MoneyFormatConverter}, ConverterParameter='g'}" Width="*" MinWidth="110" ElementStyle="{StaticResource GridCellTextStyle}" />
-                    <DataGridTextColumn Header="{DynamicResource LblKarat}" Binding="{Binding OriginalKarat}" Width="*" MinWidth="90" ElementStyle="{StaticResource GridCellTextStyle}" />
-                    <DataGridTextColumn Header="{DynamicResource LblEquivalent21}" Binding="{Binding Equivalent21, Converter={StaticResource MoneyFormatConverter}, ConverterParameter='g'}" Width="*" MinWidth="130" ElementStyle="{StaticResource GridCellTextStyle}" />
-                    <DataGridTextColumn Header="{DynamicResource LblTotalManufacturing}" Binding="{Binding TotalManufacturing, Converter={StaticResource MoneyFormatConverter}}" Width="*" MinWidth="160" ElementStyle="{StaticResource GridCellTextStyle}" />
-                    <DataGridTextColumn Header="{DynamicResource LblTotalImprovement}" Binding="{Binding TotalImprovement, Converter={StaticResource MoneyFormatConverter}}" Width="*" MinWidth="160" ElementStyle="{StaticResource GridCellTextStyle}" />
-                    <DataGridTextColumn Header="{DynamicResource LblTraceability}" Binding="{Binding Traceability}" Width="2*" MinWidth="220" ElementStyle="{StaticResource GridCellTextStyle}" />
-                    <DataGridTextColumn Header="{DynamicResource LblUpdatedAt}" Binding="{Binding UpdatedAt, StringFormat={}{0:yyyy-MM-dd HH:mm}}" Width="170" MinWidth="170" ElementStyle="{StaticResource GridCellTextStyle}" />
-                </DataGrid.Columns>
-            </DataGrid>
+        <Border Grid.Row="2"
+                Style="{StaticResource CardContainer}"
+                BorderBrush="#E7ECF2">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0" Text="{DynamicResource LblTransactionLedger}" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,14" />
+                <DataGrid Grid.Row="1"
+                          ItemsSource="{Binding FilteredTransactions}"
+                          SelectedItem="{Binding SelectedTransaction}"
+                          AutoGenerateColumns="False"
+                          CanUserAddRows="False"
+                          IsReadOnly="True"
+                          CanUserSortColumns="True"
+                          SelectionMode="Single"
+                          SelectionUnit="FullRow">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="{DynamicResource LblDate}" Binding="{Binding Date, StringFormat={}{0:yyyy-MM-dd}}" Width="130" MinWidth="130" ElementStyle="{StaticResource GridCellTextStyle}" />
+                        <DataGridTextColumn Header="{DynamicResource LblTrader}" Binding="{Binding SupplierName}" Width="2*" MinWidth="180" ElementStyle="{StaticResource GridCellTextStyle}" />
+                        <DataGridTextColumn Header="{DynamicResource LblType}" Binding="{Binding Category, Converter={StaticResource TransactionCategoryToLabelConverter}}" Width="*" MinWidth="150">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource GridCellTextStyle}">
+                                    <Setter Property="Foreground" Value="{Binding Type, Converter={StaticResource TransactionTypeToBrushConverter}}" />
+                                    <Setter Property="FontWeight" Value="SemiBold" />
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Header="{DynamicResource LblWeight}" Binding="{Binding OriginalWeight, Converter={StaticResource MoneyFormatConverter}, ConverterParameter='g'}" Width="*" MinWidth="120" ElementStyle="{StaticResource GridCellTextStyle}" />
+                        <DataGridTextColumn Header="{DynamicResource LblKarat}" Binding="{Binding OriginalKarat}" Width="*" MinWidth="100" ElementStyle="{StaticResource GridCellTextStyle}" />
+                        <DataGridTextColumn Header="{DynamicResource LblTotalManufacturing}" Binding="{Binding TotalManufacturing, Converter={StaticResource MoneyFormatConverter}}" Width="*" MinWidth="170" ElementStyle="{StaticResource GridCellTextStyle}" />
+                        <DataGridTextColumn Header="{DynamicResource LblTotalImprovement}" Binding="{Binding TotalImprovement, Converter={StaticResource MoneyFormatConverter}}" Width="*" MinWidth="170" ElementStyle="{StaticResource GridCellTextStyle}" />
+                        <DataGridTextColumn Header="{DynamicResource LblUpdatedAt}" Binding="{Binding UpdatedAt, StringFormat={}{0:yyyy-MM-dd HH:mm}}" Width="180" MinWidth="180" ElementStyle="{StaticResource GridCellTextStyle}" />
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Grid>
         </Border>
     </Grid>
 </UserControl>
-
-

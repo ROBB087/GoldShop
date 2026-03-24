@@ -15,6 +15,9 @@ public class DiscountService
     public List<DiscountRecord> GetDiscounts(int supplierId, DateTime? from, DateTime? to)
         => _discountRepository.GetBySupplier(supplierId, from, to);
 
+    public List<DiscountRecord> GetDiscounts(DateTime? from, DateTime? to)
+        => _discountRepository.GetAll(from, to);
+
     public void AddDiscount(int supplierId, DiscountType type, decimal amount, string? notes)
     {
         if (amount <= 0)

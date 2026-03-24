@@ -2,74 +2,126 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
-        Title="Transaction" Height="620" Width="620" MinWidth="400" MinHeight="300" WindowStartupLocation="CenterOwner" ResizeMode="CanResize"
+        Title="{DynamicResource WindowAddTransaction}"
+        Height="820"
+        Width="860"
+        MinWidth="700"
+        MinHeight="640"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="CanResize"
         FlowDirection="{DynamicResource AppFlowDirection}">
-    <ScrollViewer VerticalScrollBarVisibility="Auto">
-    <Grid Margin="16">
+    <Grid Background="{DynamicResource AppBackgroundBrush}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="190" />
-            <ColumnDefinition Width="*" />
-        </Grid.ColumnDefinitions>
 
-        <TextBlock Text="{DynamicResource LblTrader}" Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" Margin="8" />
-        <ComboBox x:Name="SupplierCombo" Grid.Row="0" Grid.Column="1" DisplayMemberPath="Name" SelectedValuePath="Id" Margin="0,8" MinHeight="30" />
-
-        <TextBlock Text="{DynamicResource LblDate}" Grid.Row="1" Grid.Column="0" VerticalAlignment="Center" Margin="8" />
-        <DatePicker x:Name="DatePicker" Grid.Row="1" Grid.Column="1" Margin="0,8" MinHeight="30" />
-
-        <TextBlock Text="{DynamicResource LblType}" Grid.Row="2" Grid.Column="0" VerticalAlignment="Center" Margin="8" />
-        <ComboBox x:Name="TypeCombo" Grid.Row="2" Grid.Column="1" Margin="0,8" MinHeight="30" DisplayMemberPath="Label" SelectedValuePath="Type" />
-
-        <TextBlock Text="{DynamicResource LblWeight}" Grid.Row="3" Grid.Column="0" VerticalAlignment="Center" Margin="8" />
-        <TextBox x:Name="WeightText" Grid.Row="3" Grid.Column="1" Margin="0,8" MinHeight="30" />
-
-        <TextBlock Text="{DynamicResource LblKarat}" Grid.Row="4" Grid.Column="0" VerticalAlignment="Center" Margin="8" />
-        <ComboBox x:Name="KaratCombo" Grid.Row="4" Grid.Column="1" Margin="0,8" MinHeight="30" />
-
-        <TextBlock Text="{DynamicResource LblManufacturingPerGram}" Grid.Row="5" Grid.Column="0" VerticalAlignment="Center" Margin="8" />
-        <TextBox x:Name="ManufacturingText" Grid.Row="5" Grid.Column="1" Margin="0,8" MinHeight="30" />
-
-        <TextBlock Text="{DynamicResource LblImprovementPerGram}" Grid.Row="6" Grid.Column="0" VerticalAlignment="Center" Margin="8" />
-        <TextBox x:Name="ImprovementText" Grid.Row="6" Grid.Column="1" Margin="0,8" MinHeight="30" />
-
-        <Border Grid.Row="7" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,8" Padding="12" Background="#FFF8E1" CornerRadius="8">
-            <StackPanel>
-                <TextBlock x:Name="EquivalentText" FontWeight="SemiBold" Foreground="#8D6E63" />
-                <TextBlock x:Name="ManufacturingTotalText" Foreground="#8D6E63" Margin="0,4,0,0" />
-                <TextBlock x:Name="ImprovementTotalText" Foreground="#8D6E63" Margin="0,4,0,0" />
-                <TextBlock x:Name="TraceabilityText" Foreground="#6D4C41" Margin="0,6,0,0" TextWrapping="Wrap" />
+        <Border Grid.Row="0"
+                Margin="20,20,20,0"
+                Padding="24"
+                CornerRadius="24"
+                Background="#FFF9EC"
+                BorderBrush="#F1E0A9"
+                BorderThickness="1">
+            <StackPanel Orientation="Horizontal">
+                <Border Width="54" Height="54" CornerRadius="16" Background="#FFE8A3">
+                    <materialDesign:PackIcon Kind="CashFast" Width="24" Height="24" VerticalAlignment="Center" HorizontalAlignment="Center" />
+                </Border>
+                <StackPanel Margin="14,0,0,0">
+                    <TextBlock x:Name="HeaderTitleText" FontSize="24" FontWeight="SemiBold" />
+                    <TextBlock Text="{DynamicResource SubTransactionWindow}" Foreground="{StaticResource MutedTextBrush}" Margin="0,6,0,0" />
+                </StackPanel>
             </StackPanel>
         </Border>
 
-        <TextBlock Text="{DynamicResource LblNotes}" Grid.Row="8" Grid.Column="0" VerticalAlignment="Top" Margin="8" />
-        <TextBox x:Name="NotesText" Grid.Row="8" Grid.Column="1" Margin="0,8" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="120" />
+        <Border Grid.Row="1" Style="{StaticResource CardContainer}" Margin="20">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <Grid Margin="4">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="220" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
 
-        <StackPanel Orientation="Horizontal" Grid.Row="9" Grid.Column="1" HorizontalAlignment="Right" Margin="8,16,0,0">
-            <Button Style="{StaticResource PrimaryButton}" Margin="8,16,0,0" Click="OnSave">
-                <StackPanel Orientation="Horizontal">
-                    <materialDesign:PackIcon Kind="ContentSave" Width="18" Height="18" Margin="0,0,6,0" />
-                    <TextBlock Text="{DynamicResource BtnApply}" />
-                </StackPanel>
-            </Button>
-            <Button Style="{StaticResource GhostButton}" Margin="8,16,0,0" Click="OnCancel">
-                <StackPanel Orientation="Horizontal">
-                    <materialDesign:PackIcon Kind="CloseCircle" Width="18" Height="18" Margin="0,0,6,0" />
-                    <TextBlock Text="{DynamicResource BtnClear}" />
-                </StackPanel>
-            </Button>
-        </StackPanel>
+                    <TextBlock Text="{DynamicResource LblTrader}" Grid.Row="0" Grid.Column="0" Margin="8,12" />
+                    <ComboBox x:Name="SupplierCombo" Grid.Row="0" Grid.Column="1" DisplayMemberPath="Name" SelectedValuePath="Id" Margin="0,8" />
+
+                    <TextBlock Text="{DynamicResource LblDate}" Grid.Row="1" Grid.Column="0" Margin="8,12" />
+                    <DatePicker x:Name="DatePicker" Grid.Row="1" Grid.Column="1" Margin="0,8" HorizontalAlignment="Stretch" />
+
+                    <TextBlock Text="{DynamicResource LblTransactionCategory}" Grid.Row="2" Grid.Column="0" Margin="8,12" />
+                    <ComboBox x:Name="TypeCombo" Grid.Row="2" Grid.Column="1" Margin="0,8" DisplayMemberPath="Label" SelectedValuePath="Category" />
+
+                    <TextBlock x:Name="WeightLabel" Text="{DynamicResource LblWeight}" Grid.Row="3" Grid.Column="0" Margin="8,12" />
+                    <TextBox x:Name="WeightText" Grid.Row="3" Grid.Column="1" Margin="0,8" />
+
+                    <TextBlock x:Name="KaratLabel" Text="{DynamicResource LblKarat}" Grid.Row="4" Grid.Column="0" Margin="8,12" />
+                    <ComboBox x:Name="KaratCombo" Grid.Row="4" Grid.Column="1" Margin="0,8" />
+
+                    <TextBlock x:Name="ManufacturingLabel" Text="{DynamicResource LblManufacturingPerGram}" Grid.Row="5" Grid.Column="0" Margin="8,12" />
+                    <TextBox x:Name="ManufacturingText" Grid.Row="5" Grid.Column="1" Margin="0,8" />
+
+                    <TextBlock x:Name="ImprovementLabel" Text="{DynamicResource LblImprovementPerGram}" Grid.Row="6" Grid.Column="0" Margin="8,12" />
+                    <TextBox x:Name="ImprovementText" Grid.Row="6" Grid.Column="1" Margin="0,8" />
+
+                    <Border Grid.Row="7" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,12" Padding="16" Background="#FFF8E1" CornerRadius="16" BorderBrush="#F2DDA6" BorderThickness="1">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+
+                            <Border Grid.Row="0" Grid.Column="0" Margin="6" Padding="12,10" Background="#FFFDF6" BorderBrush="#EAD8A4" BorderThickness="1" CornerRadius="12">
+                                <TextBlock x:Name="EquivalentText" FontSize="13" FontWeight="SemiBold" Foreground="#8D6E63" TextAlignment="Center" />
+                            </Border>
+                            <Border Grid.Row="0" Grid.Column="1" Margin="6" Padding="12,10" Background="#FFFDF6" BorderBrush="#EAD8A4" BorderThickness="1" CornerRadius="12">
+                                <TextBlock x:Name="ManufacturingTotalText" FontSize="13" Foreground="#8D6E63" TextAlignment="Center" />
+                            </Border>
+                            <Border Grid.Row="0" Grid.Column="2" Margin="6" Padding="12,10" Background="#FFFDF6" BorderBrush="#EAD8A4" BorderThickness="1" CornerRadius="12">
+                                <TextBlock x:Name="ImprovementTotalText" FontSize="13" Foreground="#8D6E63" TextAlignment="Center" />
+                            </Border>
+
+                            <Border Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3" Margin="6,10,6,0" Padding="12,10" Background="#FFFDF6" BorderBrush="#EAD8A4" BorderThickness="1" CornerRadius="12">
+                                <TextBlock x:Name="TraceabilityText" FontSize="12" Foreground="#6D4C41" TextWrapping="Wrap" TextAlignment="Center" />
+                            </Border>
+                        </Grid>
+                    </Border>
+
+                    <TextBlock Text="{DynamicResource LblNotes}" Grid.Row="8" Grid.Column="0" Margin="8,12" VerticalAlignment="Top" />
+                    <TextBox x:Name="NotesText" Grid.Row="8" Grid.Column="1" Margin="0,8" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="170" VerticalScrollBarVisibility="Auto" />
+
+                    <StackPanel Orientation="Horizontal" Grid.Row="9" Grid.Column="1" HorizontalAlignment="Right" Margin="0,20,0,0">
+                        <Button Width="140" Style="{StaticResource GhostButton}" Margin="12,0,0,0" Click="OnCancel" ToolTip="{DynamicResource TooltipCancel}">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="CloseCircleOutline" Width="18" Height="18" Margin="0,0,6,0" />
+                                <TextBlock Text="{DynamicResource BtnClear}" />
+                            </StackPanel>
+                        </Button>
+                        <Button Width="150" Style="{StaticResource PrimaryButton}" Click="OnSave" ToolTip="{DynamicResource TooltipSave}">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="ContentSave" Width="18" Height="18" Margin="0,0,6,0" />
+                                <TextBlock Text="{DynamicResource BtnApply}" />
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </Grid>
+            </ScrollViewer>
+        </Border>
     </Grid>
-    </ScrollViewer>
 </Window>

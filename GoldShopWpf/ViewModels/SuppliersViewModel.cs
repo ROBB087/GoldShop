@@ -145,8 +145,8 @@ public class SuppliersViewModel : ViewModelBase
         }
 
         var result = System.Windows.MessageBox.Show(
-            $"Delete trader {SelectedSupplier.Name}? This will remove all transactions and discounts.",
-            "Confirm Delete",
+            UiText.Format("MsgDeleteTraderConfirm", SelectedSupplier.Name),
+            UiText.L("TitleConfirmDelete"),
             System.Windows.MessageBoxButton.YesNo,
             System.Windows.MessageBoxImage.Warning);
 

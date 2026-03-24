@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using GoldShopCore.Models;
 using GoldShopWpf.Services;
 
 namespace GoldShopWpf.ViewModels;
@@ -75,13 +76,13 @@ public class StatementViewModel : ViewModelBase
     {
         if (FromDate > ToDate)
         {
-            System.Windows.MessageBox.Show("From date must be before To date.", "Validation", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+            System.Windows.MessageBox.Show(UiText.L("MsgFromBeforeTo"), UiText.L("TitleValidation"), System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
             return;
         }
 
         if (SelectedSupplier == null)
         {
-            StatementText = "Select a trader to generate a statement.";
+            StatementText = UiText.L("LblNoSupplier");
             return;
         }
 
@@ -90,55 +91,46 @@ public class StatementViewModel : ViewModelBase
 
         var lines = new List<string>
         {
-            "Trader Statement",
-            $"Trader: {SelectedSupplier.Name}",
-            $"Date Range: {FromDate:yyyy-MM-dd} - {ToDate:yyyy-MM-dd}",
-            new string('-', 150),
-            string.Format("{0,-12} {1,-4} {2,10} {3,7} {4,10} {5,12} {6,12} {7,-28} {8,-16} {9,-16}",
-                "Date", "Type", "Weight", "Karat", "Eq21", "Mfg Total", "Imp Total", "Traceability", "Created", "Updated"),
-            new string('-', 150)
+            UiText.L("ReceiptTitle"),
+            $"{UiText.L("LblTrader")}: {SelectedSupplier.Name}",
+            $"{UiText.L("ReceiptDateRange")}: {FromDate:yyyy-MM-dd} - {ToDate:yyyy-MM-dd}",
+            new string('=', 72),
+            $"{UiText.L("LblDate"),-12} {UiText.L("LblType"),-18} {UiText.L("LblWeight"),12} {UiText.L("LblAmount"),12}",
+            new string('-', 72)
         };
 
         foreach (var transaction in transactions)
         {
-            lines.Add(string.Format(
-                "{0,-12} {1,-4} {2,10} {3,7} {4,10} {5,12} {6,12} {7,-28} {8,-16} {9,-16}",
-                transaction.Date.ToString("yyyy-MM-dd"),
-                transaction.Type,
-                FormatNumber(transaction.OriginalWeight, "g"),
-                $"{transaction.OriginalKarat}K",
-                FormatNumber(transaction.Equivalent21, "g"),
-                FormatNumber(transaction.TotalManufacturing, string.Empty),
-                FormatNumber(transaction.TotalImprovement, string.Empty),
-                Truncate(transaction.Description, 28),
-                transaction.CreatedAt.ToString("yyyy-MM-dd HH:mm"),
-                transaction.UpdatedAt.ToString("yyyy-MM-dd HH:mm")));
+            lines.Add(
+                $"{transaction.Date:yyyy-MM-dd,-12} {FormatType(transaction),-18} {FormatNumber(transaction.OriginalWeight, UiText.L("LblWeightUnit")),12} {FormatNumber(transaction.TotalManufacturing + transaction.TotalImprovement, string.Empty),12}");
         }
 
-        lines.Add(new string('-', 150));
-        lines.Add($"Total Gold (21K): {FormatNumber(summary.TotalGold21, "g")}");
-        lines.Add($"Total Manufacturing: {FormatNumber(summary.TotalManufacturing, string.Empty)}");
-        lines.Add($"Total Improvement: {FormatNumber(summary.TotalImprovement, string.Empty)}");
-        lines.Add($"Manufacturing Discounts: {FormatNumber(summary.ManufacturingDiscounts, string.Empty)}");
-        lines.Add($"Improvement Discounts: {FormatNumber(summary.ImprovementDiscounts, string.Empty)}");
-        lines.Add($"Final Manufacturing: {FormatNumber(summary.FinalManufacturing, string.Empty)}");
-        lines.Add($"Final Improvement: {FormatNumber(summary.FinalImprovement, string.Empty)}");
+        lines.Add(new string('=', 72));
+        lines.Add(UiText.L("ReceiptSummary"));
+        lines.Add($"{UiText.L("LblTotalGold21")}: {FormatNumber(summary.TotalGold21, UiText.L("LblWeightUnit"))}");
+        lines.Add($"{UiText.L("LblTotalManufacturing")}: {FormatNumber(summary.TotalManufacturing, string.Empty)}");
+        lines.Add($"{UiText.L("LblTotalImprovement")}: {FormatNumber(summary.TotalImprovement, string.Empty)}");
+        lines.Add($"{UiText.L("LblManufacturingDiscounts")}: {FormatNumber(summary.ManufacturingDiscounts, string.Empty)}");
+        lines.Add($"{UiText.L("LblImprovementDiscounts")}: {FormatNumber(summary.ImprovementDiscounts, string.Empty)}");
+        lines.Add($"{UiText.L("LblFinalManufacturing")}: {FormatNumber(summary.FinalManufacturing, string.Empty)}");
+        lines.Add($"{UiText.L("LblFinalImprovement")}: {FormatNumber(summary.FinalImprovement, string.Empty)}");
 
         StatementText = string.Join(Environment.NewLine, lines);
     }
 
-    private static string Truncate(string? value, int length)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            return string.Empty;
-        }
-
-        return value.Length <= length ? value : value[..(length - 3)] + "...";
-    }
-
     private static string FormatNumber(decimal value, string suffix)
         => string.IsNullOrWhiteSpace(suffix) ? $"{value:0.00}" : $"{value:0.00} {suffix}";
+
+    private static string FormatType(SupplierTransaction transaction)
+    {
+        return transaction.Category switch
+        {
+            TransactionCategories.GoldOutbound => UiText.L("LblDebit"),
+            TransactionCategories.GoldReceipt => UiText.L("LblCredit"),
+            TransactionCategories.CashPayment => UiText.L("LblTransactionCategory"),
+            _ => transaction.Type.ToString()
+        };
+    }
 
     private void PrintStatement()
     {

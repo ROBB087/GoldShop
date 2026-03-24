@@ -28,10 +28,10 @@ public class TransactionRepository
         command.CommandText = @"
 INSERT INTO SupplierTransactions
     (SupplierId, TxnDate, Type, Description, Amount, Weight, Purity, OriginalWeight, OriginalKarat, Equivalent21,
-     ManufacturingPerGram, ImprovementPerGram, TotalManufacturing, TotalImprovement, Notes, CreatedAt, UpdatedAt)
+     ManufacturingPerGram, ImprovementPerGram, TotalManufacturing, TotalImprovement, Category, Notes, CreatedAt, UpdatedAt)
 VALUES
     ($supplierId, $date, $type, $description, $equivalent21, $originalWeight, $purity, $originalWeight, $originalKarat, $equivalent21,
-     $manufacturingPerGram, $improvementPerGram, $totalManufacturing, $totalImprovement, $notes, $createdAt, $updatedAt);";
+     $manufacturingPerGram, $improvementPerGram, $totalManufacturing, $totalImprovement, $category, $notes, $createdAt, $updatedAt);";
 
         BindTransaction(command, transaction);
         command.ExecuteNonQuery();
@@ -59,6 +59,7 @@ SET SupplierId = $supplierId,
     ImprovementPerGram = $improvementPerGram,
     TotalManufacturing = $totalManufacturing,
     TotalImprovement = $totalImprovement,
+    Category = $category,
     Notes = $notes,
     UpdatedAt = $updatedAt
 WHERE Id = $id;";
@@ -133,6 +134,9 @@ FROM SupplierTransactions
             summary.TotalImprovement = ReadDecimal(reader, 2);
         }
 
+        var discounts = new DiscountRepository().GetDiscountTotalsAll(from, to);
+        summary.ManufacturingDiscounts = discounts.manufacturingDiscounts;
+        summary.ImprovementDiscounts = discounts.improvementDiscounts;
         return summary;
     }
 
@@ -209,7 +213,7 @@ GROUP BY SupplierId;";
         using var command = connection.CreateCommand();
         var where = BuildDateFilter(command, supplierId, from, to);
         command.CommandText = $@"
-SELECT Id, SupplierId, TxnDate, Type, Description, OriginalWeight, OriginalKarat, Equivalent21,
+SELECT Id, SupplierId, TxnDate, Type, Category, Description, OriginalWeight, OriginalKarat, Equivalent21,
        ManufacturingPerGram, ImprovementPerGram, TotalManufacturing, TotalImprovement, Notes, CreatedAt, UpdatedAt
 FROM SupplierTransactions
 {where}
@@ -224,17 +228,18 @@ ORDER BY TxnDate DESC, Id DESC;";
                 SupplierId = reader.GetInt32(1),
                 Date = DateTime.Parse(reader.GetString(2)),
                 Type = ParseType(reader.GetString(3)),
-                Description = reader.IsDBNull(4) ? null : reader.GetString(4),
-                OriginalWeight = ReadDecimal(reader, 5),
-                OriginalKarat = reader.GetInt32(6),
-                Equivalent21 = ReadDecimal(reader, 7),
-                ManufacturingPerGram = ReadDecimal(reader, 8),
-                ImprovementPerGram = ReadDecimal(reader, 9),
-                TotalManufacturing = ReadDecimal(reader, 10),
-                TotalImprovement = ReadDecimal(reader, 11),
-                Notes = reader.IsDBNull(12) ? null : reader.GetString(12),
-                CreatedAt = DateTime.Parse(reader.GetString(13)),
-                UpdatedAt = DateTime.Parse(reader.GetString(14))
+                Category = TransactionCategories.Normalize(reader.IsDBNull(4) ? null : reader.GetString(4), ParseType(reader.GetString(3))),
+                Description = reader.IsDBNull(5) ? null : reader.GetString(5),
+                OriginalWeight = ReadDecimal(reader, 6),
+                OriginalKarat = reader.GetInt32(7),
+                Equivalent21 = ReadDecimal(reader, 8),
+                ManufacturingPerGram = ReadDecimal(reader, 9),
+                ImprovementPerGram = ReadDecimal(reader, 10),
+                TotalManufacturing = ReadDecimal(reader, 11),
+                TotalImprovement = ReadDecimal(reader, 12),
+                Notes = reader.IsDBNull(13) ? null : reader.GetString(13),
+                CreatedAt = DateTime.Parse(reader.GetString(14)),
+                UpdatedAt = DateTime.Parse(reader.GetString(15))
             });
         }
 
@@ -277,6 +282,7 @@ ORDER BY TxnDate DESC, Id DESC;";
         command.Parameters.AddWithValue("$improvementPerGram", (double)transaction.ImprovementPerGram);
         command.Parameters.AddWithValue("$totalManufacturing", (double)transaction.TotalManufacturing);
         command.Parameters.AddWithValue("$totalImprovement", (double)transaction.TotalImprovement);
+        command.Parameters.AddWithValue("$category", transaction.Category);
         command.Parameters.AddWithValue("$notes", (object?)transaction.Notes ?? DBNull.Value);
         command.Parameters.AddWithValue("$createdAt", transaction.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss"));
         command.Parameters.AddWithValue("$updatedAt", transaction.UpdatedAt.ToString("yyyy-MM-dd HH:mm:ss"));

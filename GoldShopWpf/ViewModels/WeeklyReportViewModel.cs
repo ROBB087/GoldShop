@@ -36,10 +36,7 @@ public class WeeklyReportViewModel : ViewModelBase
     {
         if (FromDate > ToDate)
         {
-            var msg = LocalizationService.CurrentLanguage == "ar"
-                ? "تاريخ البداية يجب أن يكون قبل تاريخ النهاية"
-                : "From date must be before To date.";
-            System.Windows.MessageBox.Show(msg, "Validation", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+            System.Windows.MessageBox.Show(UiText.L("MsgFromBeforeTo"), UiText.L("TitleValidation"), System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
             return;
         }
 

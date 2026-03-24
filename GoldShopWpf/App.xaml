@@ -60,7 +60,7 @@
                 <Setter Property="TextOptions.TextRenderingMode" Value="ClearType" />
                 <Setter Property="UseLayoutRounding" Value="True" />
                 <Setter Property="SnapsToDevicePixels" Value="True" />
-                <Setter Property="Icon" Value="Resources/appicon.png" />
+                <Setter Property="Icon" Value="Resources/appicon.ico" />
             </Style>
 
             <Style TargetType="UserControl">
@@ -130,9 +130,9 @@
 
             <Style TargetType="Button" BasedOn="{StaticResource MaterialDesignFlatButton}">
                 <Setter Property="Cursor" Value="Hand" />
-                <Setter Property="Height" Value="44" />
+                <Setter Property="Height" Value="48" />
                 <Setter Property="MinWidth" Value="120" />
-                <Setter Property="Padding" Value="16,12" />
+                <Setter Property="Padding" Value="18,10" />
                 <Setter Property="Margin" Value="0" />
                 <Setter Property="FontSize" Value="14" />
                 <Setter Property="FontWeight" Value="SemiBold" />
@@ -147,9 +147,9 @@
                 <Setter Property="Background" Value="{DynamicResource PrimaryBrush}" />
                 <Setter Property="Foreground" Value="#1A1A1A" />
                 <Setter Property="TextElement.Foreground" Value="#1A1A1A" />
-                <Setter Property="Height" Value="44" />
+                <Setter Property="Height" Value="48" />
                 <Setter Property="MinWidth" Value="132" />
-                <Setter Property="Padding" Value="18,12" />
+                <Setter Property="Padding" Value="18,10" />
                 <Setter Property="FontSize" Value="14" />
                 <Setter Property="FontWeight" Value="SemiBold" />
                 <Setter Property="materialDesign:ButtonAssist.CornerRadius" Value="12" />
@@ -167,9 +167,9 @@
                 <Setter Property="BorderThickness" Value="1" />
                 <Setter Property="Foreground" Value="#1A1A1A" />
                 <Setter Property="TextElement.Foreground" Value="#1A1A1A" />
-                <Setter Property="Height" Value="44" />
+                <Setter Property="Height" Value="48" />
                 <Setter Property="MinWidth" Value="120" />
-                <Setter Property="Padding" Value="16,12" />
+                <Setter Property="Padding" Value="18,10" />
                 <Setter Property="FontSize" Value="14" />
                 <Setter Property="FontWeight" Value="SemiBold" />
                 <Setter Property="materialDesign:ButtonAssist.CornerRadius" Value="12" />
@@ -242,12 +242,23 @@
                 <Setter Property="Margin" Value="{DynamicResource ControlMargin}" />
                 <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
                 <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
-                <Setter Property="MinHeight" Value="52" />
-                <Setter Property="Padding" Value="12,6" />
+                <Setter Property="MinHeight" Value="56" />
+                <Setter Property="MinWidth" Value="220" />
+                <Setter Property="Padding" Value="18,8" />
+                <Setter Property="FontSize" Value="14" />
                 <Setter Property="SelectedDateFormat" Value="Short" />
                 <Setter Property="FlowDirection" Value="LeftToRight" />
                 <Setter Property="materialDesign:HintAssist.HintOpacity" Value="0.55" />
                 <Setter Property="materialDesign:TextFieldAssist.DecorationVisibility" Value="Collapsed" />
+            </Style>
+
+            <Style TargetType="{x:Type DatePickerTextBox}">
+                <Setter Property="FontSize" Value="14" />
+                <Setter Property="TextAlignment" Value="Left" />
+                <Setter Property="VerticalContentAlignment" Value="Center" />
+                <Setter Property="HorizontalContentAlignment" Value="Left" />
+                <Setter Property="Padding" Value="12,8,40,8" />
+                <Setter Property="BorderThickness" Value="0" />
             </Style>
 
             <Style TargetType="DataGrid">
@@ -269,6 +280,15 @@
                 <Setter Property="SelectionUnit" Value="FullRow" />
                 <Setter Property="CanUserResizeRows" Value="False" />
                 <Setter Property="FlowDirection" Value="{DynamicResource AppFlowDirection}" />
+                <Setter Property="EnableRowVirtualization" Value="True" />
+                <Setter Property="EnableColumnVirtualization" Value="True" />
+                <Setter Property="VirtualizingPanel.IsVirtualizing" Value="True" />
+                <Setter Property="VirtualizingPanel.VirtualizationMode" Value="Recycling" />
+                <Setter Property="VirtualizingPanel.ScrollUnit" Value="Pixel" />
+                <Setter Property="VirtualizingPanel.CacheLength" Value="2" />
+                <Setter Property="VirtualizingPanel.CacheLengthUnit" Value="Page" />
+                <Setter Property="ScrollViewer.CanContentScroll" Value="True" />
+                <Setter Property="ScrollViewer.IsDeferredScrollingEnabled" Value="True" />
                 <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Auto" />
                 <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />
             </Style>
@@ -282,17 +302,23 @@
                 <Setter Property="Padding" Value="8,4" />
                 <Setter Property="MinHeight" Value="36" />
                 <Setter Property="HorizontalContentAlignment" Value="Center" />
+                <Setter Property="VerticalContentAlignment" Value="Center" />
+                <Setter Property="TextBlock.TextAlignment" Value="Center" />
             </Style>
 
             <Style TargetType="DataGridCell">
                 <Setter Property="BorderThickness" Value="0" />
                 <Setter Property="Padding" Value="8,6" />
+                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                <Setter Property="VerticalContentAlignment" Value="Center" />
             </Style>
 
             <Style x:Key="GridCellTextStyle" TargetType="TextBlock">
                 <Setter Property="TextWrapping" Value="NoWrap" />
                 <Setter Property="TextTrimming" Value="CharacterEllipsis" />
                 <Setter Property="VerticalAlignment" Value="Center" />
+                <Setter Property="HorizontalAlignment" Value="Center" />
+                <Setter Property="TextAlignment" Value="Center" />
             </Style>
 
             <Style TargetType="DataGridRow">
@@ -327,6 +353,7 @@
 
             <converters:TransactionTypeToBrushConverter x:Key="TransactionTypeToBrushConverter" />
             <converters:TransactionTypeToLabelConverter x:Key="TransactionTypeToLabelConverter" />
+            <converters:TransactionCategoryToLabelConverter x:Key="TransactionCategoryToLabelConverter" />
             <converters:MoneyFormatConverter x:Key="MoneyFormatConverter" />
         </ResourceDictionary>
     </Application.Resources>

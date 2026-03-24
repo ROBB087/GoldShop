@@ -9,6 +9,7 @@ public class TransactionListItem
     public string SupplierName { get; init; } = string.Empty;
     public DateTime Date { get; init; }
     public TransactionType Type { get; init; }
+    public string Category { get; init; } = TransactionCategories.GoldOutbound;
     public decimal OriginalWeight { get; init; }
     public int OriginalKarat { get; init; }
     public decimal Equivalent21 { get; init; }

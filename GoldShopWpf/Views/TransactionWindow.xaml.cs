@@ -2,17 +2,19 @@ using System.Globalization;
 using System.Windows;
 using GoldShopCore.Models;
 using GoldShopCore.Services;
+using GoldShopWpf.Services;
 using GoldShopWpf.ViewModels;
 
 namespace GoldShopWpf.Views;
 
 public partial class TransactionWindow : Window
 {
-    private sealed record TypeOption(string Label, TransactionType Type);
+    private sealed record CategoryOption(string Label, string Category);
 
     public int SupplierId => SupplierCombo.SelectedItem is SupplierListItem s ? s.Id : 0;
     public DateTime TransactionDate => DatePicker.SelectedDate ?? DateTime.Today;
-    public TransactionType TransactionType => (TransactionType)(TypeCombo.SelectedValue ?? TransactionType.Out);
+    public string TransactionCategory => (string)(TypeCombo.SelectedValue ?? TransactionCategories.GoldOutbound);
+    public TransactionType TransactionType => TransactionCategory == TransactionCategories.GoldOutbound ? TransactionType.Out : TransactionType.In;
     public decimal OriginalWeight => ParseDecimal(WeightText.Text);
     public int OriginalKarat => KaratCombo.SelectedItem is int karat ? karat : 21;
     public decimal ManufacturingPerGram => ParseDecimal(ManufacturingText.Text);
@@ -32,7 +34,8 @@ public partial class TransactionWindow : Window
     private TransactionWindow(TransactionListItem? transaction, int? supplierId, IEnumerable<SupplierListItem> suppliers)
     {
         InitializeComponent();
-        Title = transaction == null ? "Add Transaction" : "Edit Transaction";
+        Title = UiText.L(transaction == null ? "WindowAddTransaction" : "WindowEditTransaction");
+        HeaderTitleText.Text = Title;
 
         SupplierCombo.ItemsSource = suppliers.ToList();
         SupplierCombo.SelectedValue = supplierId ?? 0;
@@ -41,61 +44,145 @@ public partial class TransactionWindow : Window
             SupplierCombo.SelectedIndex = 0;
         }
 
-        var isArabic = GoldShopWpf.Services.LocalizationService.CurrentLanguage == "ar";
-        TypeCombo.ItemsSource = new[]
-        {
-            new TypeOption(isArabic ? "خارج" : "OUT", TransactionType.Out),
-            new TypeOption(isArabic ? "داخل" : "IN", TransactionType.In)
-        };
+        TypeCombo.ItemsSource = BuildTypeOptions();
+        KaratCombo.ItemsSource = new[] { 18, 21, 24 };
 
-        KaratCombo.ItemsSource = new[] { 18, 21, 22, 24 };
         DatePicker.SelectedDate = transaction?.Date ?? DateTime.Today;
-        TypeCombo.SelectedValue = transaction?.Type ?? TransactionType.Out;
-        WeightText.Text = transaction == null ? string.Empty : transaction.OriginalWeight.ToString("0.####", CultureInfo.CurrentCulture);
+        TypeCombo.SelectedValue = TransactionCategories.Normalize(transaction?.Category, transaction?.Type ?? TransactionType.Out);
+        WeightText.Text = transaction == null || transaction.OriginalWeight == 0 ? string.Empty : transaction.OriginalWeight.ToString("0.####", CultureInfo.CurrentCulture);
         KaratCombo.SelectedItem = transaction?.OriginalKarat ?? 21;
-        ManufacturingText.Text = transaction == null ? string.Empty : transaction.ManufacturingPerGram.ToString("0.####", CultureInfo.CurrentCulture);
-        ImprovementText.Text = transaction == null ? string.Empty : transaction.ImprovementPerGram.ToString("0.####", CultureInfo.CurrentCulture);
+        ManufacturingText.Text = GetManufacturingText(transaction);
+        ImprovementText.Text = GetImprovementText(transaction);
         NotesText.Text = transaction?.Notes ?? string.Empty;
 
         WeightText.TextChanged += (_, _) => UpdatePreview();
         ManufacturingText.TextChanged += (_, _) => UpdatePreview();
         ImprovementText.TextChanged += (_, _) => UpdatePreview();
         KaratCombo.SelectionChanged += (_, _) => UpdatePreview();
+        TypeCombo.SelectionChanged += (_, _) => UpdateFormForCategory();
+
+        UpdateFormForCategory();
+    }
+
+    private void UpdateFormForCategory()
+    {
+        var category = TransactionCategory;
+        var isCashPayment = category == TransactionCategories.CashPayment;
+        var isGoldReceipt = category == TransactionCategories.GoldReceipt;
+
+        WeightLabel.Visibility = isCashPayment ? Visibility.Collapsed : Visibility.Visible;
+        WeightText.Visibility = isCashPayment ? Visibility.Collapsed : Visibility.Visible;
+        KaratLabel.Visibility = isCashPayment ? Visibility.Collapsed : Visibility.Visible;
+        KaratCombo.Visibility = isCashPayment ? Visibility.Collapsed : Visibility.Visible;
+
+        ManufacturingLabel.Visibility = isGoldReceipt ? Visibility.Collapsed : Visibility.Visible;
+        ManufacturingText.Visibility = isGoldReceipt ? Visibility.Collapsed : Visibility.Visible;
+        ImprovementLabel.Visibility = isGoldReceipt ? Visibility.Collapsed : Visibility.Visible;
+        ImprovementText.Visibility = isGoldReceipt ? Visibility.Collapsed : Visibility.Visible;
+
+        ManufacturingLabel.Text = isCashPayment ? UiText.L("LblManufacturingPayment") : UiText.L("LblManufacturingPerGram");
+        ImprovementLabel.Text = isCashPayment ? UiText.L("LblRefiningPayment") : UiText.L("LblImprovementPerGram");
+
+        if (isGoldReceipt)
+        {
+            ManufacturingText.Text = "0";
+            ImprovementText.Text = "0";
+        }
+
+        if (isCashPayment)
+        {
+            WeightText.Text = "0";
+            KaratCombo.SelectedItem = 21;
+        }
 
         UpdatePreview();
     }
 
     private void UpdatePreview()
     {
-        var equivalent21 = OriginalWeight > 0 ? TransactionService.CalculateEquivalent21(OriginalWeight, OriginalKarat) : 0m;
-        var totalManufacturing = OriginalWeight > 0 ? decimal.Round(OriginalWeight * ManufacturingPerGram, 4, MidpointRounding.AwayFromZero) : 0m;
-        var totalImprovement = equivalent21 > 0 ? decimal.Round(equivalent21 * ImprovementPerGram, 4, MidpointRounding.AwayFromZero) : 0m;
+        var category = TransactionCategory;
+        if (category == TransactionCategories.CashPayment)
+        {
+            EquivalentText.Text = $"{UiText.L("LblEquivalent21")}: 0 {UiText.L("LblWeightUnit")}";
+            ManufacturingTotalText.Text = $"{UiText.L("LblTotalManufacturing")}: {-ManufacturingPerGram:0.####}";
+            ImprovementTotalText.Text = $"{UiText.L("LblTotalImprovement")}: {-ImprovementPerGram:0.####}";
+            TraceabilityText.Text = UiText.L("MsgCashPaymentPreview");
+            return;
+        }
 
-        EquivalentText.Text = $"21K Equivalent: {equivalent21:0.####} g";
-        ManufacturingTotalText.Text = $"Total Manufacturing: {totalManufacturing:0.####}";
-        ImprovementTotalText.Text = $"Total Improvement: {totalImprovement:0.####}";
+        var equivalent21 = OriginalWeight > 0 ? TransactionService.CalculateEquivalent21(OriginalWeight, OriginalKarat) : 0m;
+        var totalManufacturing = category == TransactionCategories.GoldOutbound && OriginalWeight > 0
+            ? decimal.Round(OriginalWeight * ManufacturingPerGram, 4, MidpointRounding.AwayFromZero)
+            : 0m;
+        var totalImprovement = category == TransactionCategories.GoldOutbound && equivalent21 > 0
+            ? decimal.Round(equivalent21 * ImprovementPerGram, 4, MidpointRounding.AwayFromZero)
+            : 0m;
+
+        EquivalentText.Text = $"{UiText.L("LblEquivalent21")}: {equivalent21:0.####} {UiText.L("LblWeightUnit")}";
+        ManufacturingTotalText.Text = $"{UiText.L("LblTotalManufacturing")}: {totalManufacturing:0.####}";
+        ImprovementTotalText.Text = $"{UiText.L("LblTotalImprovement")}: {totalImprovement:0.####}";
         TraceabilityText.Text = OriginalWeight > 0
-            ? $"This value is converted from {OriginalWeight:0.####} grams of {OriginalKarat} karat."
-            : "Enter weight and karat to preview the 21K conversion.";
+            ? category == TransactionCategories.GoldReceipt
+                ? UiText.L("MsgGoldReceiptPreview")
+                : $"{UiText.L("MsgGoldConversionPrefix")} {OriginalWeight:0.####} {UiText.L("LblWeightUnit")} {OriginalKarat}K."
+            : UiText.L("MsgEnterWeightPreview");
     }
 
     private void OnSave(object sender, RoutedEventArgs e)
     {
         if (SupplierId == 0)
         {
-            MessageBox.Show(this, "Please select a trader.", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show(this, UiText.L("MsgSelectTrader"), UiText.L("TitleValidation"), MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        if (!TryValidateDecimal(WeightText, TransactionCategory == TransactionCategories.CashPayment, "MsgWeightInvalid"))
+        {
+            return;
+        }
+
+        if (!TryValidateDecimal(ManufacturingText, TransactionCategory == TransactionCategories.GoldReceipt, "MsgManufacturingInvalid"))
+        {
+            return;
+        }
+
+        if (!TryValidateDecimal(ImprovementText, TransactionCategory == TransactionCategories.GoldReceipt, "MsgImprovementInvalid"))
+        {
             return;
         }
 
         try
         {
-            TransactionService.Validate(OriginalWeight, OriginalKarat, ManufacturingPerGram, ImprovementPerGram);
+            TransactionService.Validate(TransactionCategory, OriginalWeight, OriginalKarat, ManufacturingPerGram, ImprovementPerGram);
             DialogResult = true;
         }
         catch (ArgumentException ex)
         {
-            MessageBox.Show(this, ex.Message, "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show(this, UiText.LocalizeException(ex.Message), UiText.L("TitleValidation"), MessageBoxButton.OK, MessageBoxImage.Warning);
         }
+    }
+
+    private bool TryValidateDecimal(System.Windows.Controls.TextBox textBox, bool allowHidden, string resourceKey)
+    {
+        if (allowHidden || textBox.Visibility != Visibility.Visible)
+        {
+            return true;
+        }
+
+        if (string.IsNullOrWhiteSpace(textBox.Text))
+        {
+            textBox.Text = "0";
+            return true;
+        }
+
+        if (decimal.TryParse(textBox.Text, NumberStyles.Number, CultureInfo.CurrentCulture, out _))
+        {
+            return true;
+        }
+
+        MessageBox.Show(this, UiText.L(resourceKey), UiText.L("TitleValidation"), MessageBoxButton.OK, MessageBoxImage.Warning);
+        textBox.Focus();
+        return false;
     }
 
     private void OnCancel(object sender, RoutedEventArgs e)
@@ -105,4 +192,39 @@ public partial class TransactionWindow : Window
 
     private static decimal ParseDecimal(string text)
         => decimal.TryParse(text, NumberStyles.Number, CultureInfo.CurrentCulture, out var value) ? value : 0m;
+
+    private static string GetManufacturingText(TransactionListItem? transaction)
+    {
+        if (transaction == null)
+        {
+            return string.Empty;
+        }
+
+        return transaction.Category == TransactionCategories.CashPayment
+            ? Math.Abs(transaction.TotalManufacturing).ToString("0.####", CultureInfo.CurrentCulture)
+            : transaction.ManufacturingPerGram.ToString("0.####", CultureInfo.CurrentCulture);
+    }
+
+    private static string GetImprovementText(TransactionListItem? transaction)
+    {
+        if (transaction == null)
+        {
+            return string.Empty;
+        }
+
+        return transaction.Category == TransactionCategories.CashPayment
+            ? Math.Abs(transaction.TotalImprovement).ToString("0.####", CultureInfo.CurrentCulture)
+            : transaction.ImprovementPerGram.ToString("0.####", CultureInfo.CurrentCulture);
+    }
+
+    private static List<CategoryOption> BuildTypeOptions()
+    {
+        var isArabic = LocalizationService.CurrentLanguage == "ar";
+        return
+        [
+            new CategoryOption(isArabic ? "صرف ذهب" : "Gold Out", TransactionCategories.GoldOutbound),
+            new CategoryOption(isArabic ? "استلام ذهب" : "Gold Receipt", TransactionCategories.GoldReceipt),
+            new CategoryOption(isArabic ? "سداد نقدي" : "Cash Payment", TransactionCategories.CashPayment)
+        ];
+    }
 }

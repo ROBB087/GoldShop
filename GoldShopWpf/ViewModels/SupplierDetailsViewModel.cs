@@ -6,30 +6,42 @@ namespace GoldShopWpf.ViewModels;
 
 public class SupplierDetailsViewModel : ViewModelBase
 {
+    private const int AllTradersId = 0;
+
     private SupplierListItem? _supplier;
     private DateTime? _fromDate;
     private DateTime? _toDate;
+    private string _searchText = string.Empty;
     private TransactionRow? _selectedTransaction;
-    private SupplierListItem? _selectedSupplierOption;
+    private SupplierListItem? _selectedTrader;
     private decimal _totalGold21;
     private decimal _totalManufacturing;
     private decimal _totalImprovement;
     private decimal _manufacturingDiscounts;
     private decimal _improvementDiscounts;
+    private bool _isUpdatingSelection;
+    private List<TransactionRow> _allTransactions = [];
+    private List<DiscountListItem> _allDiscounts = [];
 
     public ObservableCollection<SupplierListItem> SupplierOptions { get; } = new();
     public ObservableCollection<TransactionRow> Transactions { get; } = new();
     public ObservableCollection<DiscountListItem> Discounts { get; } = new();
 
-    public SupplierListItem? SelectedSupplierOption
+    public SupplierListItem? SelectedTrader
     {
-        get => _selectedSupplierOption;
+        get => _selectedTrader;
         set
         {
-            if (SetProperty(ref _selectedSupplierOption, value))
+            if (SetProperty(ref _selectedTrader, value) && !_isUpdatingSelection)
             {
-                Supplier = value;
-                Load();
+                if (value == null)
+                {
+                    Supplier = null;
+                    ResetViewState();
+                    return;
+                }
+
+                LoadTraderData(value.Id);
             }
         }
     }
@@ -65,6 +77,18 @@ public class SupplierDetailsViewModel : ViewModelBase
         set => SetProperty(ref _toDate, value);
     }
 
+    public string SearchText
+    {
+        get => _searchText;
+        set
+        {
+            if (SetProperty(ref _searchText, value))
+            {
+                ApplySearchFilter();
+            }
+        }
+    }
+
     public TransactionRow? SelectedTransaction
     {
         get => _selectedTransaction;
@@ -92,7 +116,6 @@ public class SupplierDetailsViewModel : ViewModelBase
             if (SetProperty(ref _totalManufacturing, value))
             {
                 OnPropertyChanged(nameof(FinalManufacturing));
-                OnPropertyChanged(nameof(NetManufacturing));
             }
         }
     }
@@ -105,7 +128,6 @@ public class SupplierDetailsViewModel : ViewModelBase
             if (SetProperty(ref _totalImprovement, value))
             {
                 OnPropertyChanged(nameof(FinalImprovement));
-                OnPropertyChanged(nameof(NetImprovement));
             }
         }
     }
@@ -118,7 +140,6 @@ public class SupplierDetailsViewModel : ViewModelBase
             if (SetProperty(ref _manufacturingDiscounts, value))
             {
                 OnPropertyChanged(nameof(FinalManufacturing));
-                OnPropertyChanged(nameof(NetManufacturing));
             }
         }
     }
@@ -131,15 +152,12 @@ public class SupplierDetailsViewModel : ViewModelBase
             if (SetProperty(ref _improvementDiscounts, value))
             {
                 OnPropertyChanged(nameof(FinalImprovement));
-                OnPropertyChanged(nameof(NetImprovement));
             }
         }
     }
 
     public decimal FinalManufacturing => TotalManufacturing - ManufacturingDiscounts;
     public decimal FinalImprovement => TotalImprovement - ImprovementDiscounts;
-    public decimal NetManufacturing => FinalManufacturing;
-    public decimal NetImprovement => FinalImprovement;
 
     public RelayCommand ApplyFilterCommand { get; }
     public RelayCommand ClearFilterCommand { get; }
@@ -151,12 +169,22 @@ public class SupplierDetailsViewModel : ViewModelBase
 
     public SupplierDetailsViewModel()
     {
-        ApplyFilterCommand = new RelayCommand(_ => Load());
+        ApplyFilterCommand = new RelayCommand(_ =>
+        {
+            if (SelectedTrader != null)
+            {
+                LoadTraderData(SelectedTrader.Id);
+            }
+        });
         ClearFilterCommand = new RelayCommand(_ =>
         {
             FromDate = null;
             ToDate = null;
-            Load();
+            SearchText = string.Empty;
+            if (SelectedTrader != null)
+            {
+                LoadTraderData(SelectedTrader.Id);
+            }
         });
         AddTransactionCommand = new RelayCommand(_ => AddTransaction(), _ => Supplier != null);
         AddDiscountCommand = new RelayCommand(_ => AddDiscount(), _ => Supplier != null);
@@ -170,34 +198,34 @@ public class SupplierDetailsViewModel : ViewModelBase
     public void RefreshLocalization()
     {
         LoadSupplierOptions();
-        SelectedSupplierOption = Supplier != null
-            ? SupplierOptions.FirstOrDefault(s => s.Id == Supplier.Id)
-            : SupplierOptions.FirstOrDefault();
+        SelectTrader(SelectedTrader?.Id ?? Supplier?.Id ?? SupplierOptions.FirstOrDefault()?.Id, loadData: SupplierOptions.Count > 0);
     }
 
     public void LoadForSupplier(SupplierListItem supplier)
     {
-        Supplier = supplier;
-        LoadSupplierOptions();
-        SelectedSupplierOption = SupplierOptions.FirstOrDefault(s => s.Id == supplier.Id);
         FromDate ??= DateTime.Today.AddMonths(-1);
         ToDate ??= DateTime.Today;
-        Load();
+        LoadSupplierOptions();
+        SelectTrader(supplier.Id, loadData: true);
     }
 
     public void LoadAll()
     {
-        LoadSupplierOptions();
-        Supplier = SupplierOptions.FirstOrDefault();
-        SelectedSupplierOption = Supplier;
         FromDate ??= DateTime.Today.AddMonths(-1);
         ToDate ??= DateTime.Today;
-        Load();
+        LoadSupplierOptions();
+        SelectTrader(SelectedTrader?.Id ?? Supplier?.Id ?? AllTradersId, loadData: SupplierOptions.Count > 0);
     }
 
     private void LoadSupplierOptions()
     {
+        var selectedTraderId = SelectedTrader?.Id ?? Supplier?.Id ?? AllTradersId;
         SupplierOptions.Clear();
+        SupplierOptions.Add(new SupplierListItem
+        {
+            Id = AllTradersId,
+            Name = UiText.L("LblAllSuppliers")
+        });
 
         foreach (var supplier in AppServices.SupplierService.GetSuppliers())
         {
@@ -211,36 +239,102 @@ public class SupplierDetailsViewModel : ViewModelBase
             });
         }
 
-        SelectedSupplierOption ??= SupplierOptions.FirstOrDefault();
+        _isUpdatingSelection = true;
+        try
+        {
+            SelectedTrader = SupplierOptions.FirstOrDefault(s => s.Id == selectedTraderId) ?? SupplierOptions.FirstOrDefault();
+        }
+        finally
+        {
+            _isUpdatingSelection = false;
+        }
     }
 
-    private void Load()
+    public void LoadTraderData(int traderId)
     {
         if (FromDate.HasValue && ToDate.HasValue && FromDate > ToDate)
         {
-            var msg = LocalizationService.CurrentLanguage == "ar"
-                ? "تاريخ البداية يجب أن يكون قبل تاريخ النهاية"
-                : "From date must be before To date.";
-            System.Windows.MessageBox.Show(msg, "Validation", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+            System.Windows.MessageBox.Show(UiText.L("MsgFromBeforeTo"), UiText.L("TitleValidation"), System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
             return;
         }
 
-        Transactions.Clear();
-        Discounts.Clear();
+        var suppliers = AppServices.SupplierService.GetSuppliers()
+            .ToDictionary(
+                s => s.Id,
+                s => new SupplierListItem
+                {
+                    Id = s.Id,
+                    Name = s.Name,
+                    Phone = s.Phone ?? string.Empty,
+                    WorkerName = s.WorkerName ?? string.Empty,
+                    WorkerPhone = s.WorkerPhone ?? string.Empty
+                });
 
-        if (Supplier == null)
+        if (traderId == AllTradersId)
         {
+            Supplier = null;
+            SelectTrader(AllTradersId);
+            SelectedTransaction = null;
+
+            _allTransactions = AppServices.TransactionService.GetTransactions(FromDate, ToDate)
+                .Select(transaction => new TransactionRow
+                {
+                    Id = transaction.Id,
+                    SupplierName = suppliers.TryGetValue(transaction.SupplierId, out var supplier) ? supplier.Name : string.Empty,
+                    Date = transaction.Date,
+                    Type = transaction.Type,
+                    Category = transaction.Category,
+                    OriginalWeight = transaction.OriginalWeight,
+                    OriginalKarat = transaction.OriginalKarat,
+                    Equivalent21 = transaction.Equivalent21,
+                    ManufacturingPerGram = transaction.ManufacturingPerGram,
+                    ImprovementPerGram = transaction.ImprovementPerGram,
+                    TotalManufacturing = transaction.TotalManufacturing,
+                    TotalImprovement = transaction.TotalImprovement,
+                    Traceability = transaction.Description ?? string.Empty,
+                    Notes = transaction.Notes ?? string.Empty,
+                    CreatedAt = transaction.CreatedAt,
+                    UpdatedAt = transaction.UpdatedAt
+                })
+                .ToList();
+
+            _allDiscounts = AppServices.DiscountService.GetDiscounts(FromDate, ToDate)
+                .Select(discount => new DiscountListItem
+                {
+                    Id = discount.Id,
+                    SupplierName = suppliers.TryGetValue(discount.SupplierId, out var supplier) ? supplier.Name : string.Empty,
+                    Type = discount.Type,
+                    Amount = discount.Amount,
+                    Notes = discount.Notes ?? string.Empty,
+                    CreatedAt = discount.CreatedAt
+                })
+                .ToList();
+
+            ApplySummary(AppServices.TransactionService.GetSummaryAll(FromDate, ToDate));
+            ApplySearchFilter();
             return;
         }
 
-        foreach (var transaction in AppServices.TransactionService.GetTransactions(Supplier.Id, FromDate, ToDate))
+        var trader = SupplierOptions.FirstOrDefault(s => s.Id == traderId);
+        if (trader == null)
         {
-            Transactions.Add(new TransactionRow
+            Supplier = null;
+            ResetViewState();
+            return;
+        }
+
+        Supplier = trader;
+        SelectTrader(traderId);
+        SelectedTransaction = null;
+
+        _allTransactions = AppServices.TransactionService.GetTransactions(traderId, FromDate, ToDate)
+            .Select(transaction => new TransactionRow
             {
                 Id = transaction.Id,
-                SupplierName = Supplier.Name,
+                SupplierName = trader.Name,
                 Date = transaction.Date,
                 Type = transaction.Type,
+                Category = transaction.Category,
                 OriginalWeight = transaction.OriginalWeight,
                 OriginalKarat = transaction.OriginalKarat,
                 Equivalent21 = transaction.Equivalent21,
@@ -252,22 +346,56 @@ public class SupplierDetailsViewModel : ViewModelBase
                 Notes = transaction.Notes ?? string.Empty,
                 CreatedAt = transaction.CreatedAt,
                 UpdatedAt = transaction.UpdatedAt
-            });
-        }
+            })
+            .ToList();
 
-        foreach (var discount in AppServices.DiscountService.GetDiscounts(Supplier.Id, FromDate, ToDate))
-        {
-            Discounts.Add(new DiscountListItem
+        _allDiscounts = AppServices.DiscountService.GetDiscounts(traderId, FromDate, ToDate)
+            .Select(discount => new DiscountListItem
             {
                 Id = discount.Id,
+                SupplierName = trader.Name,
                 Type = discount.Type,
                 Amount = discount.Amount,
                 Notes = discount.Notes ?? string.Empty,
                 CreatedAt = discount.CreatedAt
-            });
+            })
+            .ToList();
+
+        ApplySummary(AppServices.TransactionService.GetSummary(traderId, FromDate, ToDate));
+        ApplySearchFilter();
+    }
+
+    private void ApplySearchFilter()
+    {
+        Transactions.Clear();
+        Discounts.Clear();
+
+        var query = SearchText.Trim().ToLowerInvariant();
+
+        foreach (var transaction in _allTransactions)
+        {
+            if (!string.IsNullOrWhiteSpace(query) &&
+                !transaction.SupplierName.ToLowerInvariant().Contains(query) &&
+                !transaction.Notes.ToLowerInvariant().Contains(query) &&
+                !transaction.Traceability.ToLowerInvariant().Contains(query))
+            {
+                continue;
+            }
+
+            Transactions.Add(transaction);
         }
 
-        ApplySummary(AppServices.TransactionService.GetSummary(Supplier.Id, FromDate, ToDate));
+        foreach (var discount in _allDiscounts)
+        {
+            if (!string.IsNullOrWhiteSpace(query) &&
+                !discount.SupplierName.ToLowerInvariant().Contains(query) &&
+                !discount.Notes.ToLowerInvariant().Contains(query))
+            {
+                continue;
+            }
+
+            Discounts.Add(discount);
+        }
     }
 
     private void AddTransaction()
@@ -277,7 +405,7 @@ public class SupplierDetailsViewModel : ViewModelBase
             return;
         }
 
-        var dialog = new Views.TransactionWindow(Supplier.Id, SupplierOptions);
+        var dialog = new Views.TransactionWindow(Supplier.Id, SupplierOptions.Where(s => s.Id != AllTradersId));
         if (dialog.ShowDialog() != true)
         {
             return;
@@ -288,17 +416,17 @@ public class SupplierDetailsViewModel : ViewModelBase
             AppServices.TransactionService.AddTransaction(
                 Supplier.Id,
                 dialog.TransactionDate,
-                dialog.TransactionType,
+                dialog.TransactionCategory,
                 dialog.OriginalWeight,
                 dialog.OriginalKarat,
                 dialog.ManufacturingPerGram,
                 dialog.ImprovementPerGram,
                 dialog.Notes);
-            Load();
+            LoadTraderData(Supplier.Id);
         }
         catch (ArgumentException ex)
         {
-            System.Windows.MessageBox.Show(ex.Message, "Validation", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+            System.Windows.MessageBox.Show(UiText.LocalizeException(ex.Message), UiText.L("TitleValidation"), System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
         }
     }
 
@@ -318,11 +446,11 @@ public class SupplierDetailsViewModel : ViewModelBase
         try
         {
             AppServices.DiscountService.AddDiscount(Supplier.Id, dialog.DiscountType, dialog.Amount, dialog.Notes);
-            Load();
+            LoadTraderData(Supplier.Id);
         }
         catch (ArgumentException ex)
         {
-            System.Windows.MessageBox.Show(ex.Message, "Validation", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+            System.Windows.MessageBox.Show(UiText.LocalizeException(ex.Message), UiText.L("TitleValidation"), System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
         }
     }
 
@@ -346,6 +474,7 @@ public class SupplierDetailsViewModel : ViewModelBase
             SupplierName = Supplier.Name,
             Date = transaction.Date,
             Type = transaction.Type,
+            Category = transaction.Category,
             OriginalWeight = transaction.OriginalWeight,
             OriginalKarat = transaction.OriginalKarat,
             Equivalent21 = transaction.Equivalent21,
@@ -359,7 +488,7 @@ public class SupplierDetailsViewModel : ViewModelBase
             UpdatedAt = transaction.UpdatedAt
         };
 
-        var dialog = new Views.TransactionWindow(item, SupplierOptions);
+        var dialog = new Views.TransactionWindow(item, SupplierOptions.Where(s => s.Id != AllTradersId));
         if (dialog.ShowDialog() != true)
         {
             return;
@@ -371,17 +500,17 @@ public class SupplierDetailsViewModel : ViewModelBase
                 SelectedTransaction.Id,
                 Supplier.Id,
                 dialog.TransactionDate,
-                dialog.TransactionType,
+                dialog.TransactionCategory,
                 dialog.OriginalWeight,
                 dialog.OriginalKarat,
                 dialog.ManufacturingPerGram,
                 dialog.ImprovementPerGram,
                 dialog.Notes);
-            Load();
+            LoadTraderData(Supplier.Id);
         }
         catch (ArgumentException ex)
         {
-            System.Windows.MessageBox.Show(ex.Message, "Validation", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+            System.Windows.MessageBox.Show(UiText.LocalizeException(ex.Message), UiText.L("TitleValidation"), System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
         }
     }
 
@@ -393,15 +522,18 @@ public class SupplierDetailsViewModel : ViewModelBase
         }
 
         var result = System.Windows.MessageBox.Show(
-            "Delete selected transaction?",
-            "Confirm Delete",
+            UiText.L("MsgDeleteTransactionConfirm"),
+            UiText.L("TitleConfirmDelete"),
             System.Windows.MessageBoxButton.YesNo,
             System.Windows.MessageBoxImage.Warning);
 
         if (result == System.Windows.MessageBoxResult.Yes)
         {
             AppServices.TransactionService.DeleteTransaction(SelectedTransaction.Id);
-            Load();
+            if (SelectedTrader != null)
+            {
+                LoadTraderData(SelectedTrader.Id);
+            }
         }
     }
 
@@ -423,5 +555,42 @@ public class SupplierDetailsViewModel : ViewModelBase
         TotalImprovement = summary.TotalImprovement;
         ManufacturingDiscounts = summary.ManufacturingDiscounts;
         ImprovementDiscounts = summary.ImprovementDiscounts;
+    }
+
+    private void ResetViewState()
+    {
+        SelectedTransaction = null;
+        _allTransactions = [];
+        _allDiscounts = [];
+        Transactions.Clear();
+        Discounts.Clear();
+        ApplySummary(new TraderSummary());
+    }
+
+    private void SelectTrader(int? traderId, bool loadData = false)
+    {
+        var trader = traderId.HasValue
+            ? SupplierOptions.FirstOrDefault(s => s.Id == traderId.Value)
+            : null;
+
+        _isUpdatingSelection = true;
+        try
+        {
+            SelectedTrader = trader;
+        }
+        finally
+        {
+            _isUpdatingSelection = false;
+        }
+
+        if (loadData && trader != null)
+        {
+            LoadTraderData(trader.Id);
+        }
+        else if (loadData)
+        {
+            Supplier = null;
+            ResetViewState();
+        }
     }
 }

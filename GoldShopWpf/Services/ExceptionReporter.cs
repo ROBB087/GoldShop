@@ -30,8 +30,8 @@ public static class ExceptionReporter
         }
 
         MessageBox.Show(
-            $"{context}\n\n{ex.Message}\n\nDetails were written to app-errors.log.",
-            "Application Error",
+            $"{context}\n\n{UiText.LocalizeException(ex.Message)}\n\n{UiText.L("MsgErrorLogged")}",
+            UiText.L("TitleApplicationError"),
             MessageBoxButton.OK,
             MessageBoxImage.Error);
     }

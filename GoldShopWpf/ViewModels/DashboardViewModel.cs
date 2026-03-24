@@ -11,6 +11,10 @@ public class DashboardViewModel : ViewModelBase
 {
     private decimal _totalGold21;
     private int _supplierCount;
+    private decimal _totalManufacturing;
+    private decimal _totalImprovement;
+    private decimal _manufacturingDiscounts;
+    private decimal _improvementDiscounts;
     private decimal _totalManufacturingThisWeek;
     private decimal _totalImprovementThisWeek;
 
@@ -37,6 +41,57 @@ public class DashboardViewModel : ViewModelBase
         get => _totalImprovementThisWeek;
         set => SetProperty(ref _totalImprovementThisWeek, value);
     }
+
+    public decimal TotalManufacturing
+    {
+        get => _totalManufacturing;
+        set
+        {
+            if (SetProperty(ref _totalManufacturing, value))
+            {
+                OnPropertyChanged(nameof(FinalManufacturing));
+            }
+        }
+    }
+
+    public decimal TotalImprovement
+    {
+        get => _totalImprovement;
+        set
+        {
+            if (SetProperty(ref _totalImprovement, value))
+            {
+                OnPropertyChanged(nameof(FinalImprovement));
+            }
+        }
+    }
+
+    public decimal ManufacturingDiscounts
+    {
+        get => _manufacturingDiscounts;
+        set
+        {
+            if (SetProperty(ref _manufacturingDiscounts, value))
+            {
+                OnPropertyChanged(nameof(FinalManufacturing));
+            }
+        }
+    }
+
+    public decimal ImprovementDiscounts
+    {
+        get => _improvementDiscounts;
+        set
+        {
+            if (SetProperty(ref _improvementDiscounts, value))
+            {
+                OnPropertyChanged(nameof(FinalImprovement));
+            }
+        }
+    }
+
+    public decimal FinalManufacturing => TotalManufacturing - ManufacturingDiscounts;
+    public decimal FinalImprovement => TotalImprovement - ImprovementDiscounts;
 
     public ObservableCollection<BarItem> SupplierBalanceBars { get; } = new();
     public PointCollection GoldLinePoints { get; } = new();
@@ -69,11 +124,15 @@ public class DashboardViewModel : ViewModelBase
 
         SupplierCount = suppliers.Count;
         TotalGold21 = totalsAll.TotalGold21;
+        TotalManufacturing = totalsAll.TotalManufacturing;
+        TotalImprovement = totalsAll.TotalImprovement;
+        ManufacturingDiscounts = totalsAll.ManufacturingDiscounts;
+        ImprovementDiscounts = totalsAll.ImprovementDiscounts;
 
         var weekStart = DateTime.Today.AddDays(-7);
         var weekTotals = transactionService.GetSummaryAll(weekStart, DateTime.Today);
-        TotalManufacturingThisWeek = weekTotals.TotalManufacturing;
-        TotalImprovementThisWeek = weekTotals.TotalImprovement;
+        TotalManufacturingThisWeek = weekTotals.FinalManufacturing;
+        TotalImprovementThisWeek = weekTotals.FinalImprovement;
 
         BuildSupplierBalanceChart(suppliers, goldBySupplier);
         BuildGoldPaymentChart(transactionService);

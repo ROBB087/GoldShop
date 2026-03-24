@@ -34,22 +34,22 @@ public class TransactionService
     public void AddTransaction(
         int supplierId,
         DateTime date,
-        TransactionType type,
+        string category,
         decimal originalWeight,
         int originalKarat,
-        decimal manufacturingPerGram,
-        decimal improvementPerGram,
+        decimal manufacturingValue,
+        decimal improvementValue,
         string? notes)
     {
         var now = DateTime.Now;
         var transaction = CreateTransaction(
             supplierId,
             date,
-            type,
+            category,
             originalWeight,
             originalKarat,
-            manufacturingPerGram,
-            improvementPerGram,
+            manufacturingValue,
+            improvementValue,
             notes,
             now,
             now);
@@ -61,11 +61,11 @@ public class TransactionService
         int id,
         int supplierId,
         DateTime date,
-        TransactionType type,
+        string category,
         decimal originalWeight,
         int originalKarat,
-        decimal manufacturingPerGram,
-        decimal improvementPerGram,
+        decimal manufacturingValue,
+        decimal improvementValue,
         string? notes)
     {
         var existing = _transactionRepository.GetBySupplier(supplierId, null, null).FirstOrDefault(t => t.Id == id);
@@ -73,11 +73,11 @@ public class TransactionService
         var transaction = CreateTransaction(
             supplierId,
             date,
-            type,
+            category,
             originalWeight,
             originalKarat,
-            manufacturingPerGram,
-            improvementPerGram,
+            manufacturingValue,
+            improvementValue,
             notes,
             createdAt,
             DateTime.Now);
@@ -94,32 +94,63 @@ public class TransactionService
     private static SupplierTransaction CreateTransaction(
         int supplierId,
         DateTime date,
-        TransactionType type,
+        string category,
         decimal originalWeight,
         int originalKarat,
-        decimal manufacturingPerGram,
-        decimal improvementPerGram,
+        decimal manufacturingValue,
+        decimal improvementValue,
         string? notes,
         DateTime createdAt,
         DateTime updatedAt)
     {
-        Validate(originalWeight, originalKarat, manufacturingPerGram, improvementPerGram);
+        category = TransactionCategories.Normalize(category, TransactionType.Out);
+        Validate(category, originalWeight, originalKarat, manufacturingValue, improvementValue);
 
-        var equivalent21 = CalculateEquivalent21(originalWeight, originalKarat);
-        var totalManufacturing = decimal.Round(originalWeight * manufacturingPerGram, 4, MidpointRounding.AwayFromZero);
-        var totalImprovement = decimal.Round(equivalent21 * improvementPerGram, 4, MidpointRounding.AwayFromZero);
+        var type = category == TransactionCategories.GoldOutbound ? TransactionType.Out : TransactionType.In;
+        var roundedWeight = 0m;
+        var roundedManufacturing = 0m;
+        var roundedImprovement = 0m;
+        var equivalent21 = 0m;
+        var totalManufacturing = 0m;
+        var totalImprovement = 0m;
+        string? description;
+
+        if (category == TransactionCategories.CashPayment)
+        {
+            roundedManufacturing = decimal.Round(manufacturingValue, 4, MidpointRounding.AwayFromZero);
+            roundedImprovement = decimal.Round(improvementValue, 4, MidpointRounding.AwayFromZero);
+            totalManufacturing = -roundedManufacturing;
+            totalImprovement = -roundedImprovement;
+            description = BuildCashPaymentTraceabilityText(roundedManufacturing, roundedImprovement);
+            originalKarat = 21;
+        }
+        else
+        {
+            roundedWeight = decimal.Round(originalWeight, 4, MidpointRounding.AwayFromZero);
+            equivalent21 = CalculateEquivalent21(roundedWeight, originalKarat);
+            description = BuildTraceabilityText(roundedWeight, originalKarat, equivalent21);
+
+            if (category == TransactionCategories.GoldOutbound)
+            {
+                roundedManufacturing = decimal.Round(manufacturingValue, 4, MidpointRounding.AwayFromZero);
+                roundedImprovement = decimal.Round(improvementValue, 4, MidpointRounding.AwayFromZero);
+                totalManufacturing = decimal.Round(roundedWeight * roundedManufacturing, 4, MidpointRounding.AwayFromZero);
+                totalImprovement = decimal.Round(equivalent21 * roundedImprovement, 4, MidpointRounding.AwayFromZero);
+            }
+        }
 
         return new SupplierTransaction
         {
             SupplierId = supplierId,
             Date = date.Date,
             Type = type,
-            Description = BuildTraceabilityText(originalWeight, originalKarat, equivalent21),
-            OriginalWeight = decimal.Round(originalWeight, 4, MidpointRounding.AwayFromZero),
+            Category = category,
+            Description = description,
+            OriginalWeight = roundedWeight,
             OriginalKarat = originalKarat,
             Equivalent21 = equivalent21,
-            ManufacturingPerGram = decimal.Round(manufacturingPerGram, 4, MidpointRounding.AwayFromZero),
-            ImprovementPerGram = decimal.Round(improvementPerGram, 4, MidpointRounding.AwayFromZero),
+            ManufacturingPerGram = roundedManufacturing,
+            ImprovementPerGram = roundedImprovement,
             TotalManufacturing = totalManufacturing,
             TotalImprovement = totalImprovement,
             Notes = string.IsNullOrWhiteSpace(notes) ? null : notes.Trim(),
@@ -134,8 +165,33 @@ public class TransactionService
     public static string BuildTraceabilityText(decimal originalWeight, int originalKarat, decimal equivalent21)
         => $"21K eq {equivalent21:0.####} g from {originalWeight:0.####} g of {originalKarat}K";
 
-    public static void Validate(decimal originalWeight, int originalKarat, decimal manufacturingPerGram, decimal improvementPerGram)
+    public static string BuildCashPaymentTraceabilityText(decimal manufacturingAmount, decimal improvementAmount)
+        => $"Cash payment posted. Manufacturing {manufacturingAmount:0.####}, Refining {improvementAmount:0.####}.";
+
+    public static void Validate(string category, decimal originalWeight, int originalKarat, decimal manufacturingValue, decimal improvementValue)
     {
+        category = TransactionCategories.Normalize(category, TransactionType.Out);
+
+        if (category == TransactionCategories.CashPayment)
+        {
+            if (manufacturingValue < 0)
+            {
+                throw new ArgumentException("Manufacturing payment must be zero or greater.", nameof(manufacturingValue));
+            }
+
+            if (improvementValue < 0)
+            {
+                throw new ArgumentException("Refining payment must be zero or greater.", nameof(improvementValue));
+            }
+
+            if (manufacturingValue <= 0 && improvementValue <= 0)
+            {
+                throw new ArgumentException("Enter a manufacturing payment, a refining payment, or both.");
+            }
+
+            return;
+        }
+
         if (originalWeight <= 0)
         {
             throw new ArgumentException("Weight must be greater than zero.", nameof(originalWeight));
@@ -146,14 +202,19 @@ public class TransactionService
             throw new ArgumentException("Karat must be one of the supported values: 18, 21, 22, 24.", nameof(originalKarat));
         }
 
-        if (manufacturingPerGram < 0)
+        if (manufacturingValue < 0)
         {
-            throw new ArgumentException("Manufacturing per gram must be zero or greater.", nameof(manufacturingPerGram));
+            throw new ArgumentException("Manufacturing value must be zero or greater.", nameof(manufacturingValue));
         }
 
-        if (improvementPerGram < 0)
+        if (improvementValue < 0)
         {
-            throw new ArgumentException("Improvement per gram must be zero or greater.", nameof(improvementPerGram));
+            throw new ArgumentException("Refining value must be zero or greater.", nameof(improvementValue));
+        }
+
+        if (category == TransactionCategories.GoldReceipt && (manufacturingValue != 0 || improvementValue != 0))
+        {
+            throw new ArgumentException("Gold receipt cannot include manufacturing or refining values.");
         }
     }
 }

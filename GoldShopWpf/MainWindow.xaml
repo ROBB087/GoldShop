@@ -8,7 +8,7 @@
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         mc:Ignorable="d"
         FlowDirection="{DynamicResource AppFlowDirection}"
-        Title="Gold Shop Trader Tracking" Height="820" Width="1260" WindowStartupLocation="CenterScreen">
+        Title="{DynamicResource LblAppTitle}" Height="820" Width="1260" WindowStartupLocation="CenterScreen">
     <Window.DataContext>
         <vm:MainViewModel />
     </Window.DataContext>
@@ -32,6 +32,9 @@
         <DataTemplate DataType="{x:Type vm:StatementViewModel}">
             <views:StatementView />
         </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:NotesViewModel}">
+            <views:NotesView />
+        </DataTemplate>
         <DataTemplate DataType="{x:Type vm:BackupViewModel}">
             <views:BackupView />
         </DataTemplate>
@@ -46,47 +49,55 @@
         <Border Background="{DynamicResource SidebarBackgroundBrush}" Grid.Column="0">
             <StackPanel Margin="16">
                 <StackPanel Orientation="Horizontal" Margin="0,10,0,24">
-                    <materialDesign:PackIcon Kind="Home" Width="26" Height="26" Foreground="{StaticResource SidebarIconBrush}" />
+                    <Border Width="34" Height="34" Background="#FFF8E1" CornerRadius="10" Padding="4">
+                        <Image Source="Resources/logo.png" Stretch="Uniform" />
+                    </Border>
                     <TextBlock Text="{DynamicResource LblAppTitle}" Foreground="{DynamicResource SidebarTextBrush}" FontSize="18" FontWeight="SemiBold" Margin="10,0,0,0" />
                 </StackPanel>
 
-                <Button Style="{StaticResource SidebarButton}" Command="{Binding ShowDashboardCommand}" ToolTip="Go to dashboard" Margin="0,0,0,8">
+                <Button Style="{StaticResource SidebarButton}" Command="{Binding ShowDashboardCommand}" ToolTip="{DynamicResource TooltipDashboard}" Margin="0,0,0,8">
                     <StackPanel Orientation="Horizontal">
                         <materialDesign:PackIcon Kind="Home" Width="18" Height="18" Margin="0,0,10,0" Foreground="{StaticResource SidebarIconBrush}" />
                         <TextBlock Text="{DynamicResource NavDashboard}" Foreground="{DynamicResource SidebarTextBrush}" TextWrapping="NoWrap" />
                     </StackPanel>
                 </Button>
-                <Button Style="{StaticResource SidebarButton}" Command="{Binding ShowSuppliersCommand}" ToolTip="View traders" Margin="0,0,0,8">
+                <Button Style="{StaticResource SidebarButton}" Command="{Binding ShowSuppliersCommand}" ToolTip="{DynamicResource TooltipSuppliers}" Margin="0,0,0,8">
                     <StackPanel Orientation="Horizontal">
                         <materialDesign:PackIcon Kind="AccountGroup" Width="18" Height="18" Margin="0,0,10,0" Foreground="{StaticResource SidebarIconBrush}" />
                         <TextBlock Text="{DynamicResource NavSuppliers}" Foreground="{DynamicResource SidebarTextBrush}" TextWrapping="NoWrap" />
                     </StackPanel>
                 </Button>
-                <Button Style="{StaticResource SidebarButton}" Command="{Binding ShowTransactionsCommand}" ToolTip="View all transactions" Margin="0,0,0,8">
+                <Button Style="{StaticResource SidebarButton}" Command="{Binding ShowTransactionsCommand}" ToolTip="{DynamicResource TooltipTransactions}" Margin="0,0,0,8">
                     <StackPanel Orientation="Horizontal">
                         <materialDesign:PackIcon Kind="Cash" Width="18" Height="18" Margin="0,0,10,0" Foreground="{StaticResource SidebarIconBrush}" />
                         <TextBlock Text="{DynamicResource NavTransactions}" Foreground="{DynamicResource SidebarTextBrush}" TextWrapping="NoWrap" />
                     </StackPanel>
                 </Button>
-                <Button Style="{StaticResource SidebarButton}" Command="{Binding ShowSupplierDetailsCommand}" ToolTip="Trader details page" Margin="0,0,0,8">
+                <Button Style="{StaticResource SidebarButton}" Command="{Binding ShowSupplierDetailsCommand}" ToolTip="{DynamicResource TooltipSupplierDetails}" Margin="0,0,0,8">
                     <StackPanel Orientation="Horizontal">
                         <materialDesign:PackIcon Kind="AccountDetails" Width="18" Height="18" Margin="0,0,10,0" Foreground="{StaticResource SidebarIconBrush}" />
                         <TextBlock Text="{DynamicResource NavSupplierDetails}" Foreground="{DynamicResource SidebarTextBrush}" TextWrapping="NoWrap" />
                     </StackPanel>
                 </Button>
-                <Button Style="{StaticResource SidebarButton}" Command="{Binding ShowWeeklyReportCommand}" ToolTip="Weekly report" Margin="0,0,0,8">
+                <Button Style="{StaticResource SidebarButton}" Command="{Binding ShowWeeklyReportCommand}" ToolTip="{DynamicResource TooltipWeeklyReport}" Margin="0,0,0,8">
                     <StackPanel Orientation="Horizontal">
                         <materialDesign:PackIcon Kind="ChartLine" Width="18" Height="18" Margin="0,0,10,0" Foreground="{StaticResource SidebarIconBrush}" />
                         <TextBlock Text="{DynamicResource NavWeeklyReport}" Foreground="{DynamicResource SidebarTextBrush}" TextWrapping="NoWrap" />
                     </StackPanel>
                 </Button>
-                <Button Style="{StaticResource SidebarButton}" Command="{Binding ShowStatementCommand}" ToolTip="Printable statement" Margin="0,0,0,8">
+                <Button Style="{StaticResource SidebarButton}" Command="{Binding ShowStatementCommand}" ToolTip="{DynamicResource TooltipStatement}" Margin="0,0,0,8">
                     <StackPanel Orientation="Horizontal">
                         <materialDesign:PackIcon Kind="FileDocumentOutline" Width="18" Height="18" Margin="0,0,10,0" Foreground="{StaticResource SidebarIconBrush}" />
                         <TextBlock Text="{DynamicResource NavStatement}" Foreground="{DynamicResource SidebarTextBrush}" TextWrapping="NoWrap" />
                     </StackPanel>
                 </Button>
-                <Button Style="{StaticResource SidebarButton}" Command="{Binding ShowBackupCommand}" ToolTip="Backup database">
+                <Button Style="{StaticResource SidebarButton}" Command="{Binding ShowNotesCommand}" ToolTip="{DynamicResource TooltipNotes}" Margin="0,0,0,8">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="NotebookOutline" Width="18" Height="18" Margin="0,0,10,0" Foreground="{StaticResource SidebarIconBrush}" />
+                        <TextBlock Text="{DynamicResource NavNotes}" Foreground="{DynamicResource SidebarTextBrush}" TextWrapping="NoWrap" />
+                    </StackPanel>
+                </Button>
+                <Button Style="{StaticResource SidebarButton}" Command="{Binding ShowBackupCommand}" ToolTip="{DynamicResource TooltipBackup}">
                     <StackPanel Orientation="Horizontal">
                         <materialDesign:PackIcon Kind="Database" Width="18" Height="18" Margin="0,0,10,0" Foreground="{StaticResource SidebarIconBrush}" />
                         <TextBlock Text="{DynamicResource NavBackup}" Foreground="{DynamicResource SidebarTextBrush}" TextWrapping="NoWrap" />
@@ -105,7 +116,7 @@
                     <TextBlock Text="{Binding PageTitle}" FontSize="20" FontWeight="SemiBold" />
                     <StackPanel Orientation="Horizontal" Grid.Column="1">
                         <Button Content="{DynamicResource BtnBackup}" Style="{StaticResource GhostButton}" Margin="0,0,8,0" Command="{Binding BackupCommand}" ToolTip="{DynamicResource BtnBackup}" />
-                        <Button Content="{DynamicResource BtnToggleLang}" Style="{StaticResource GhostButton}" Command="{Binding ToggleLanguageCommand}" ToolTip="Switch language" />
+                        <Button Content="{DynamicResource BtnToggleLang}" Style="{StaticResource GhostButton}" Command="{Binding ToggleLanguageCommand}" ToolTip="{DynamicResource TooltipToggleLanguage}" />
                     </StackPanel>
                 </Grid>
             </Border>

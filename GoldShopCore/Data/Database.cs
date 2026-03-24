@@ -64,7 +64,12 @@ CREATE TABLE IF NOT EXISTS Discounts (
 
 CREATE INDEX IF NOT EXISTS IX_SupplierTransactions_SupplierId ON SupplierTransactions(SupplierId);
 CREATE INDEX IF NOT EXISTS IX_SupplierTransactions_TxnDate ON SupplierTransactions(TxnDate);
+CREATE INDEX IF NOT EXISTS IX_SupplierTransactions_SupplierId_TxnDate ON SupplierTransactions(SupplierId, TxnDate DESC);
+CREATE INDEX IF NOT EXISTS IX_SupplierTransactions_UpdatedAt ON SupplierTransactions(UpdatedAt DESC);
 CREATE INDEX IF NOT EXISTS IX_Discounts_SupplierId ON Discounts(SupplierId);
+CREATE INDEX IF NOT EXISTS IX_Discounts_CreatedAt ON Discounts(CreatedAt DESC);
+CREATE INDEX IF NOT EXISTS IX_Discounts_SupplierId_CreatedAt ON Discounts(SupplierId, CreatedAt DESC);
+CREATE INDEX IF NOT EXISTS IX_Suppliers_Name ON Suppliers(Name);
 ";
         command.ExecuteNonQuery();
 
@@ -87,6 +92,14 @@ CREATE INDEX IF NOT EXISTS IX_Discounts_SupplierId ON Discounts(SupplierId);
         migrate.CommandText = @"
 UPDATE SupplierTransactions SET Type = 'Out' WHERE Type IN ('GoldGiven', 'PaymentIssued', 'Gold');
 UPDATE SupplierTransactions SET Type = 'In' WHERE Type IN ('GoldReceived', 'PaymentReceived', 'Payment');
+
+UPDATE SupplierTransactions
+SET Category = CASE
+    WHEN Type = 'Out' THEN 'GoldOutbound'
+    WHEN Type = 'In' THEN 'GoldReceipt'
+    ELSE 'GoldOutbound'
+END
+WHERE TRIM(COALESCE(Category, '')) = '';
 
 UPDATE SupplierTransactions
 SET OriginalWeight = COALESCE(NULLIF(OriginalWeight, 0), Weight, Amount, 0);
