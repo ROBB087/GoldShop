@@ -88,7 +88,7 @@ WHERE Id = $id;";
         var where = BuildDateFilter(command, supplierId, from, to);
         command.CommandText = $@"
 SELECT
-    COALESCE(SUM(Equivalent21), 0),
+    COALESCE(SUM({GetSignedEquivalent21Sql()}), 0),
     COALESCE(SUM(TotalManufacturing), 0),
     COALESCE(SUM(TotalImprovement), 0)
 FROM SupplierTransactions
@@ -118,7 +118,7 @@ FROM SupplierTransactions
         var where = BuildDateFilter(command, null, from, to);
         command.CommandText = $@"
 SELECT
-    COALESCE(SUM(Equivalent21), 0),
+    COALESCE(SUM({GetSignedEquivalent21Sql()}), 0),
     COALESCE(SUM(TotalManufacturing), 0),
     COALESCE(SUM(TotalImprovement), 0)
 FROM SupplierTransactions
@@ -143,8 +143,8 @@ FROM SupplierTransactions
         connection.Open();
 
         using var command = connection.CreateCommand();
-        command.CommandText = @"
-SELECT SupplierId, COALESCE(SUM(Equivalent21), 0)
+        command.CommandText = $@"
+SELECT SupplierId, COALESCE(SUM({GetSignedEquivalent21Sql()}), 0)
 FROM SupplierTransactions
 GROUP BY SupplierId;";
 
@@ -164,9 +164,9 @@ GROUP BY SupplierId;";
         connection.Open();
 
         using var command = connection.CreateCommand();
-        command.CommandText = @"
+        command.CommandText = $@"
 SELECT SupplierId,
-       COALESCE(SUM(CASE WHEN Type = 'Out' THEN Equivalent21 ELSE -Equivalent21 END), 0)
+       COALESCE(SUM({GetSignedEquivalent21Sql()}), 0)
 FROM SupplierTransactions
 GROUP BY SupplierId;";
 
@@ -285,6 +285,25 @@ ORDER BY TxnDate DESC, Id DESC;";
     private static decimal ReadDecimal(SqliteDataReader reader, int ordinal)
     {
         return reader.IsDBNull(ordinal) ? 0m : (decimal)reader.GetDouble(ordinal);
+    }
+
+    private static string GetSignedEquivalent21Sql()
+    {
+        const string equivalent21Sql = @"
+CASE
+    WHEN COALESCE(Equivalent21, 0) <> 0 THEN Equivalent21
+    ELSE (
+        COALESCE(OriginalWeight, Weight, Amount, 0) *
+        COALESCE(NULLIF(OriginalKarat, 0), CAST(NULLIF(TRIM(Purity), '') AS INTEGER), 21) / 21.0
+    )
+END";
+
+        return $@"
+CASE
+    WHEN Type IN ('Out', 'GoldGiven', 'PaymentIssued', 'Gold') THEN ({equivalent21Sql})
+    WHEN Type IN ('In', 'GoldReceived', 'PaymentReceived', 'Payment') THEN -({equivalent21Sql})
+    ELSE 0
+END";
     }
 
     private static TransactionType ParseType(string value)
