@@ -87,29 +87,59 @@ public class SupplierDetailsViewModel : ViewModelBase
     public decimal TotalManufacturing
     {
         get => _totalManufacturing;
-        set => SetProperty(ref _totalManufacturing, value);
+        set
+        {
+            if (SetProperty(ref _totalManufacturing, value))
+            {
+                OnPropertyChanged(nameof(FinalManufacturing));
+                OnPropertyChanged(nameof(NetManufacturing));
+            }
+        }
     }
 
     public decimal TotalImprovement
     {
         get => _totalImprovement;
-        set => SetProperty(ref _totalImprovement, value);
+        set
+        {
+            if (SetProperty(ref _totalImprovement, value))
+            {
+                OnPropertyChanged(nameof(FinalImprovement));
+                OnPropertyChanged(nameof(NetImprovement));
+            }
+        }
     }
 
     public decimal ManufacturingDiscounts
     {
         get => _manufacturingDiscounts;
-        set => SetProperty(ref _manufacturingDiscounts, value);
+        set
+        {
+            if (SetProperty(ref _manufacturingDiscounts, value))
+            {
+                OnPropertyChanged(nameof(FinalManufacturing));
+                OnPropertyChanged(nameof(NetManufacturing));
+            }
+        }
     }
 
     public decimal ImprovementDiscounts
     {
         get => _improvementDiscounts;
-        set => SetProperty(ref _improvementDiscounts, value);
+        set
+        {
+            if (SetProperty(ref _improvementDiscounts, value))
+            {
+                OnPropertyChanged(nameof(FinalImprovement));
+                OnPropertyChanged(nameof(NetImprovement));
+            }
+        }
     }
 
     public decimal FinalManufacturing => TotalManufacturing - ManufacturingDiscounts;
     public decimal FinalImprovement => TotalImprovement - ImprovementDiscounts;
+    public decimal NetManufacturing => FinalManufacturing;
+    public decimal NetImprovement => FinalImprovement;
 
     public RelayCommand ApplyFilterCommand { get; }
     public RelayCommand ClearFilterCommand { get; }
@@ -237,14 +267,7 @@ public class SupplierDetailsViewModel : ViewModelBase
             });
         }
 
-        var summary = AppServices.TransactionService.GetSummary(Supplier.Id, FromDate, ToDate);
-        TotalGold21 = summary.TotalGold21;
-        TotalManufacturing = summary.TotalManufacturing;
-        TotalImprovement = summary.TotalImprovement;
-        ManufacturingDiscounts = summary.ManufacturingDiscounts;
-        ImprovementDiscounts = summary.ImprovementDiscounts;
-        OnPropertyChanged(nameof(FinalManufacturing));
-        OnPropertyChanged(nameof(FinalImprovement));
+        ApplySummary(AppServices.TransactionService.GetSummary(Supplier.Id, FromDate, ToDate));
     }
 
     private void AddTransaction()
@@ -391,5 +414,14 @@ public class SupplierDetailsViewModel : ViewModelBase
 
         var statementWindow = new Views.StatementWindow(Supplier.Id, Supplier.Name, FromDate, ToDate);
         statementWindow.ShowDialog();
+    }
+
+    private void ApplySummary(TraderSummary summary)
+    {
+        TotalGold21 = summary.TotalGold21;
+        TotalManufacturing = summary.TotalManufacturing;
+        TotalImprovement = summary.TotalImprovement;
+        ManufacturingDiscounts = summary.ManufacturingDiscounts;
+        ImprovementDiscounts = summary.ImprovementDiscounts;
     }
 }

@@ -11,6 +11,7 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
         <Border Style="{StaticResource CardContainer}" Grid.Row="0">
@@ -20,38 +21,38 @@
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                 <StackPanel>
-                    <TextBlock Text="{DynamicResource NavTraderDetails}" FontSize="18" FontWeight="SemiBold" />
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="{DynamicResource LblTrader}" Foreground="{StaticResource MutedTextBrush}" Margin="0,0,8,0" />
-                        <ComboBox Width="220" ItemsSource="{Binding SupplierOptions}" SelectedItem="{Binding SelectedSupplierOption}" DisplayMemberPath="Name" />
+                    <TextBlock Text="{DynamicResource NavTraderDetails}" FontSize="20" FontWeight="SemiBold" Margin="8" />
+                    <StackPanel Orientation="Horizontal" Margin="8">
+                        <TextBlock Text="{DynamicResource LblTrader}" Foreground="{StaticResource MutedTextBrush}" Margin="8" />
+                        <ComboBox Width="260" Margin="8" ItemsSource="{Binding SupplierOptions}" SelectedItem="{Binding SelectedSupplierOption}" DisplayMemberPath="Name" />
                     </StackPanel>
                 </StackPanel>
-                <StackPanel Orientation="Horizontal" Grid.Column="1">
-                    <Button Command="{Binding AddTransactionCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,8,0">
+                <StackPanel Orientation="Horizontal" Grid.Column="1" Margin="8" HorizontalAlignment="Right">
+                    <Button Command="{Binding AddTransactionCommand}" Style="{StaticResource PrimaryButton}" Margin="8">
                         <StackPanel Orientation="Horizontal">
                             <materialDesign:PackIcon Kind="Plus" Width="18" Height="18" Margin="0,0,6,0" />
                             <TextBlock Text="{DynamicResource BtnAddTransaction}" />
                         </StackPanel>
                     </Button>
-                    <Button Command="{Binding AddDiscountCommand}" Style="{StaticResource GhostButton}" Margin="0,0,8,0">
+                    <Button Command="{Binding AddDiscountCommand}" Style="{StaticResource GhostButton}" Margin="8">
                         <StackPanel Orientation="Horizontal">
                             <materialDesign:PackIcon Kind="Percent" Width="18" Height="18" Margin="0,0,6,0" />
                             <TextBlock Text="{DynamicResource BtnAddDiscount}" />
                         </StackPanel>
                     </Button>
-                    <Button Command="{Binding EditTransactionCommand}" Style="{StaticResource GhostButton}" Margin="0,0,8,0">
+                    <Button Command="{Binding EditTransactionCommand}" Style="{StaticResource GhostButton}" Margin="8">
                         <StackPanel Orientation="Horizontal">
                             <materialDesign:PackIcon Kind="Pencil" Width="18" Height="18" Margin="0,0,6,0" />
                             <TextBlock Text="{DynamicResource BtnEdit}" />
                         </StackPanel>
                     </Button>
-                    <Button Command="{Binding DeleteTransactionCommand}" Style="{StaticResource GhostButton}" Margin="0,0,8,0">
+                    <Button Command="{Binding DeleteTransactionCommand}" Style="{StaticResource GhostButton}" Margin="8">
                         <StackPanel Orientation="Horizontal">
                             <materialDesign:PackIcon Kind="Delete" Width="18" Height="18" Margin="0,0,6,0" Foreground="#D32F2F" />
                             <TextBlock Text="{DynamicResource BtnDelete}" />
                         </StackPanel>
                     </Button>
-                    <Button Command="{Binding PrintStatementCommand}" Style="{StaticResource GhostButton}">
+                    <Button Command="{Binding PrintStatementCommand}" Style="{StaticResource GhostButton}" Margin="8">
                         <StackPanel Orientation="Horizontal">
                             <materialDesign:PackIcon Kind="Printer" Width="18" Height="18" Margin="0,0,6,0" />
                             <TextBlock Text="{DynamicResource NavStatement}" />
@@ -65,9 +66,8 @@
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
-                <Grid Grid.Row="0">
+                <Grid Grid.Row="0" Margin="8">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="140" />
@@ -85,84 +85,90 @@
                     <Button Grid.Column="4" Width="100" Content="{DynamicResource BtnApply}" Command="{Binding ApplyFilterCommand}" Style="{StaticResource GhostButton}" Margin="5" />
                     <Button Grid.Column="5" Width="100" Content="{DynamicResource BtnClear}" Command="{Binding ClearFilterCommand}" Style="{StaticResource GhostButton}" Margin="5" />
                 </Grid>
-
-                <WrapPanel Grid.Row="1" Margin="0,12,0,0" HorizontalAlignment="Right">
-                    <materialDesign:Card Margin="0,0,8,8" Padding="12" Background="#FFFFFF">
-                        <StackPanel>
-                            <TextBlock Text="{DynamicResource LblTotalGold21}" Foreground="{StaticResource MutedTextBrush}" />
-                            <TextBlock Text="{Binding TotalGold21, Converter={StaticResource MoneyFormatConverter}, ConverterParameter='g'}" FontWeight="SemiBold" Foreground="{DynamicResource GoldValueBrush}" />
-                        </StackPanel>
-                    </materialDesign:Card>
-                    <materialDesign:Card Margin="0,0,8,8" Padding="12" Background="#FFFFFF">
-                        <StackPanel>
-                            <TextBlock Text="{DynamicResource LblTotalManufacturing}" Foreground="{StaticResource MutedTextBrush}" />
-                            <TextBlock Text="{Binding TotalManufacturing, Converter={StaticResource MoneyFormatConverter}}" FontWeight="SemiBold" Foreground="{DynamicResource GoldValueBrush}" />
-                        </StackPanel>
-                    </materialDesign:Card>
-                    <materialDesign:Card Margin="0,0,8,8" Padding="12" Background="#FFFFFF">
-                        <StackPanel>
-                            <TextBlock Text="{DynamicResource LblTotalImprovement}" Foreground="{StaticResource MutedTextBrush}" />
-                            <TextBlock Text="{Binding TotalImprovement, Converter={StaticResource MoneyFormatConverter}}" FontWeight="SemiBold" Foreground="{DynamicResource GoldValueBrush}" />
-                        </StackPanel>
-                    </materialDesign:Card>
-                    <materialDesign:Card Margin="0,0,8,8" Padding="12" Background="#FFFFFF">
-                        <StackPanel>
-                            <TextBlock Text="{DynamicResource LblManufacturingDiscounts}" Foreground="{StaticResource MutedTextBrush}" />
-                            <TextBlock Text="{Binding ManufacturingDiscounts, Converter={StaticResource MoneyFormatConverter}}" FontWeight="SemiBold" Foreground="#C62828" />
-                        </StackPanel>
-                    </materialDesign:Card>
-                    <materialDesign:Card Margin="0,0,8,8" Padding="12" Background="#FFFFFF">
-                        <StackPanel>
-                            <TextBlock Text="{DynamicResource LblImprovementDiscounts}" Foreground="{StaticResource MutedTextBrush}" />
-                            <TextBlock Text="{Binding ImprovementDiscounts, Converter={StaticResource MoneyFormatConverter}}" FontWeight="SemiBold" Foreground="#C62828" />
-                        </StackPanel>
-                    </materialDesign:Card>
-                    <materialDesign:Card Margin="0,0,8,8" Padding="12" Background="#FFFFFF">
-                        <StackPanel>
-                            <TextBlock Text="{DynamicResource LblFinalManufacturing}" Foreground="{StaticResource MutedTextBrush}" />
-                            <TextBlock Text="{Binding FinalManufacturing, Converter={StaticResource MoneyFormatConverter}}" FontWeight="SemiBold" Foreground="#2E7D32" />
-                        </StackPanel>
-                    </materialDesign:Card>
-                    <materialDesign:Card Margin="0,0,0,8" Padding="12" Background="#FFFFFF">
-                        <StackPanel>
-                            <TextBlock Text="{DynamicResource LblFinalImprovement}" Foreground="{StaticResource MutedTextBrush}" />
-                            <TextBlock Text="{Binding FinalImprovement, Converter={StaticResource MoneyFormatConverter}}" FontWeight="SemiBold" Foreground="#2E7D32" />
-                        </StackPanel>
-                    </materialDesign:Card>
-                </WrapPanel>
             </Grid>
         </Border>
 
         <Border Style="{StaticResource CardContainer}" Grid.Row="2">
+            <StackPanel Margin="8">
+                <TextBlock Text="Summary" FontSize="16" FontWeight="SemiBold" Margin="8" />
+                <WrapPanel Margin="8">
+                    <materialDesign:Card Width="220" Margin="8" Padding="18" Background="#FFFFFF">
+                        <StackPanel>
+                            <TextBlock Text="{DynamicResource LblTotalGold21}" Foreground="{StaticResource MutedTextBrush}" FontSize="12" Margin="0,0,0,8" />
+                            <TextBlock Text="{Binding TotalGold21, Converter={StaticResource MoneyFormatConverter}, ConverterParameter='g'}" FontSize="24" FontWeight="Bold" Foreground="{DynamicResource TextBrush}" />
+                        </StackPanel>
+                    </materialDesign:Card>
+                    <materialDesign:Card Width="220" Margin="8" Padding="18" Background="#FFFFFF">
+                        <StackPanel>
+                            <TextBlock Text="{DynamicResource LblTotalManufacturing}" Foreground="{StaticResource MutedTextBrush}" FontSize="12" Margin="0,0,0,8" />
+                            <TextBlock Text="{Binding TotalManufacturing, Converter={StaticResource MoneyFormatConverter}, ConverterParameter='EGP'}" FontSize="24" FontWeight="Bold" Foreground="{DynamicResource TextBrush}" />
+                        </StackPanel>
+                    </materialDesign:Card>
+                    <materialDesign:Card Width="220" Margin="8" Padding="18" Background="#FFFFFF">
+                        <StackPanel>
+                            <TextBlock Text="{DynamicResource LblTotalImprovement}" Foreground="{StaticResource MutedTextBrush}" FontSize="12" Margin="0,0,0,8" />
+                            <TextBlock Text="{Binding TotalImprovement, Converter={StaticResource MoneyFormatConverter}, ConverterParameter='EGP'}" FontSize="24" FontWeight="Bold" Foreground="{DynamicResource TextBrush}" />
+                        </StackPanel>
+                    </materialDesign:Card>
+                    <materialDesign:Card Width="220" Margin="8" Padding="18" Background="#FFFFFF">
+                        <StackPanel>
+                            <TextBlock Text="{DynamicResource LblManufacturingDiscounts}" Foreground="{StaticResource MutedTextBrush}" FontSize="12" Margin="0,0,0,8" />
+                            <TextBlock Text="{Binding ManufacturingDiscounts, Converter={StaticResource MoneyFormatConverter}, ConverterParameter='EGP'}" FontSize="24" FontWeight="Bold" Foreground="#B71C1C" />
+                        </StackPanel>
+                    </materialDesign:Card>
+                    <materialDesign:Card Width="220" Margin="8" Padding="18" Background="#FFFFFF">
+                        <StackPanel>
+                            <TextBlock Text="{DynamicResource LblImprovementDiscounts}" Foreground="{StaticResource MutedTextBrush}" FontSize="12" Margin="0,0,0,8" />
+                            <TextBlock Text="{Binding ImprovementDiscounts, Converter={StaticResource MoneyFormatConverter}, ConverterParameter='EGP'}" FontSize="24" FontWeight="Bold" Foreground="#B71C1C" />
+                        </StackPanel>
+                    </materialDesign:Card>
+                    <materialDesign:Card Width="220" Margin="8" Padding="18" Background="#FFFFFF">
+                        <StackPanel>
+                            <TextBlock Text="Net Manufacturing" Foreground="{StaticResource MutedTextBrush}" FontSize="12" Margin="0,0,0,8" />
+                            <TextBlock Text="{Binding NetManufacturing, Converter={StaticResource MoneyFormatConverter}, ConverterParameter='EGP'}" FontSize="24" FontWeight="Bold" Foreground="#1A1A1A" />
+                        </StackPanel>
+                    </materialDesign:Card>
+                    <materialDesign:Card Width="220" Margin="8" Padding="18" Background="#FFFFFF">
+                        <StackPanel>
+                            <TextBlock Text="Net Improvement" Foreground="{StaticResource MutedTextBrush}" FontSize="12" Margin="0,0,0,8" />
+                            <TextBlock Text="{Binding NetImprovement, Converter={StaticResource MoneyFormatConverter}, ConverterParameter='EGP'}" FontSize="24" FontWeight="Bold" Foreground="#1A1A1A" />
+                        </StackPanel>
+                    </materialDesign:Card>
+                </WrapPanel>
+            </StackPanel>
+        </Border>
+
+        <Border Style="{StaticResource CardContainer}" Grid.Row="3">
             <StackPanel>
-                <TextBlock Text="{DynamicResource LblDiscounts}" FontWeight="SemiBold" Margin="0,0,0,8" />
-                <DataGrid ItemsSource="{Binding Discounts}" AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True" Height="150">
+                <TextBlock Text="Transactions" FontSize="16" FontWeight="SemiBold" Margin="8" />
+                <DataGrid ItemsSource="{Binding Transactions}" SelectedItem="{Binding SelectedTransaction}" AutoGenerateColumns="False"
+                          CanUserAddRows="False" IsReadOnly="True" SelectionMode="Single" SelectionUnit="FullRow" MinHeight="280" Margin="8">
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="{DynamicResource LblType}" Binding="{Binding Type}" Width="160" MinWidth="140" ElementStyle="{StaticResource GridCellTextStyle}" />
-                        <DataGridTextColumn Header="{DynamicResource LblAmount}" Binding="{Binding Amount, Converter={StaticResource MoneyFormatConverter}}" Width="160" MinWidth="140" ElementStyle="{StaticResource GridCellTextStyle}" />
-                        <DataGridTextColumn Header="{DynamicResource LblNotes}" Binding="{Binding Notes}" Width="*" MinWidth="180" ElementStyle="{StaticResource GridCellTextStyle}" />
-                        <DataGridTextColumn Header="{DynamicResource LblCreatedAt}" Binding="{Binding CreatedAt, StringFormat={}{0:yyyy-MM-dd HH:mm}}" Width="170" MinWidth="170" ElementStyle="{StaticResource GridCellTextStyle}" />
+                        <DataGridTextColumn Header="{DynamicResource LblDate}" Binding="{Binding Date, StringFormat={}{0:yyyy-MM-dd}}" Width="130" MinWidth="130" ElementStyle="{StaticResource GridCellTextStyle}" />
+                        <DataGridTextColumn Header="{DynamicResource LblType}" Binding="{Binding Type, Converter={StaticResource TransactionTypeToLabelConverter}}" Width="110" MinWidth="110" ElementStyle="{StaticResource GridCellTextStyle}" />
+                        <DataGridTextColumn Header="{DynamicResource LblWeight}" Binding="{Binding OriginalWeight, Converter={StaticResource MoneyFormatConverter}, ConverterParameter='g'}" Width="120" MinWidth="120" ElementStyle="{StaticResource GridCellTextStyle}" />
+                        <DataGridTextColumn Header="{DynamicResource LblKarat}" Binding="{Binding OriginalKarat}" Width="90" MinWidth="90" ElementStyle="{StaticResource GridCellTextStyle}" />
+                        <DataGridTextColumn Header="{DynamicResource LblEquivalent21}" Binding="{Binding Equivalent21, Converter={StaticResource MoneyFormatConverter}, ConverterParameter='g'}" Width="130" MinWidth="130" ElementStyle="{StaticResource GridCellTextStyle}" />
+                        <DataGridTextColumn Header="{DynamicResource LblTotalManufacturing}" Binding="{Binding TotalManufacturing, Converter={StaticResource MoneyFormatConverter}, ConverterParameter='EGP'}" Width="160" MinWidth="160" ElementStyle="{StaticResource GridCellTextStyle}" />
+                        <DataGridTextColumn Header="{DynamicResource LblTotalImprovement}" Binding="{Binding TotalImprovement, Converter={StaticResource MoneyFormatConverter}, ConverterParameter='EGP'}" Width="160" MinWidth="160" ElementStyle="{StaticResource GridCellTextStyle}" />
+                        <DataGridTextColumn Header="{DynamicResource LblNotes}" Binding="{Binding Notes}" Width="2*" MinWidth="200" ElementStyle="{StaticResource GridCellTextStyle}" />
                     </DataGrid.Columns>
                 </DataGrid>
             </StackPanel>
         </Border>
 
-        <Border Style="{StaticResource CardContainer}" Grid.Row="3">
-            <DataGrid ItemsSource="{Binding Transactions}" SelectedItem="{Binding SelectedTransaction}" AutoGenerateColumns="False"
-                      CanUserAddRows="False" IsReadOnly="True" SelectionMode="Single" SelectionUnit="FullRow">
-                <DataGrid.Columns>
-                    <DataGridTextColumn Header="{DynamicResource LblDate}" Binding="{Binding Date, StringFormat={}{0:yyyy-MM-dd}}" Width="130" MinWidth="130" ElementStyle="{StaticResource GridCellTextStyle}" />
-                    <DataGridTextColumn Header="{DynamicResource LblType}" Binding="{Binding Type, Converter={StaticResource TransactionTypeToLabelConverter}}" Width="*" MinWidth="100" ElementStyle="{StaticResource GridCellTextStyle}" />
-                    <DataGridTextColumn Header="{DynamicResource LblWeight}" Binding="{Binding OriginalWeight, Converter={StaticResource MoneyFormatConverter}, ConverterParameter='g'}" Width="*" MinWidth="110" ElementStyle="{StaticResource GridCellTextStyle}" />
-                    <DataGridTextColumn Header="{DynamicResource LblKarat}" Binding="{Binding OriginalKarat}" Width="*" MinWidth="90" ElementStyle="{StaticResource GridCellTextStyle}" />
-                    <DataGridTextColumn Header="{DynamicResource LblEquivalent21}" Binding="{Binding Equivalent21, Converter={StaticResource MoneyFormatConverter}, ConverterParameter='g'}" Width="*" MinWidth="130" ElementStyle="{StaticResource GridCellTextStyle}" />
-                    <DataGridTextColumn Header="{DynamicResource LblTotalManufacturing}" Binding="{Binding TotalManufacturing, Converter={StaticResource MoneyFormatConverter}}" Width="*" MinWidth="160" ElementStyle="{StaticResource GridCellTextStyle}" />
-                    <DataGridTextColumn Header="{DynamicResource LblTotalImprovement}" Binding="{Binding TotalImprovement, Converter={StaticResource MoneyFormatConverter}}" Width="*" MinWidth="160" ElementStyle="{StaticResource GridCellTextStyle}" />
-                    <DataGridTextColumn Header="{DynamicResource LblTraceability}" Binding="{Binding Traceability}" Width="2*" MinWidth="220" ElementStyle="{StaticResource GridCellTextStyle}" />
-                    <DataGridTextColumn Header="{DynamicResource LblCreatedAt}" Binding="{Binding CreatedAt, StringFormat={}{0:yyyy-MM-dd HH:mm}}" Width="170" MinWidth="170" ElementStyle="{StaticResource GridCellTextStyle}" />
-                    <DataGridTextColumn Header="{DynamicResource LblUpdatedAt}" Binding="{Binding UpdatedAt, StringFormat={}{0:yyyy-MM-dd HH:mm}}" Width="170" MinWidth="170" ElementStyle="{StaticResource GridCellTextStyle}" />
-                </DataGrid.Columns>
-            </DataGrid>
+        <Border Style="{StaticResource CardContainer}" Grid.Row="4">
+            <StackPanel>
+                <TextBlock Text="Discounts" FontSize="16" FontWeight="SemiBold" Margin="8" />
+                <DataGrid ItemsSource="{Binding Discounts}" AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True" Height="190" Margin="8">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="{DynamicResource LblDate}" Binding="{Binding CreatedAt, StringFormat={}{0:yyyy-MM-dd}}" Width="130" MinWidth="130" ElementStyle="{StaticResource GridCellTextStyle}" />
+                        <DataGridTextColumn Header="{DynamicResource LblType}" Binding="{Binding Type}" Width="180" MinWidth="160" ElementStyle="{StaticResource GridCellTextStyle}" />
+                        <DataGridTextColumn Header="{DynamicResource LblAmount}" Binding="{Binding Amount, Converter={StaticResource MoneyFormatConverter}, ConverterParameter='EGP'}" Width="160" MinWidth="160" ElementStyle="{StaticResource GridCellTextStyle}" />
+                        <DataGridTextColumn Header="{DynamicResource LblNotes}" Binding="{Binding Notes}" Width="*" MinWidth="220" ElementStyle="{StaticResource GridCellTextStyle}" />
+                    </DataGrid.Columns>
+                </DataGrid>
+            </StackPanel>
         </Border>
     </Grid>
 </UserControl>
