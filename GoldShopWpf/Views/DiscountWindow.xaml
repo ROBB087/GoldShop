@@ -1,0 +1,45 @@
+<Window x:Class="GoldShopWpf.Views.DiscountWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        Title="Add Discount" Height="300" Width="480" MinWidth="400" MinHeight="300" WindowStartupLocation="CenterOwner" ResizeMode="CanResize"
+        FlowDirection="{DynamicResource AppFlowDirection}">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="160" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <TextBlock Text="{DynamicResource LblDiscountType}" Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" Margin="8" />
+        <ComboBox x:Name="TypeCombo" Grid.Row="0" Grid.Column="1" DisplayMemberPath="Label" SelectedValuePath="Type" Margin="0,8" MinHeight="30" />
+
+        <TextBlock Text="{DynamicResource LblAmount}" Grid.Row="1" Grid.Column="0" VerticalAlignment="Center" Margin="8" />
+        <TextBox x:Name="AmountText" Grid.Row="1" Grid.Column="1" Margin="0,8" MinHeight="30" />
+
+        <TextBlock Text="{DynamicResource LblNotes}" Grid.Row="2" Grid.Column="0" VerticalAlignment="Top" Margin="8" />
+        <TextBox x:Name="NotesText" Grid.Row="2" Grid.Column="1" Margin="0,8" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="100" />
+
+        <StackPanel Orientation="Horizontal" Grid.Row="3" Grid.Column="1" HorizontalAlignment="Right" Margin="8,16,0,0">
+            <Button Style="{StaticResource PrimaryButton}" Margin="8,16,0,0" Click="OnSave">
+                <StackPanel Orientation="Horizontal">
+                    <materialDesign:PackIcon Kind="ContentSave" Width="18" Height="18" Margin="0,0,6,0" />
+                    <TextBlock Text="{DynamicResource BtnApply}" />
+                </StackPanel>
+            </Button>
+            <Button Style="{StaticResource GhostButton}" Margin="8,16,0,0" Click="OnCancel">
+                <StackPanel Orientation="Horizontal">
+                    <materialDesign:PackIcon Kind="CloseCircle" Width="18" Height="18" Margin="0,0,6,0" />
+                    <TextBlock Text="{DynamicResource BtnClear}" />
+                </StackPanel>
+            </Button>
+        </StackPanel>
+    </Grid>
+    </ScrollViewer>
+</Window>

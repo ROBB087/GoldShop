@@ -1,13 +1,44 @@
-<UserControl x:Class="GoldShopWpf.Views.DashboardView"
+﻿<UserControl x:Class="GoldShopWpf.Views.DashboardView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              mc:Ignorable="d">
+    <UserControl.Resources>
+        <DropShadowEffect x:Key="CardShadow" BlurRadius="16" ShadowDepth="2" Opacity="0.12" />
+
+        <Style x:Key="MetricCard" TargetType="materialDesign:Card">
+            <Setter Property="Background" Value="#FFFFFF" />
+            <Setter Property="Padding" Value="18" />
+            <Setter Property="Margin" Value="8" />
+            <Setter Property="Effect" Value="{StaticResource CardShadow}" />
+        </Style>
+
+        <Style x:Key="MetricTitle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="{DynamicResource MutedTextBrush}" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
+
+        <Style x:Key="MetricValue" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="26" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+        </Style>
+
+        <Style x:Key="IconBubble" TargetType="Border">
+            <Setter Property="Width" Value="38" />
+            <Setter Property="Height" Value="38" />
+            <Setter Property="CornerRadius" Value="10" />
+            <Setter Property="HorizontalAlignment" Value="Right" />
+            <Setter Property="VerticalAlignment" Value="Top" />
+        </Style>
+    </UserControl.Resources>
+
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel>
-            <Border Style="{StaticResource CardContainer}" Margin="0,0,0,12">
+            <Border Style="{StaticResource CardContainer}" Margin="0,0,0,16">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
@@ -18,13 +49,13 @@
                         <TextBlock Text="{DynamicResource LblOverviewSub}" Foreground="{StaticResource MutedTextBrush}" />
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" Grid.Column="1">
-                        <Button Command="{Binding AddSupplierCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,8,0" ToolTip="Add a new supplier">
+                        <Button Command="{Binding AddSupplierCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,8,0" ToolTip="Add a new trader">
                             <StackPanel Orientation="Horizontal">
                                 <materialDesign:PackIcon Kind="Plus" Width="18" Height="18" Margin="0,0,6,0" />
-                                <TextBlock Text="{DynamicResource BtnAddSupplier}" />
+                                <TextBlock Text="{DynamicResource BtnAddTrader}" />
                             </StackPanel>
                         </Button>
-                        <Button Command="{Binding AddTransactionCommand}" Style="{StaticResource GhostButton}" ToolTip="Record gold or payment">
+                        <Button Command="{Binding AddTransactionCommand}" Style="{StaticResource GhostButton}" ToolTip="Record trader transaction">
                             <StackPanel Orientation="Horizontal">
                                 <materialDesign:PackIcon Kind="Cash" Width="18" Height="18" Margin="0,0,6,0" />
                                 <TextBlock Text="{DynamicResource BtnAddTransaction}" />
@@ -35,30 +66,69 @@
             </Border>
 
             <UniformGrid Columns="4" Margin="0,0,0,16">
-                <Border Style="{StaticResource CardContainer}">
-                    <StackPanel>
-                        <TextBlock Text="{DynamicResource LblOutstanding}" Foreground="{StaticResource MutedTextBrush}" />
-                        <TextBlock Text="{Binding TotalOutstanding, StringFormat=C}" FontSize="22" FontWeight="SemiBold" Foreground="{DynamicResource GoldValueBrush}" />
-                    </StackPanel>
-                </Border>
-                <Border Style="{StaticResource CardContainer}">
-                    <StackPanel>
-                        <TextBlock Text="{DynamicResource LblSuppliers}" Foreground="{StaticResource MutedTextBrush}" />
-                        <TextBlock Text="{Binding SupplierCount}" FontSize="22" FontWeight="SemiBold" Foreground="{DynamicResource GoldValueBrush}" />
-                    </StackPanel>
-                </Border>
-                <Border Style="{StaticResource CardContainer}">
-                    <StackPanel>
-                        <TextBlock Text="{DynamicResource LblGoldGiven}" Foreground="{StaticResource MutedTextBrush}" />
-                        <TextBlock Text="{Binding TotalGoldIssued, StringFormat=C}" FontSize="22" FontWeight="SemiBold" Foreground="{DynamicResource GoldValueBrush}" />
-                    </StackPanel>
-                </Border>
-                <Border Style="{StaticResource CardContainer}">
-                    <StackPanel>
-                        <TextBlock Text="{DynamicResource LblPaymentsWeek}" Foreground="{StaticResource MutedTextBrush}" />
-                        <TextBlock Text="{Binding TotalPaymentsThisWeek, StringFormat=C}" FontSize="22" FontWeight="SemiBold" Foreground="{DynamicResource GoldValueBrush}" />
-                    </StackPanel>
-                </Border>
+                <materialDesign:Card Style="{StaticResource MetricCard}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="{DynamicResource LblTotalGold21}" Style="{StaticResource MetricTitle}" />
+                            <TextBlock Text="{Binding TotalGold21, Converter={StaticResource MoneyFormatConverter}, ConverterParameter='g'}" Style="{StaticResource MetricValue}" />
+                        </StackPanel>
+                        <Border Style="{StaticResource IconBubble}" Background="#FFF5E6" Grid.Column="1">
+                            <materialDesign:PackIcon Kind="CashMultiple" Width="20" Height="20" Foreground="#C9A300" VerticalAlignment="Center" HorizontalAlignment="Center" />
+                        </Border>
+                    </Grid>
+                </materialDesign:Card>
+
+                <materialDesign:Card Style="{StaticResource MetricCard}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="{DynamicResource LblTraders}" Style="{StaticResource MetricTitle}" />
+                            <TextBlock Text="{Binding SupplierCount}" Style="{StaticResource MetricValue}" />
+                        </StackPanel>
+                        <Border Style="{StaticResource IconBubble}" Background="#EEF2FF" Grid.Column="1">
+                            <materialDesign:PackIcon Kind="AccountGroup" Width="20" Height="20" Foreground="#3F51B5" VerticalAlignment="Center" HorizontalAlignment="Center" />
+                        </Border>
+                    </Grid>
+                </materialDesign:Card>
+
+                <materialDesign:Card Style="{StaticResource MetricCard}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="{DynamicResource LblTotalManufacturing}" Style="{StaticResource MetricTitle}" />
+                            <TextBlock Text="{Binding TotalManufacturingThisWeek, Converter={StaticResource MoneyFormatConverter}}" Style="{StaticResource MetricValue}" />
+                        </StackPanel>
+                        <Border Style="{StaticResource IconBubble}" Background="#FFF8E1" Grid.Column="1">
+                            <materialDesign:PackIcon Kind="DiamondStone" Width="20" Height="20" Foreground="#C9A300" VerticalAlignment="Center" HorizontalAlignment="Center" />
+                        </Border>
+                    </Grid>
+                </materialDesign:Card>
+
+                <materialDesign:Card Style="{StaticResource MetricCard}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="{DynamicResource LblTotalImprovement}" Style="{StaticResource MetricTitle}" />
+                            <TextBlock Text="{Binding TotalImprovementThisWeek, Converter={StaticResource MoneyFormatConverter}}" Style="{StaticResource MetricValue}" />
+                        </StackPanel>
+                        <Border Style="{StaticResource IconBubble}" Background="#E8F5E9" Grid.Column="1">
+                            <materialDesign:PackIcon Kind="BankTransfer" Width="20" Height="20" Foreground="#2E7D32" VerticalAlignment="Center" HorizontalAlignment="Center" />
+                        </Border>
+                    </Grid>
+                </materialDesign:Card>
             </UniformGrid>
 
             <Grid>
@@ -69,7 +139,7 @@
 
                 <Border Style="{StaticResource CardContainer}" Grid.Column="0">
                     <StackPanel>
-                        <TextBlock Text="{DynamicResource LblTopBalances}" FontWeight="SemiBold" Margin="0,0,0,8" />
+                        <TextBlock Text="{DynamicResource LblTopGold}" FontWeight="SemiBold" Margin="0,0,0,8" />
                         <ItemsControl ItemsSource="{Binding SupplierBalanceBars}">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
@@ -90,7 +160,7 @@
 
                 <Border Style="{StaticResource CardContainer}" Grid.Column="1">
                     <StackPanel>
-                        <TextBlock Text="{DynamicResource LblGoldVsPayment}" FontWeight="SemiBold" Margin="0,0,0,8" />
+                        <TextBlock Text="{DynamicResource LblGoldVsCosts}" FontWeight="SemiBold" Margin="0,0,0,8" />
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="200" />
@@ -122,3 +192,4 @@
         </StackPanel>
     </ScrollViewer>
 </UserControl>
+

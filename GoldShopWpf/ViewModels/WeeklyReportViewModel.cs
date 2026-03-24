@@ -34,6 +34,15 @@ public class WeeklyReportViewModel : ViewModelBase
 
     public void Load()
     {
+        if (FromDate > ToDate)
+        {
+            var msg = LocalizationService.CurrentLanguage == "ar"
+                ? "تاريخ البداية يجب أن يكون قبل تاريخ النهاية"
+                : "From date must be before To date.";
+            System.Windows.MessageBox.Show(msg, "Validation", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+            return;
+        }
+
         Reports.Clear();
 
         var reportService = AppServices.ReportService;
@@ -45,9 +54,11 @@ public class WeeklyReportViewModel : ViewModelBase
             {
                 SupplierId = report.SupplierId,
                 SupplierName = report.SupplierName,
-                TotalGold = report.GoldGiven,
-                TotalPayments = report.PaymentsIssued,
-                CurrentBalance = report.CurrentBalance
+                TotalGold21 = report.TotalGold21,
+                TotalManufacturing = report.TotalManufacturing,
+                TotalImprovement = report.TotalImprovement,
+                FinalManufacturing = report.TotalManufacturing - report.ManufacturingDiscounts,
+                FinalImprovement = report.TotalImprovement - report.ImprovementDiscounts
             });
         }
 
@@ -56,18 +67,18 @@ public class WeeklyReportViewModel : ViewModelBase
 
     private void BuildChart()
     {
-        var top = Reports.OrderByDescending(r => r.CurrentBalance).Take(10).ToList();
-        var max = top.Select(r => r.CurrentBalance).DefaultIfEmpty(0m).Max();
+        var top = Reports.OrderByDescending(r => r.TotalGold21).Take(10).ToList();
+        var max = top.Select(r => r.TotalGold21).DefaultIfEmpty(0m).Max();
         var maxHeight = 180d;
 
         TopBalanceBars.Clear();
         foreach (var report in top)
         {
-            var height = max == 0m ? 0d : (double)(report.CurrentBalance / max) * maxHeight;
+            var height = max == 0m ? 0d : (double)(report.TotalGold21 / max) * maxHeight;
             TopBalanceBars.Add(new BarItem
             {
                 Label = report.SupplierName,
-                Value = (double)report.CurrentBalance,
+                Value = (double)report.TotalGold21,
                 Height = height
             });
         }

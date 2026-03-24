@@ -1,8 +1,9 @@
-using System.Windows.Controls;
+﻿using System.Windows.Controls;
 using System.Windows;
 using System.Windows.Documents;
 using System.Windows.Media;
 using GoldShopWpf.ViewModels;
+using GoldShopWpf.Services;
 
 namespace GoldShopWpf.Views;
 
@@ -21,23 +22,28 @@ public partial class WeeklyReportView : UserControl
         }
 
         var title = (string?)Application.Current.TryFindResource("NavWeeklyReport") ?? "Weekly Report";
-        var supplierLabel = (string?)Application.Current.TryFindResource("LblSupplier") ?? "Supplier";
-        var goldLabel = (string?)Application.Current.TryFindResource("LblGoldGiven") ?? "Gold";
-        var paymentsLabel = (string?)Application.Current.TryFindResource("LblTotalPayments") ?? "Payments";
-        var balanceLabel = (string?)Application.Current.TryFindResource("LblCurrentBalance") ?? "Balance";
+        var supplierLabel = (string?)Application.Current.TryFindResource("LblTrader") ?? "Trader";
+        var goldLabel = (string?)Application.Current.TryFindResource("LblTotalGold21") ?? "Total Gold (21K)";
+        var manufacturingLabel = (string?)Application.Current.TryFindResource("LblTotalManufacturing") ?? "Manufacturing";
+        var improvementLabel = (string?)Application.Current.TryFindResource("LblTotalImprovement") ?? "Improvement";
 
         var lines = new List<string>
         {
             title,
             $"{vm.FromDate:yyyy-MM-dd} - {vm.ToDate:yyyy-MM-dd}",
-            new string('-', 72),
-            string.Format("{0,-24} {1,12} {2,12} {3,12}", supplierLabel, goldLabel, paymentsLabel, balanceLabel),
-            new string('-', 72)
+            new string('-', 88),
+            string.Format("{0,-20} {1,14} {2,14} {3,14}", supplierLabel, goldLabel, manufacturingLabel, improvementLabel),
+            new string('-', 88)
         };
 
         foreach (var r in vm.Reports)
         {
-            lines.Add(string.Format("{0,-24} {1,12:0.00} {2,12:0.00} {3,12:0.00}", r.SupplierName, r.TotalGold, r.TotalPayments, r.CurrentBalance));
+            lines.Add(string.Format(
+                "{0,-20} {1,14} {2,14} {3,14}",
+                r.SupplierName,
+                FormatNumber(r.TotalGold21, "g"),
+                FormatNumber(r.TotalManufacturing, string.Empty),
+                FormatNumber(r.TotalImprovement, string.Empty)));
         }
 
         var content = string.Join(Environment.NewLine, lines);
@@ -56,4 +62,7 @@ public partial class WeeklyReportView : UserControl
             dialog.PrintDocument(((IDocumentPaginatorSource)doc).DocumentPaginator, title);
         }
     }
+
+    private static string FormatNumber(decimal value, string suffix)
+        => string.IsNullOrWhiteSpace(suffix) ? $"{value:0.00}" : $"{value:0.00} {suffix}";
 }

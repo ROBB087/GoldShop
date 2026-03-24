@@ -23,6 +23,8 @@ CREATE TABLE IF NOT EXISTS Suppliers (
     Id INTEGER PRIMARY KEY AUTOINCREMENT,
     Name TEXT NOT NULL,
     Phone TEXT,
+    WorkerName TEXT,
+    WorkerPhone TEXT,
     Notes TEXT,
     CreatedAt TEXT NOT NULL
 );
@@ -36,24 +38,89 @@ CREATE TABLE IF NOT EXISTS SupplierTransactions (
     Amount REAL NOT NULL,
     Weight REAL,
     Purity TEXT,
+    OriginalWeight REAL NOT NULL DEFAULT 0,
+    OriginalKarat INTEGER NOT NULL DEFAULT 21,
+    Equivalent21 REAL NOT NULL DEFAULT 0,
+    ManufacturingPerGram REAL NOT NULL DEFAULT 0,
+    ImprovementPerGram REAL NOT NULL DEFAULT 0,
+    TotalManufacturing REAL NOT NULL DEFAULT 0,
+    TotalImprovement REAL NOT NULL DEFAULT 0,
     Category TEXT,
     Notes TEXT,
+    CreatedAt TEXT NOT NULL DEFAULT '',
+    UpdatedAt TEXT NOT NULL DEFAULT '',
+    FOREIGN KEY (SupplierId) REFERENCES Suppliers(Id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS Discounts (
+    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+    SupplierId INTEGER NOT NULL,
+    Type TEXT NOT NULL,
+    Amount REAL NOT NULL,
+    Notes TEXT,
+    CreatedAt TEXT NOT NULL,
     FOREIGN KEY (SupplierId) REFERENCES Suppliers(Id) ON DELETE CASCADE
 );
 
 CREATE INDEX IF NOT EXISTS IX_SupplierTransactions_SupplierId ON SupplierTransactions(SupplierId);
 CREATE INDEX IF NOT EXISTS IX_SupplierTransactions_TxnDate ON SupplierTransactions(TxnDate);
+CREATE INDEX IF NOT EXISTS IX_Discounts_SupplierId ON Discounts(SupplierId);
 ";
         command.ExecuteNonQuery();
 
         EnsureColumn(connection, "SupplierTransactions", "Weight", "REAL");
         EnsureColumn(connection, "SupplierTransactions", "Purity", "TEXT");
+        EnsureColumn(connection, "SupplierTransactions", "OriginalWeight", "REAL NOT NULL DEFAULT 0");
+        EnsureColumn(connection, "SupplierTransactions", "OriginalKarat", "INTEGER NOT NULL DEFAULT 21");
+        EnsureColumn(connection, "SupplierTransactions", "Equivalent21", "REAL NOT NULL DEFAULT 0");
+        EnsureColumn(connection, "SupplierTransactions", "ManufacturingPerGram", "REAL NOT NULL DEFAULT 0");
+        EnsureColumn(connection, "SupplierTransactions", "ImprovementPerGram", "REAL NOT NULL DEFAULT 0");
+        EnsureColumn(connection, "SupplierTransactions", "TotalManufacturing", "REAL NOT NULL DEFAULT 0");
+        EnsureColumn(connection, "SupplierTransactions", "TotalImprovement", "REAL NOT NULL DEFAULT 0");
         EnsureColumn(connection, "SupplierTransactions", "Category", "TEXT");
+        EnsureColumn(connection, "SupplierTransactions", "CreatedAt", "TEXT NOT NULL DEFAULT ''");
+        EnsureColumn(connection, "SupplierTransactions", "UpdatedAt", "TEXT NOT NULL DEFAULT ''");
+        EnsureColumn(connection, "Suppliers", "WorkerName", "TEXT");
+        EnsureColumn(connection, "Suppliers", "WorkerPhone", "TEXT");
 
         using var migrate = connection.CreateCommand();
         migrate.CommandText = @"
-UPDATE SupplierTransactions SET Type = 'GoldGiven' WHERE Type = 'Gold';
-UPDATE SupplierTransactions SET Type = 'PaymentIssued' WHERE Type = 'Payment';
+UPDATE SupplierTransactions SET Type = 'Out' WHERE Type IN ('GoldGiven', 'PaymentIssued', 'Gold');
+UPDATE SupplierTransactions SET Type = 'In' WHERE Type IN ('GoldReceived', 'PaymentReceived', 'Payment');
+
+UPDATE SupplierTransactions
+SET OriginalWeight = COALESCE(NULLIF(OriginalWeight, 0), Weight, Amount, 0);
+
+UPDATE SupplierTransactions
+SET OriginalKarat = CASE
+    WHEN OriginalKarat IS NULL OR OriginalKarat = 0 THEN
+        COALESCE(CAST(NULLIF(TRIM(Purity), '') AS INTEGER), 21)
+    ELSE OriginalKarat
+END;
+
+UPDATE SupplierTransactions
+SET Equivalent21 = ROUND((OriginalWeight * OriginalKarat) / 21.0, 6)
+WHERE Equivalent21 IS NULL OR Equivalent21 = 0;
+
+UPDATE SupplierTransactions
+SET TotalManufacturing = ROUND(OriginalWeight * ManufacturingPerGram, 6)
+WHERE TotalManufacturing IS NULL OR TotalManufacturing = 0;
+
+UPDATE SupplierTransactions
+SET TotalImprovement = ROUND(Equivalent21 * ImprovementPerGram, 6)
+WHERE TotalImprovement IS NULL OR TotalImprovement = 0;
+
+UPDATE SupplierTransactions
+SET CreatedAt = CASE
+    WHEN TRIM(COALESCE(CreatedAt, '')) = '' THEN TxnDate || ' 00:00:00'
+    ELSE CreatedAt
+END;
+
+UPDATE SupplierTransactions
+SET UpdatedAt = CASE
+    WHEN TRIM(COALESCE(UpdatedAt, '')) = '' THEN COALESCE(NULLIF(CreatedAt, ''), TxnDate || ' 00:00:00')
+    ELSE UpdatedAt
+END;
 ";
         migrate.ExecuteNonQuery();
     }

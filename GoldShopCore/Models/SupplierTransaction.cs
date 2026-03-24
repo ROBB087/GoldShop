@@ -2,17 +2,8 @@ namespace GoldShopCore.Models;
 
 public enum TransactionType
 {
-    GoldGiven = 1,
-    GoldReceived = 2,
-    PaymentIssued = 3,
-    PaymentReceived = 4
-}
-
-public enum TransactionCategory
-{
-    None = 0,
-    Internal = 1,
-    External = 2
+    Out = 1,
+    In = 2
 }
 
 public class SupplierTransaction
@@ -22,9 +13,14 @@ public class SupplierTransaction
     public DateTime Date { get; set; }
     public TransactionType Type { get; set; }
     public string? Description { get; set; }
-    public decimal Amount { get; set; }
-    public decimal? Weight { get; set; }
-    public string? Purity { get; set; }
-    public TransactionCategory Category { get; set; } = TransactionCategory.None;
+    public decimal OriginalWeight { get; set; }
+    public int OriginalKarat { get; set; }
+    public decimal Equivalent21 { get; set; }
+    public decimal ManufacturingPerGram { get; set; }
+    public decimal ImprovementPerGram { get; set; }
+    public decimal TotalManufacturing { get; set; }
+    public decimal TotalImprovement { get; set; }
     public string? Notes { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
 }

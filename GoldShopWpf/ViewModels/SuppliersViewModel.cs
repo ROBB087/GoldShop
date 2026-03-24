@@ -63,22 +63,27 @@ public class SuppliersViewModel : ViewModelBase
         FilteredSuppliers.Clear();
 
         var supplierService = AppServices.SupplierService;
-        var balances = supplierService.GetBalancesBySupplier();
+        var totalGoldBySupplier = supplierService.GetTotalGold21BySupplier();
+        var netGoldBySupplier = supplierService.GetNetGold21BySupplier();
         var lastDates = supplierService.GetLastTransactionDates();
         var noActivityLabel = System.Windows.Application.Current.TryFindResource("LblNoActivity")?.ToString() ?? "No activity";
 
         foreach (var supplier in supplierService.GetSuppliers())
         {
-            balances.TryGetValue(supplier.Id, out var balance);
+            totalGoldBySupplier.TryGetValue(supplier.Id, out var totalGold21);
+            netGoldBySupplier.TryGetValue(supplier.Id, out var netGold21);
             lastDates.TryGetValue(supplier.Id, out var lastDate);
             Suppliers.Add(new SupplierListItem
             {
                 Id = supplier.Id,
                 Name = supplier.Name,
                 Phone = supplier.Phone ?? string.Empty,
-                Balance = balance,
+                WorkerName = supplier.WorkerName ?? string.Empty,
+                WorkerPhone = supplier.WorkerPhone ?? string.Empty,
+                TotalGold21 = totalGold21,
+                NetGold21 = netGold21,
                 LastTransactionDate = lastDate == default ? null : lastDate,
-                LastActivityLabel = lastDate == default ? noActivityLabel : lastDate.ToString("yyyy-MM-dd")
+                LastActivityLabel = lastDate == default ? noActivityLabel : lastDate.ToString("yyyy-MM-dd HH:mm")
             });
         }
 
@@ -106,7 +111,7 @@ public class SuppliersViewModel : ViewModelBase
         var dialog = new Views.SupplierWindow();
         if (dialog.ShowDialog() == true)
         {
-            AppServices.SupplierService.AddSupplier(dialog.SupplierName, dialog.SupplierPhone, dialog.SupplierNotes);
+            AppServices.SupplierService.AddSupplier(dialog.SupplierName, dialog.SupplierPhone, dialog.WorkerName, dialog.WorkerPhone, dialog.SupplierNotes);
             Load();
         }
     }
@@ -127,7 +132,7 @@ public class SuppliersViewModel : ViewModelBase
         var dialog = new Views.SupplierWindow(supplier);
         if (dialog.ShowDialog() == true)
         {
-            AppServices.SupplierService.UpdateSupplier(supplier.Id, dialog.SupplierName, dialog.SupplierPhone, dialog.SupplierNotes);
+            AppServices.SupplierService.UpdateSupplier(supplier.Id, dialog.SupplierName, dialog.SupplierPhone, dialog.WorkerName, dialog.WorkerPhone, dialog.SupplierNotes);
             Load();
         }
     }
@@ -140,7 +145,7 @@ public class SuppliersViewModel : ViewModelBase
         }
 
         var result = System.Windows.MessageBox.Show(
-            $"Delete supplier {SelectedSupplier.Name}? This will remove all transactions.",
+            $"Delete trader {SelectedSupplier.Name}? This will remove all transactions and discounts.",
             "Confirm Delete",
             System.Windows.MessageBoxButton.YesNo,
             System.Windows.MessageBoxImage.Warning);

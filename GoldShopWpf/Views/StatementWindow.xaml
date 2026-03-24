@@ -1,8 +1,10 @@
-<Window x:Class="GoldShopWpf.Views.StatementWindow"
+﻿<Window x:Class="GoldShopWpf.Views.StatementWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="{DynamicResource LblStatementTitle}" Height="600" Width="820" WindowStartupLocation="CenterOwner">
-    <Grid>
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        Title="{DynamicResource LblStatementTitle}" Height="600" Width="820" MinWidth="400" MinHeight="300" WindowStartupLocation="CenterOwner" ResizeMode="CanResize"
+        FlowDirection="{DynamicResource AppFlowDirection}">
+    <Grid Margin="16">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
@@ -21,12 +23,14 @@
                 </StackPanel>
 
                 <StackPanel Orientation="Horizontal" Grid.Row="1">
-                    <TextBlock Text="{DynamicResource LblFrom}" VerticalAlignment="Center" Margin="0,0,8,0" />
-                    <DatePicker x:Name="FromDate" Width="140" />
-                    <TextBlock Text="{DynamicResource LblTo}" VerticalAlignment="Center" Margin="16,0,8,0" />
-                    <DatePicker x:Name="ToDate" Width="140" />
-                    <Button Content="{DynamicResource BtnApply}" Margin="16,0,0,0" Click="OnGenerate" />
-                    <Button Content="{DynamicResource BtnPrint}" Margin="8,0,0,0" Click="OnPrint" />
+                    <TextBlock Text="{DynamicResource LblFrom}" VerticalAlignment="Center" Margin="5" />
+                    <DatePicker x:Name="FromDate" Width="140" Margin="5"
+                                materialDesign:HintAssist.Hint="من" />
+                    <TextBlock Text="{DynamicResource LblTo}" VerticalAlignment="Center" Margin="5" />
+                    <DatePicker x:Name="ToDate" Width="140" Margin="5"
+                                materialDesign:HintAssist.Hint="إلى" />
+                    <Button Content="{DynamicResource BtnApply}" Style="{StaticResource PrimaryButton}" Margin="8,0,0,0" Click="OnGenerate" />
+                    <Button Content="{DynamicResource BtnPrint}" Style="{StaticResource GhostButton}" Margin="8,0,0,0" Click="OnPrint" />
                 </StackPanel>
             </Grid>
         </Border>
@@ -37,3 +41,5 @@
         </Border>
     </Grid>
 </Window>
+
+

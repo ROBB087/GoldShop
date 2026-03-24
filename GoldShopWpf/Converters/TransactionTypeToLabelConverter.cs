@@ -15,20 +15,16 @@ public class TransactionTypeToLabelConverter : IValueConverter
             {
                 return type switch
                 {
-                    TransactionType.GoldGiven => "ذهب طالع",
-                    TransactionType.GoldReceived => "ذهب داخل",
-                    TransactionType.PaymentIssued => "دفعة خارجة",
-                    TransactionType.PaymentReceived => "دفعة داخلة",
+                    TransactionType.Out => "خارج",
+                    TransactionType.In => "داخل",
                     _ => string.Empty
                 };
             }
 
             return type switch
             {
-                TransactionType.GoldGiven => "Gold Given",
-                TransactionType.GoldReceived => "Gold Received",
-                TransactionType.PaymentIssued => "Payment Issued",
-                TransactionType.PaymentReceived => "Payment Received",
+                TransactionType.Out => "OUT",
+                TransactionType.In => "IN",
                 _ => string.Empty
             };
         }
@@ -38,3 +34,4 @@ public class TransactionTypeToLabelConverter : IValueConverter
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         => Binding.DoNothing;
 }
+

@@ -1,9 +1,7 @@
-﻿using System.Windows;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Media;
-using GoldShopCore.Models;
-using GoldShopWpf.Services;
 
 namespace GoldShopWpf.Views;
 
@@ -21,7 +19,6 @@ public partial class StatementWindow : Window
 
         FromDate.SelectedDate = fromDate ?? DateTime.Today.AddMonths(-1);
         ToDate.SelectedDate = toDate ?? DateTime.Today;
-
         LoadLogo();
         GenerateStatement();
     }
@@ -45,50 +42,40 @@ public partial class StatementWindow : Window
     {
         var from = FromDate.SelectedDate ?? DateTime.Today.AddMonths(-1);
         var to = ToDate.SelectedDate ?? DateTime.Today;
-        var transactions = AppServices.TransactionService.GetTransactions(_supplierId, from, to);
-
-        var isArabic = GoldShopWpf.Services.LocalizationService.CurrentLanguage == "ar";
-        var supplierLabel = isArabic ? "المورد" : "Supplier";
-        var dateRangeLabel = isArabic ? "الفترة" : "Date Range";
-        var finalBalanceLabel = isArabic ? "الرصيد النهائي" : "Final Balance";
-        var dateHeader = (string)Application.Current.TryFindResource("LblDate") ?? "Date";
-        var typeHeader = (string)Application.Current.TryFindResource("LblType") ?? "Type";
-        var detailsHeader = (string)Application.Current.TryFindResource("LblDescription") ?? "Details";
-        var amountHeader = (string)Application.Current.TryFindResource("LblAmount") ?? "Amount";
-        var balanceHeader = (string)Application.Current.TryFindResource("LblBalance") ?? "Balance";
+        var transactions = Services.AppServices.TransactionService.GetTransactions(_supplierId, from, to);
+        var summary = Services.AppServices.TransactionService.GetSummary(_supplierId, from, to);
 
         var lines = new List<string>
         {
-            (string)Application.Current.TryFindResource("LblStatementTitle") ?? "Supplier Statement",
-            $"{supplierLabel}: {_supplierName}",
-            $"{dateRangeLabel}: {from:yyyy-MM-dd} - {to:yyyy-MM-dd}",
-            new string('-', 72),
-            string.Format("{0,-12} {1,-18} {2,-22} {3,10} {4,10}", dateHeader, typeHeader, detailsHeader, amountHeader, balanceHeader),
-            new string('-', 72)
+            "Trader Statement",
+            $"Trader: {_supplierName}",
+            $"Date Range: {from:yyyy-MM-dd} - {to:yyyy-MM-dd}",
+            new string('-', 150),
+            string.Format("{0,-12} {1,-4} {2,10} {3,7} {4,10} {5,12} {6,12} {7,-28} {8,-16} {9,-16}",
+                "Date", "Type", "Weight", "Karat", "Eq21", "Mfg Total", "Imp Total", "Traceability", "Created", "Updated"),
+            new string('-', 150)
         };
 
-        decimal balance = 0m;
         foreach (var transaction in transactions)
         {
-            var amount = transaction.Amount;
-            balance += IsIncrease(transaction.Type) ? amount : -amount;
-
-            var typeLabel = isArabic
-                ? GetArabicTypeLabel(transaction.Type)
-                : GetEnglishTypeLabel(transaction.Type);
-
             lines.Add(string.Format(
-                "{0,-12} {1,-18} {2,-22} {3,10} {4,10}",
+                "{0,-12} {1,-4} {2,10} {3,7} {4,10} {5,12} {6,12} {7,-28} {8,-16} {9,-16}",
                 transaction.Date.ToString("yyyy-MM-dd"),
-                typeLabel,
-                Truncate(transaction.Description, 22),
-                amount.ToString("0.00"),
-                balance.ToString("0.00")
-            ));
+                transaction.Type,
+                FormatNumber(transaction.OriginalWeight, "g"),
+                $"{transaction.OriginalKarat}K",
+                FormatNumber(transaction.Equivalent21, "g"),
+                FormatNumber(transaction.TotalManufacturing, string.Empty),
+                FormatNumber(transaction.TotalImprovement, string.Empty),
+                Truncate(transaction.Description, 28),
+                transaction.CreatedAt.ToString("yyyy-MM-dd HH:mm"),
+                transaction.UpdatedAt.ToString("yyyy-MM-dd HH:mm")));
         }
 
-        lines.Add(new string('-', 72));
-        lines.Add($"{finalBalanceLabel}: {balance:0.00}");
+        lines.Add(new string('-', 150));
+        lines.Add($"Total Gold (21K): {FormatNumber(summary.TotalGold21, "g")}");
+        lines.Add($"Final Manufacturing: {FormatNumber(summary.FinalManufacturing, string.Empty)}");
+        lines.Add($"Final Improvement: {FormatNumber(summary.FinalImprovement, string.Empty)}");
 
         _statement = string.Join(Environment.NewLine, lines);
         StatementText.Text = _statement;
@@ -100,8 +87,12 @@ public partial class StatementWindow : Window
         {
             return string.Empty;
         }
-        return value.Length <= length ? value : value.Substring(0, length - 3) + "...";
+
+        return value.Length <= length ? value : value[..(length - 3)] + "...";
     }
+
+    private static string FormatNumber(decimal value, string suffix)
+        => string.IsNullOrWhiteSpace(suffix) ? $"{value:0.00}" : $"{value:0.00} {suffix}";
 
     private void OnPrint(object sender, RoutedEventArgs e)
     {
@@ -124,35 +115,6 @@ public partial class StatementWindow : Window
             PagePadding = new Thickness(40)
         };
 
-        dialog.PrintDocument(((IDocumentPaginatorSource)document).DocumentPaginator, "Supplier Statement");
-    }
-
-    private static bool IsIncrease(TransactionType type)
-    {
-        return type == TransactionType.GoldGiven || type == TransactionType.PaymentReceived;
-    }
-
-    private static string GetArabicTypeLabel(TransactionType type)
-    {
-        return type switch
-        {
-            TransactionType.GoldGiven => "ذهب طالع",
-            TransactionType.GoldReceived => "ذهب داخل",
-            TransactionType.PaymentIssued => "دفعة خارجة",
-            TransactionType.PaymentReceived => "دفعة داخلة",
-            _ => string.Empty
-        };
-    }
-
-    private static string GetEnglishTypeLabel(TransactionType type)
-    {
-        return type switch
-        {
-            TransactionType.GoldGiven => "Gold Given",
-            TransactionType.GoldReceived => "Gold Received",
-            TransactionType.PaymentIssued => "Payment Issued",
-            TransactionType.PaymentReceived => "Payment Received",
-            _ => string.Empty
-        };
+        dialog.PrintDocument(((IDocumentPaginatorSource)document).DocumentPaginator, "Trader Statement");
     }
 }

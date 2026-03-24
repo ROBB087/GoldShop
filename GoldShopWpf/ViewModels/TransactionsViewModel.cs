@@ -82,21 +82,30 @@ public class TransactionsViewModel : ViewModelBase
 
     public void Load()
     {
+        if (FromDate.HasValue && ToDate.HasValue && FromDate > ToDate)
+        {
+            var msg = LocalizationService.CurrentLanguage == "ar"
+                ? "تاريخ البداية يجب أن يكون قبل تاريخ النهاية"
+                : "From date must be before To date.";
+            System.Windows.MessageBox.Show(msg, "Validation", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+            return;
+        }
+
         Suppliers.Clear();
         Transactions.Clear();
         FilteredTransactions.Clear();
 
         var supplierService = AppServices.SupplierService;
         var suppliers = supplierService.GetSuppliers();
-        var allLabel = System.Windows.Application.Current.TryFindResource("LblAllSuppliers")?.ToString() ?? "All suppliers";
-        Suppliers.Add(new SupplierListItem { Id = 0, Name = allLabel, Phone = string.Empty });
         foreach (var supplier in suppliers)
         {
             Suppliers.Add(new SupplierListItem
             {
                 Id = supplier.Id,
                 Name = supplier.Name,
-                Phone = supplier.Phone ?? string.Empty
+                Phone = supplier.Phone ?? string.Empty,
+                WorkerName = supplier.WorkerName ?? string.Empty,
+                WorkerPhone = supplier.WorkerPhone ?? string.Empty
             });
         }
 
@@ -108,16 +117,23 @@ public class TransactionsViewModel : ViewModelBase
             {
                 Id = transaction.Id,
                 SupplierId = transaction.SupplierId,
-                SupplierName = supplierLookup.TryGetValue(transaction.SupplierId, out var name) ? name : "",
+                SupplierName = supplierLookup.TryGetValue(transaction.SupplierId, out var name) ? name : string.Empty,
                 Date = transaction.Date,
                 Type = transaction.Type,
-                Details = transaction.Description ?? string.Empty,
-                Amount = transaction.Amount,
-                Notes = transaction.Notes ?? string.Empty
+                OriginalWeight = transaction.OriginalWeight,
+                OriginalKarat = transaction.OriginalKarat,
+                Equivalent21 = transaction.Equivalent21,
+                ManufacturingPerGram = transaction.ManufacturingPerGram,
+                ImprovementPerGram = transaction.ImprovementPerGram,
+                TotalManufacturing = transaction.TotalManufacturing,
+                TotalImprovement = transaction.TotalImprovement,
+                Traceability = transaction.Description ?? string.Empty,
+                Notes = transaction.Notes ?? string.Empty,
+                CreatedAt = transaction.CreatedAt,
+                UpdatedAt = transaction.UpdatedAt
             });
         }
 
-        SelectedSupplier ??= Suppliers.FirstOrDefault();
         ApplyFilter();
     }
 
@@ -128,14 +144,15 @@ public class TransactionsViewModel : ViewModelBase
 
         foreach (var transaction in Transactions)
         {
-            if (SelectedSupplier != null && SelectedSupplier.Id != 0 && transaction.SupplierId != SelectedSupplier.Id)
+            if (SelectedSupplier != null && transaction.SupplierId != SelectedSupplier.Id)
             {
                 continue;
             }
 
             if (!string.IsNullOrWhiteSpace(query) &&
                 !transaction.SupplierName.ToLowerInvariant().Contains(query) &&
-                !transaction.Details.ToLowerInvariant().Contains(query))
+                !transaction.Traceability.ToLowerInvariant().Contains(query) &&
+                !transaction.Notes.ToLowerInvariant().Contains(query))
             {
                 continue;
             }
@@ -146,20 +163,10 @@ public class TransactionsViewModel : ViewModelBase
 
     private void AddTransaction()
     {
-        var dialog = new Views.TransactionWindow(null, "Select Supplier", Suppliers);
+        var dialog = new Views.TransactionWindow((int?)null, Suppliers);
         if (dialog.ShowDialog() == true)
         {
-            AppServices.TransactionService.AddTransaction(
-                dialog.SupplierId,
-                dialog.TransactionDate,
-                dialog.TransactionType,
-                dialog.Description,
-                dialog.Amount,
-                dialog.GoldWeight,
-                dialog.GoldPurity,
-                TransactionCategory.None,
-                dialog.Notes);
-            Load();
+            SaveTransaction(dialog, null);
         }
     }
 
@@ -170,31 +177,48 @@ public class TransactionsViewModel : ViewModelBase
             return;
         }
 
-        var dialog = new Views.TransactionWindow(
-            SelectedTransaction.SupplierId,
-            SelectedTransaction.SupplierName,
-            Suppliers,
-            SelectedTransaction.Id,
-            SelectedTransaction.Date,
-            SelectedTransaction.Type,
-            SelectedTransaction.Details,
-            SelectedTransaction.Amount,
-            SelectedTransaction.Notes);
-
+        var dialog = new Views.TransactionWindow(SelectedTransaction, Suppliers);
         if (dialog.ShowDialog() == true)
         {
-            AppServices.TransactionService.UpdateTransaction(
-                SelectedTransaction.Id,
-                dialog.SupplierId,
-                dialog.TransactionDate,
-                dialog.TransactionType,
-                dialog.Description,
-                dialog.Amount,
-                dialog.GoldWeight,
-                dialog.GoldPurity,
-                TransactionCategory.None,
-                dialog.Notes);
+            SaveTransaction(dialog, SelectedTransaction.Id);
+        }
+    }
+
+    private void SaveTransaction(Views.TransactionWindow dialog, int? transactionId)
+    {
+        try
+        {
+            if (transactionId.HasValue)
+            {
+                AppServices.TransactionService.UpdateTransaction(
+                    transactionId.Value,
+                    dialog.SupplierId,
+                    dialog.TransactionDate,
+                    dialog.TransactionType,
+                    dialog.OriginalWeight,
+                    dialog.OriginalKarat,
+                    dialog.ManufacturingPerGram,
+                    dialog.ImprovementPerGram,
+                    dialog.Notes);
+            }
+            else
+            {
+                AppServices.TransactionService.AddTransaction(
+                    dialog.SupplierId,
+                    dialog.TransactionDate,
+                    dialog.TransactionType,
+                    dialog.OriginalWeight,
+                    dialog.OriginalKarat,
+                    dialog.ManufacturingPerGram,
+                    dialog.ImprovementPerGram,
+                    dialog.Notes);
+            }
+
             Load();
+        }
+        catch (ArgumentException ex)
+        {
+            System.Windows.MessageBox.Show(ex.Message, "Validation", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
         }
     }
 

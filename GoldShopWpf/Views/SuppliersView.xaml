@@ -1,4 +1,4 @@
-<UserControl x:Class="GoldShopWpf.Views.SuppliersView"
+﻿<UserControl x:Class="GoldShopWpf.Views.SuppliersView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -25,10 +25,10 @@
                 </StackPanel>
 
                 <StackPanel Orientation="Horizontal" Grid.Column="1">
-                    <Button Command="{Binding AddCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,8,0" ToolTip="{DynamicResource BtnAddSupplier}">
+                    <Button Command="{Binding AddCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,8,0" ToolTip="{DynamicResource BtnAddTrader}">
                         <StackPanel Orientation="Horizontal">
                             <materialDesign:PackIcon Kind="Plus" Width="18" Height="18" Margin="0,0,6,0" />
-                            <TextBlock Text="{DynamicResource BtnAddSupplier}" />
+                            <TextBlock Text="{DynamicResource BtnAddTrader}" />
                         </StackPanel>
                     </Button>
                     <Button Command="{Binding EditCommand}" Style="{StaticResource GhostButton}" Margin="0,0,8,0" ToolTip="{DynamicResource BtnEdit}">
@@ -57,12 +57,14 @@
             <DataGrid ItemsSource="{Binding FilteredSuppliers}" SelectedItem="{Binding SelectedSupplier}" AutoGenerateColumns="False"
                       CanUserAddRows="False" IsReadOnly="True" CanUserSortColumns="True">
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="{DynamicResource LblSupplier}" Binding="{Binding Name}" Width="*" />
+                    <DataGridTextColumn Header="{DynamicResource LblTrader}" Binding="{Binding Name}" Width="*" />
                     <DataGridTextColumn Header="{DynamicResource LblPhone}" Binding="{Binding Phone}" Width="180" />
-                    <DataGridTextColumn Header="{DynamicResource LblBalance}" Binding="{Binding Balance, StringFormat=C}" Width="180" />
-                    <DataGridTextColumn Header="{DynamicResource LblLastActivity}" Binding="{Binding LastActivityLabel}" Width="160" />
+                    <DataGridTextColumn Header="{DynamicResource LblTotalGold21}" Binding="{Binding TotalGold21, Converter={StaticResource MoneyFormatConverter}, ConverterParameter='g'}" Width="180" />
+                    <DataGridTextColumn Header="{DynamicResource LblNetGold21}" Binding="{Binding NetGold21, Converter={StaticResource MoneyFormatConverter}, ConverterParameter='g'}" Width="180" />
+                    <DataGridTextColumn Header="{DynamicResource LblLastUpdated}" Binding="{Binding LastActivityLabel}" Width="170" />
                 </DataGrid.Columns>
             </DataGrid>
         </Border>
     </Grid>
 </UserControl>
+

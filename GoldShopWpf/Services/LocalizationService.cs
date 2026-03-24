@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Linq;
 using System.Windows;
 
 namespace GoldShopWpf.Services;
@@ -18,11 +19,15 @@ public static class LocalizationService
         };
 
         var appResources = Application.Current.Resources.MergedDictionaries;
+        var existing = appResources.FirstOrDefault(d =>
+            d.Source != null &&
+            (d.Source.OriginalString.EndsWith(ArPath, System.StringComparison.OrdinalIgnoreCase) ||
+             d.Source.OriginalString.EndsWith(EnPath, System.StringComparison.OrdinalIgnoreCase)));
 
-        // ensure first dictionary is our strings
-        if (appResources.Count > 0)
+        if (existing != null)
         {
-            appResources[0] = dict;
+            var index = appResources.IndexOf(existing);
+            appResources[index] = dict;
         }
         else
         {
@@ -33,16 +38,23 @@ public static class LocalizationService
         {
             Application.Current.Resources["AppFlowDirection"] = FlowDirection.LeftToRight;
             Application.Current.Resources["AppFontFamily"] = new System.Windows.Media.FontFamily("Segoe UI");
-            System.Globalization.CultureInfo.CurrentCulture = new System.Globalization.CultureInfo("en-US");
-            System.Globalization.CultureInfo.CurrentUICulture = new System.Globalization.CultureInfo("en-US");
+            var culture = new CultureInfo("en-US");
+            CultureInfo.CurrentCulture = culture;
+            CultureInfo.CurrentUICulture = culture;
+            CultureInfo.DefaultThreadCurrentCulture = culture;
+            CultureInfo.DefaultThreadCurrentUICulture = culture;
             CurrentLanguage = "en";
         }
         else
         {
             Application.Current.Resources["AppFlowDirection"] = FlowDirection.RightToLeft;
             Application.Current.Resources["AppFontFamily"] = new System.Windows.Media.FontFamily("Tahoma");
-            System.Globalization.CultureInfo.CurrentCulture = new System.Globalization.CultureInfo("ar-EG");
-            System.Globalization.CultureInfo.CurrentUICulture = new System.Globalization.CultureInfo("ar-EG");
+            var numberCulture = new CultureInfo("en-US");
+            var uiCulture = new CultureInfo("ar-EG");
+            CultureInfo.CurrentCulture = numberCulture;
+            CultureInfo.CurrentUICulture = uiCulture;
+            CultureInfo.DefaultThreadCurrentCulture = numberCulture;
+            CultureInfo.DefaultThreadCurrentUICulture = uiCulture;
             CurrentLanguage = "ar";
         }
     }

@@ -1,4 +1,5 @@
 using System.Windows.Input;
+using GoldShopWpf.Services;
 
 namespace GoldShopWpf.ViewModels;
 
@@ -17,7 +18,17 @@ public class RelayCommand : ICommand
 
     public bool CanExecute(object? parameter) => _canExecute?.Invoke(parameter) ?? true;
 
-    public void Execute(object? parameter) => _execute(parameter);
+    public void Execute(object? parameter)
+    {
+        try
+        {
+            _execute(parameter);
+        }
+        catch (Exception ex)
+        {
+            ExceptionReporter.Report(ex, "Command execution failed");
+        }
+    }
 
     public void RaiseCanExecuteChanged() => CanExecuteChanged?.Invoke(this, EventArgs.Empty);
 }

@@ -86,11 +86,11 @@ public class WeeklyReportForm : Form
         {
             _grid.Rows.Add(
                 report.SupplierName,
-                report.GoldGiven.ToString("0.00"),
-                report.GoldReceived.ToString("0.00"),
-                report.PaymentsIssued.ToString("0.00"),
-                report.PaymentsReceived.ToString("0.00"),
-                report.CurrentBalance.ToString("0.00")
+                $"{report.GoldGiven:0.00} EGP",
+                $"{report.GoldReceived:0.00} EGP",
+                $"{report.PaymentsIssued:0.00} EGP",
+                $"{report.PaymentsReceived:0.00} EGP",
+                $"{report.CurrentBalance:0.00} EGP"
             );
         }
     }

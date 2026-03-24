@@ -1,5 +1,4 @@
-﻿using System.Collections.ObjectModel;
-using GoldShopCore.Models;
+using System.Collections.ObjectModel;
 using GoldShopWpf.Services;
 
 namespace GoldShopWpf.ViewModels;
@@ -50,7 +49,6 @@ public class StatementViewModel : ViewModelBase
     {
         GenerateCommand = new RelayCommand(_ => GenerateStatement());
         PrintCommand = new RelayCommand(_ => PrintStatement());
-
         LoadSuppliers();
     }
 
@@ -63,7 +61,9 @@ public class StatementViewModel : ViewModelBase
             {
                 Id = supplier.Id,
                 Name = supplier.Name,
-                Phone = supplier.Phone ?? string.Empty
+                Phone = supplier.Phone ?? string.Empty,
+                WorkerName = supplier.WorkerName ?? string.Empty,
+                WorkerPhone = supplier.WorkerPhone ?? string.Empty
             });
         }
 
@@ -73,87 +73,58 @@ public class StatementViewModel : ViewModelBase
 
     private void GenerateStatement()
     {
+        if (FromDate > ToDate)
+        {
+            System.Windows.MessageBox.Show("From date must be before To date.", "Validation", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+            return;
+        }
+
         if (SelectedSupplier == null)
         {
-            StatementText = System.Windows.Application.Current.TryFindResource("LblNoSupplier")?.ToString() ?? string.Empty;
+            StatementText = "Select a trader to generate a statement.";
             return;
         }
 
         var transactions = AppServices.TransactionService.GetTransactions(SelectedSupplier.Id, FromDate.Date, ToDate.Date);
-
-        var isArabic = GoldShopWpf.Services.LocalizationService.CurrentLanguage == "ar";
-        var supplierLabel = isArabic ? "المورد" : "Supplier";
-        var dateRangeLabel = isArabic ? "الفترة" : "Date Range";
-        var finalBalanceLabel = isArabic ? "الرصيد النهائي" : "Final Balance";
-        var dateHeader = System.Windows.Application.Current.TryFindResource("LblDate")?.ToString() ?? "Date";
-        var typeHeader = System.Windows.Application.Current.TryFindResource("LblType")?.ToString() ?? "Type";
-        var detailsHeader = System.Windows.Application.Current.TryFindResource("LblDescription")?.ToString() ?? "Details";
-        var amountHeader = System.Windows.Application.Current.TryFindResource("LblAmount")?.ToString() ?? "Amount";
-        var balanceHeader = System.Windows.Application.Current.TryFindResource("LblBalance")?.ToString() ?? "Balance";
+        var summary = AppServices.TransactionService.GetSummary(SelectedSupplier.Id, FromDate.Date, ToDate.Date);
 
         var lines = new List<string>
         {
-            (string)System.Windows.Application.Current.TryFindResource("LblStatementTitle") ?? "Supplier Statement",
-            $"{supplierLabel}: {SelectedSupplier.Name}",
-            $"{dateRangeLabel}: {FromDate:yyyy-MM-dd} - {ToDate:yyyy-MM-dd}",
-            new string('-', 72),
-            string.Format("{0,-12} {1,-18} {2,-22} {3,10} {4,10}", dateHeader, typeHeader, detailsHeader, amountHeader, balanceHeader),
-            new string('-', 72)
+            "Trader Statement",
+            $"Trader: {SelectedSupplier.Name}",
+            $"Date Range: {FromDate:yyyy-MM-dd} - {ToDate:yyyy-MM-dd}",
+            new string('-', 150),
+            string.Format("{0,-12} {1,-4} {2,10} {3,7} {4,10} {5,12} {6,12} {7,-28} {8,-16} {9,-16}",
+                "Date", "Type", "Weight", "Karat", "Eq21", "Mfg Total", "Imp Total", "Traceability", "Created", "Updated"),
+            new string('-', 150)
         };
 
-        decimal balance = 0m;
         foreach (var transaction in transactions)
         {
-            var amount = transaction.Amount;
-            balance += IsIncrease(transaction.Type) ? amount : -amount;
-
-            var typeLabel = isArabic
-                ? GetArabicTypeLabel(transaction.Type)
-                : GetEnglishTypeLabel(transaction.Type);
-
             lines.Add(string.Format(
-                "{0,-12} {1,-18} {2,-22} {3,10} {4,10}",
+                "{0,-12} {1,-4} {2,10} {3,7} {4,10} {5,12} {6,12} {7,-28} {8,-16} {9,-16}",
                 transaction.Date.ToString("yyyy-MM-dd"),
-                typeLabel,
-                Truncate(transaction.Description, 22),
-                amount.ToString("0.00"),
-                balance.ToString("0.00")
-            ));
+                transaction.Type,
+                FormatNumber(transaction.OriginalWeight, "g"),
+                $"{transaction.OriginalKarat}K",
+                FormatNumber(transaction.Equivalent21, "g"),
+                FormatNumber(transaction.TotalManufacturing, string.Empty),
+                FormatNumber(transaction.TotalImprovement, string.Empty),
+                Truncate(transaction.Description, 28),
+                transaction.CreatedAt.ToString("yyyy-MM-dd HH:mm"),
+                transaction.UpdatedAt.ToString("yyyy-MM-dd HH:mm")));
         }
 
-        lines.Add(new string('-', 72));
-        lines.Add($"{finalBalanceLabel}: {balance:0.00}");
+        lines.Add(new string('-', 150));
+        lines.Add($"Total Gold (21K): {FormatNumber(summary.TotalGold21, "g")}");
+        lines.Add($"Total Manufacturing: {FormatNumber(summary.TotalManufacturing, string.Empty)}");
+        lines.Add($"Total Improvement: {FormatNumber(summary.TotalImprovement, string.Empty)}");
+        lines.Add($"Manufacturing Discounts: {FormatNumber(summary.ManufacturingDiscounts, string.Empty)}");
+        lines.Add($"Improvement Discounts: {FormatNumber(summary.ImprovementDiscounts, string.Empty)}");
+        lines.Add($"Final Manufacturing: {FormatNumber(summary.FinalManufacturing, string.Empty)}");
+        lines.Add($"Final Improvement: {FormatNumber(summary.FinalImprovement, string.Empty)}");
 
         StatementText = string.Join(Environment.NewLine, lines);
-    }
-
-    private static string GetArabicTypeLabel(TransactionType type)
-    {
-        return type switch
-        {
-            TransactionType.GoldGiven => "ذهب طالع",
-            TransactionType.GoldReceived => "ذهب داخل",
-            TransactionType.PaymentIssued => "دفعة خارجة",
-            TransactionType.PaymentReceived => "دفعة داخلة",
-            _ => string.Empty
-        };
-    }
-
-    private static string GetEnglishTypeLabel(TransactionType type)
-    {
-        return type switch
-        {
-            TransactionType.GoldGiven => "Gold Given",
-            TransactionType.GoldReceived => "Gold Received",
-            TransactionType.PaymentIssued => "Payment Issued",
-            TransactionType.PaymentReceived => "Payment Received",
-            _ => string.Empty
-        };
-    }
-
-    private static bool IsIncrease(TransactionType type)
-    {
-        return type == TransactionType.GoldGiven || type == TransactionType.PaymentReceived;
     }
 
     private static string Truncate(string? value, int length)
@@ -162,8 +133,12 @@ public class StatementViewModel : ViewModelBase
         {
             return string.Empty;
         }
-        return value.Length <= length ? value : value.Substring(0, length - 3) + "...";
+
+        return value.Length <= length ? value : value[..(length - 3)] + "...";
     }
+
+    private static string FormatNumber(decimal value, string suffix)
+        => string.IsNullOrWhiteSpace(suffix) ? $"{value:0.00}" : $"{value:0.00} {suffix}";
 
     private void PrintStatement()
     {

@@ -10,12 +10,16 @@ public class SupplierDetailsViewModel : ViewModelBase
     private DateTime? _fromDate;
     private DateTime? _toDate;
     private TransactionRow? _selectedTransaction;
-    private decimal _currentBalance;
-    private decimal _totalDebit;
-    private decimal _totalCredit;
     private SupplierListItem? _selectedSupplierOption;
+    private decimal _totalGold21;
+    private decimal _totalManufacturing;
+    private decimal _totalImprovement;
+    private decimal _manufacturingDiscounts;
+    private decimal _improvementDiscounts;
 
     public ObservableCollection<SupplierListItem> SupplierOptions { get; } = new();
+    public ObservableCollection<TransactionRow> Transactions { get; } = new();
+    public ObservableCollection<DiscountListItem> Discounts { get; } = new();
 
     public SupplierListItem? SelectedSupplierOption
     {
@@ -24,7 +28,7 @@ public class SupplierDetailsViewModel : ViewModelBase
         {
             if (SetProperty(ref _selectedSupplierOption, value))
             {
-                Supplier = value?.Id == 0 ? null : value;
+                Supplier = value;
                 Load();
             }
         }
@@ -37,16 +41,17 @@ public class SupplierDetailsViewModel : ViewModelBase
         {
             if (SetProperty(ref _supplier, value))
             {
-                AddGoldCommand.RaiseCanExecuteChanged();
-                AddPaymentCommand.RaiseCanExecuteChanged();
+                AddTransactionCommand.RaiseCanExecuteChanged();
+                AddDiscountCommand.RaiseCanExecuteChanged();
+                EditTransactionCommand.RaiseCanExecuteChanged();
+                DeleteTransactionCommand.RaiseCanExecuteChanged();
                 PrintStatementCommand.RaiseCanExecuteChanged();
                 OnPropertyChanged(nameof(SupplierDisplayName));
             }
         }
     }
 
-    public string SupplierDisplayName
-        => Supplier?.Name ?? (System.Windows.Application.Current.TryFindResource("LblAllSuppliers")?.ToString() ?? string.Empty);
+    public string SupplierDisplayName => Supplier?.Name ?? string.Empty;
 
     public DateTime? FromDate
     {
@@ -73,30 +78,43 @@ public class SupplierDetailsViewModel : ViewModelBase
         }
     }
 
-    public decimal CurrentBalance
+    public decimal TotalGold21
     {
-        get => _currentBalance;
-        set => SetProperty(ref _currentBalance, value);
+        get => _totalGold21;
+        set => SetProperty(ref _totalGold21, value);
     }
 
-    public decimal TotalDebit
+    public decimal TotalManufacturing
     {
-        get => _totalDebit;
-        set => SetProperty(ref _totalDebit, value);
+        get => _totalManufacturing;
+        set => SetProperty(ref _totalManufacturing, value);
     }
 
-    public decimal TotalCredit
+    public decimal TotalImprovement
     {
-        get => _totalCredit;
-        set => SetProperty(ref _totalCredit, value);
+        get => _totalImprovement;
+        set => SetProperty(ref _totalImprovement, value);
     }
 
-    public ObservableCollection<TransactionRow> Transactions { get; } = new();
+    public decimal ManufacturingDiscounts
+    {
+        get => _manufacturingDiscounts;
+        set => SetProperty(ref _manufacturingDiscounts, value);
+    }
+
+    public decimal ImprovementDiscounts
+    {
+        get => _improvementDiscounts;
+        set => SetProperty(ref _improvementDiscounts, value);
+    }
+
+    public decimal FinalManufacturing => TotalManufacturing - ManufacturingDiscounts;
+    public decimal FinalImprovement => TotalImprovement - ImprovementDiscounts;
 
     public RelayCommand ApplyFilterCommand { get; }
     public RelayCommand ClearFilterCommand { get; }
-    public RelayCommand AddGoldCommand { get; }
-    public RelayCommand AddPaymentCommand { get; }
+    public RelayCommand AddTransactionCommand { get; }
+    public RelayCommand AddDiscountCommand { get; }
     public RelayCommand EditTransactionCommand { get; }
     public RelayCommand DeleteTransactionCommand { get; }
     public RelayCommand PrintStatementCommand { get; }
@@ -110,8 +128,8 @@ public class SupplierDetailsViewModel : ViewModelBase
             ToDate = null;
             Load();
         });
-        AddGoldCommand = new RelayCommand(_ => AddTransaction(TransactionType.GoldGiven), _ => Supplier != null);
-        AddPaymentCommand = new RelayCommand(_ => AddTransaction(TransactionType.PaymentIssued), _ => Supplier != null);
+        AddTransactionCommand = new RelayCommand(_ => AddTransaction(), _ => Supplier != null);
+        AddDiscountCommand = new RelayCommand(_ => AddDiscount(), _ => Supplier != null);
         EditTransactionCommand = new RelayCommand(_ => EditTransaction(), _ => Supplier != null && SelectedTransaction != null);
         DeleteTransactionCommand = new RelayCommand(_ => DeleteTransaction(), _ => Supplier != null && SelectedTransaction != null);
         PrintStatementCommand = new RelayCommand(_ => PrintStatement(), _ => Supplier != null);
@@ -119,34 +137,12 @@ public class SupplierDetailsViewModel : ViewModelBase
         LoadSupplierOptions();
     }
 
-    private void LoadSupplierOptions()
-    {
-        SupplierOptions.Clear();
-        SupplierOptions.Add(new SupplierListItem
-        {
-            Id = 0,
-            Name = System.Windows.Application.Current.TryFindResource("LblAllSuppliers")?.ToString() ?? "All suppliers"
-        });
-
-        foreach (var supplier in AppServices.SupplierService.GetSuppliers())
-        {
-            SupplierOptions.Add(new SupplierListItem { Id = supplier.Id, Name = supplier.Name });
-        }
-
-        SelectedSupplierOption ??= SupplierOptions.FirstOrDefault();
-    }
-
     public void RefreshLocalization()
     {
         LoadSupplierOptions();
-        if (Supplier != null)
-        {
-            SelectedSupplierOption = SupplierOptions.FirstOrDefault(s => s.Id == Supplier.Id);
-        }
-        else
-        {
-            SelectedSupplierOption = SupplierOptions.FirstOrDefault(s => s.Id == 0);
-        }
+        SelectedSupplierOption = Supplier != null
+            ? SupplierOptions.FirstOrDefault(s => s.Id == Supplier.Id)
+            : SupplierOptions.FirstOrDefault();
     }
 
     public void LoadForSupplier(SupplierListItem supplier)
@@ -161,80 +157,149 @@ public class SupplierDetailsViewModel : ViewModelBase
 
     public void LoadAll()
     {
-        Supplier = null;
         LoadSupplierOptions();
-        SelectedSupplierOption = SupplierOptions.FirstOrDefault(s => s.Id == 0);
+        Supplier = SupplierOptions.FirstOrDefault();
+        SelectedSupplierOption = Supplier;
         FromDate ??= DateTime.Today.AddMonths(-1);
         ToDate ??= DateTime.Today;
         Load();
     }
 
-    private void Load()
+    private void LoadSupplierOptions()
     {
-        Transactions.Clear();
+        SupplierOptions.Clear();
 
-        var suppliers = AppServices.SupplierService.GetSuppliers();
-        var supplierLookup = suppliers.ToDictionary(s => s.Id, s => s.Name);
-
-        var transactions = Supplier != null
-            ? AppServices.TransactionService.GetTransactions(Supplier.Id, FromDate, ToDate)
-            : AppServices.TransactionService.GetTransactions(FromDate, ToDate);
-
-        var balanceBySupplier = new Dictionary<int, decimal>();
-        decimal totalDebit = 0m;
-        decimal totalCredit = 0m;
-
-        foreach (var transaction in transactions)
+        foreach (var supplier in AppServices.SupplierService.GetSuppliers())
         {
-            var amount = transaction.Amount;
-            balanceBySupplier.TryGetValue(transaction.SupplierId, out var bal);
-            bal += IsIncrease(transaction.Type) ? amount : -amount;
-            balanceBySupplier[transaction.SupplierId] = bal;
-            totalDebit += IsIncrease(transaction.Type) ? amount : 0m;
-            totalCredit += IsDecrease(transaction.Type) ? amount : 0m;
-
-            Transactions.Add(new TransactionRow
+            SupplierOptions.Add(new SupplierListItem
             {
-                Id = transaction.Id,
-                SupplierName = supplierLookup.TryGetValue(transaction.SupplierId, out var sname) ? sname : string.Empty,
-                Date = transaction.Date,
-                Type = transaction.Type,
-                Description = transaction.Description ?? string.Empty,
-                Amount = amount,
-                Balance = bal,
-                Notes = transaction.Notes ?? string.Empty
+                Id = supplier.Id,
+                Name = supplier.Name,
+                Phone = supplier.Phone ?? string.Empty,
+                WorkerName = supplier.WorkerName ?? string.Empty,
+                WorkerPhone = supplier.WorkerPhone ?? string.Empty
             });
         }
 
-        CurrentBalance = Supplier != null && balanceBySupplier.TryGetValue(Supplier.Id, out var b) ? b : 0m;
-        TotalDebit = totalDebit;
-        TotalCredit = totalCredit;
+        SelectedSupplierOption ??= SupplierOptions.FirstOrDefault();
     }
 
-    private void AddTransaction(TransactionType type)
+    private void Load()
+    {
+        if (FromDate.HasValue && ToDate.HasValue && FromDate > ToDate)
+        {
+            var msg = LocalizationService.CurrentLanguage == "ar"
+                ? "تاريخ البداية يجب أن يكون قبل تاريخ النهاية"
+                : "From date must be before To date.";
+            System.Windows.MessageBox.Show(msg, "Validation", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+            return;
+        }
+
+        Transactions.Clear();
+        Discounts.Clear();
+
+        if (Supplier == null)
+        {
+            return;
+        }
+
+        foreach (var transaction in AppServices.TransactionService.GetTransactions(Supplier.Id, FromDate, ToDate))
+        {
+            Transactions.Add(new TransactionRow
+            {
+                Id = transaction.Id,
+                SupplierName = Supplier.Name,
+                Date = transaction.Date,
+                Type = transaction.Type,
+                OriginalWeight = transaction.OriginalWeight,
+                OriginalKarat = transaction.OriginalKarat,
+                Equivalent21 = transaction.Equivalent21,
+                ManufacturingPerGram = transaction.ManufacturingPerGram,
+                ImprovementPerGram = transaction.ImprovementPerGram,
+                TotalManufacturing = transaction.TotalManufacturing,
+                TotalImprovement = transaction.TotalImprovement,
+                Traceability = transaction.Description ?? string.Empty,
+                Notes = transaction.Notes ?? string.Empty,
+                CreatedAt = transaction.CreatedAt,
+                UpdatedAt = transaction.UpdatedAt
+            });
+        }
+
+        foreach (var discount in AppServices.DiscountService.GetDiscounts(Supplier.Id, FromDate, ToDate))
+        {
+            Discounts.Add(new DiscountListItem
+            {
+                Id = discount.Id,
+                Type = discount.Type,
+                Amount = discount.Amount,
+                Notes = discount.Notes ?? string.Empty,
+                CreatedAt = discount.CreatedAt
+            });
+        }
+
+        var summary = AppServices.TransactionService.GetSummary(Supplier.Id, FromDate, ToDate);
+        TotalGold21 = summary.TotalGold21;
+        TotalManufacturing = summary.TotalManufacturing;
+        TotalImprovement = summary.TotalImprovement;
+        ManufacturingDiscounts = summary.ManufacturingDiscounts;
+        ImprovementDiscounts = summary.ImprovementDiscounts;
+        OnPropertyChanged(nameof(FinalManufacturing));
+        OnPropertyChanged(nameof(FinalImprovement));
+    }
+
+    private void AddTransaction()
     {
         if (Supplier == null)
         {
             return;
         }
 
-        var suppliers = AppServices.SupplierService.GetSuppliers()
-            .Select(s => new SupplierListItem { Id = s.Id, Name = s.Name, Phone = s.Phone ?? string.Empty })
-            .ToList();
-        var dialog = new Views.TransactionWindow(Supplier.Id, Supplier.Name, suppliers, null, DateTime.Today, type, string.Empty, 0m, string.Empty);
-        if (dialog.ShowDialog() == true)
+        var dialog = new Views.TransactionWindow(Supplier.Id, SupplierOptions);
+        if (dialog.ShowDialog() != true)
+        {
+            return;
+        }
+
+        try
         {
             AppServices.TransactionService.AddTransaction(
                 Supplier.Id,
                 dialog.TransactionDate,
                 dialog.TransactionType,
-                dialog.Description,
-                dialog.Amount,
-                dialog.GoldWeight,
-                dialog.GoldPurity,
-                TransactionCategory.None,
+                dialog.OriginalWeight,
+                dialog.OriginalKarat,
+                dialog.ManufacturingPerGram,
+                dialog.ImprovementPerGram,
                 dialog.Notes);
             Load();
+        }
+        catch (ArgumentException ex)
+        {
+            System.Windows.MessageBox.Show(ex.Message, "Validation", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+        }
+    }
+
+    private void AddDiscount()
+    {
+        if (Supplier == null)
+        {
+            return;
+        }
+
+        var dialog = new Views.DiscountWindow();
+        if (dialog.ShowDialog() != true)
+        {
+            return;
+        }
+
+        try
+        {
+            AppServices.DiscountService.AddDiscount(Supplier.Id, dialog.DiscountType, dialog.Amount, dialog.Notes);
+            Load();
+        }
+        catch (ArgumentException ex)
+        {
+            System.Windows.MessageBox.Show(ex.Message, "Validation", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
         }
     }
 
@@ -245,34 +310,55 @@ public class SupplierDetailsViewModel : ViewModelBase
             return;
         }
 
-        var suppliers = AppServices.SupplierService.GetSuppliers()
-            .Select(s => new SupplierListItem { Id = s.Id, Name = s.Name, Phone = s.Phone ?? string.Empty })
-            .ToList();
-        var dialog = new Views.TransactionWindow(
-            Supplier.Id,
-            Supplier.Name,
-            suppliers,
-            SelectedTransaction.Id,
-            SelectedTransaction.Date,
-            SelectedTransaction.Type,
-            SelectedTransaction.Description,
-            SelectedTransaction.Amount,
-            SelectedTransaction.Notes);
+        var transaction = Transactions.FirstOrDefault(t => t.Id == SelectedTransaction.Id);
+        if (transaction == null)
+        {
+            return;
+        }
 
-        if (dialog.ShowDialog() == true)
+        var item = new TransactionListItem
+        {
+            Id = transaction.Id,
+            SupplierId = Supplier.Id,
+            SupplierName = Supplier.Name,
+            Date = transaction.Date,
+            Type = transaction.Type,
+            OriginalWeight = transaction.OriginalWeight,
+            OriginalKarat = transaction.OriginalKarat,
+            Equivalent21 = transaction.Equivalent21,
+            ManufacturingPerGram = transaction.ManufacturingPerGram,
+            ImprovementPerGram = transaction.ImprovementPerGram,
+            TotalManufacturing = transaction.TotalManufacturing,
+            TotalImprovement = transaction.TotalImprovement,
+            Traceability = transaction.Traceability,
+            Notes = transaction.Notes,
+            CreatedAt = transaction.CreatedAt,
+            UpdatedAt = transaction.UpdatedAt
+        };
+
+        var dialog = new Views.TransactionWindow(item, SupplierOptions);
+        if (dialog.ShowDialog() != true)
+        {
+            return;
+        }
+
+        try
         {
             AppServices.TransactionService.UpdateTransaction(
                 SelectedTransaction.Id,
                 Supplier.Id,
                 dialog.TransactionDate,
                 dialog.TransactionType,
-                dialog.Description,
-                dialog.Amount,
-                dialog.GoldWeight,
-                dialog.GoldPurity,
-                TransactionCategory.None,
+                dialog.OriginalWeight,
+                dialog.OriginalKarat,
+                dialog.ManufacturingPerGram,
+                dialog.ImprovementPerGram,
                 dialog.Notes);
             Load();
+        }
+        catch (ArgumentException ex)
+        {
+            System.Windows.MessageBox.Show(ex.Message, "Validation", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
         }
     }
 
@@ -305,15 +391,5 @@ public class SupplierDetailsViewModel : ViewModelBase
 
         var statementWindow = new Views.StatementWindow(Supplier.Id, Supplier.Name, FromDate, ToDate);
         statementWindow.ShowDialog();
-    }
-
-    private static bool IsIncrease(TransactionType type)
-    {
-        return type == TransactionType.GoldGiven || type == TransactionType.PaymentReceived;
-    }
-
-    private static bool IsDecrease(TransactionType type)
-    {
-        return type == TransactionType.GoldReceived || type == TransactionType.PaymentIssued;
     }
 }

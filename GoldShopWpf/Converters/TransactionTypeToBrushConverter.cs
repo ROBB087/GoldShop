@@ -11,7 +11,7 @@ public class TransactionTypeToBrushConverter : IValueConverter
     {
         if (value is TransactionType type)
         {
-            return type is TransactionType.GoldGiven or TransactionType.GoldReceived
+            return type == TransactionType.Out
                 ? new SolidColorBrush(Color.FromRgb(212, 175, 55))
                 : new SolidColorBrush(Color.FromRgb(46, 125, 50));
         }

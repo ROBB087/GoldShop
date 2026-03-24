@@ -68,7 +68,7 @@ public class TransactionForm : Form
         _descriptionText = new TextBox { Dock = DockStyle.Fill };
         layout.Controls.Add(_descriptionText, 1, 2);
 
-        layout.Controls.Add(new Label { Text = "Amount", Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft }, 0, 3);
+        layout.Controls.Add(new Label { Text = "Amount (EGP)", Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft }, 0, 3);
         _amountNumeric = new NumericUpDown { Dock = DockStyle.Fill, Maximum = 100000000, DecimalPlaces = 2 };
         layout.Controls.Add(_amountNumeric, 1, 3);
 

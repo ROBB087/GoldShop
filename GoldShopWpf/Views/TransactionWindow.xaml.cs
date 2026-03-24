@@ -1,6 +1,7 @@
-﻿using System.Globalization;
+using System.Globalization;
 using System.Windows;
 using GoldShopCore.Models;
+using GoldShopCore.Services;
 using GoldShopWpf.ViewModels;
 
 namespace GoldShopWpf.Views;
@@ -8,55 +9,34 @@ namespace GoldShopWpf.Views;
 public partial class TransactionWindow : Window
 {
     private sealed record TypeOption(string Label, TransactionType Type);
-    public int SupplierId => (int)(SupplierCombo.SelectedValue ?? 0);
+
+    public int SupplierId => SupplierCombo.SelectedItem is SupplierListItem s ? s.Id : 0;
     public DateTime TransactionDate => DatePicker.SelectedDate ?? DateTime.Today;
-    public TransactionType TransactionType => (TransactionType)(TypeCombo.SelectedValue ?? TransactionType.GoldGiven);
-    public decimal Amount => decimal.TryParse(AmountText.Text, NumberStyles.Number, CultureInfo.CurrentCulture, out var value) ? value : 0m;
-    public decimal GoldWeight => decimal.TryParse(WeightText.Text, NumberStyles.Number, CultureInfo.CurrentCulture, out var value) ? value : 0m;
-    public string GoldPurity => PurityText.Text.Trim();
+    public TransactionType TransactionType => (TransactionType)(TypeCombo.SelectedValue ?? TransactionType.Out);
+    public decimal OriginalWeight => ParseDecimal(WeightText.Text);
+    public int OriginalKarat => KaratCombo.SelectedItem is int karat ? karat : 21;
+    public decimal ManufacturingPerGram => ParseDecimal(ManufacturingText.Text);
+    public decimal ImprovementPerGram => ParseDecimal(ImprovementText.Text);
     public string? Notes => string.IsNullOrWhiteSpace(NotesText.Text) ? null : NotesText.Text.Trim();
 
-    public string? Description
-    {
-        get
-        {
-            var isArabic = GoldShopWpf.Services.LocalizationService.CurrentLanguage == "ar";
-            if (TransactionType is TransactionType.GoldGiven or TransactionType.GoldReceived)
-            {
-                var parts = new List<string>();
-                if (GoldWeight > 0) parts.Add(isArabic ? $"وزن {GoldWeight:0.##} ج" : $"Weight {GoldWeight:0.##} g");
-                if (!string.IsNullOrWhiteSpace(GoldPurity)) parts.Add(isArabic ? $"عيار {GoldPurity}" : $"Purity {GoldPurity}");
-                if (parts.Count == 0)
-                {
-                    return TransactionType == TransactionType.GoldGiven
-                        ? (isArabic ? "ذهب طالع" : "Gold given")
-                        : (isArabic ? "ذهب داخل" : "Gold received");
-                }
-                return string.Join(", ", parts);
-            }
-
-            return TransactionType == TransactionType.PaymentIssued
-                ? (isArabic ? "دفعة خارجة" : "Payment issued")
-                : (isArabic ? "دفعة داخلة" : "Payment received");
-        }
-    }
-
-    public TransactionWindow(int? supplierId, string supplierName, IEnumerable<SupplierListItem> suppliers)
-        : this(supplierId, supplierName, suppliers, null, DateTime.Today, TransactionType.GoldGiven, string.Empty, 0m, string.Empty)
+    public TransactionWindow(int? supplierId, IEnumerable<SupplierListItem> suppliers)
+        : this(null, supplierId, suppliers)
     {
     }
 
-    public TransactionWindow(int? supplierId, string supplierName, IEnumerable<SupplierListItem> suppliers, int? id, DateTime date, TransactionType type, string details, decimal amount, string notes)
+    public TransactionWindow(TransactionListItem transaction, IEnumerable<SupplierListItem> suppliers)
+        : this(transaction, transaction.SupplierId, suppliers)
+    {
+    }
+
+    private TransactionWindow(TransactionListItem? transaction, int? supplierId, IEnumerable<SupplierListItem> suppliers)
     {
         InitializeComponent();
-        Title = id == null ? "Add Transaction" : "Edit Transaction";
+        Title = transaction == null ? "Add Transaction" : "Edit Transaction";
 
         SupplierCombo.ItemsSource = suppliers.ToList();
-        if (supplierId.HasValue)
-        {
-            SupplierCombo.SelectedValue = supplierId.Value;
-        }
-        else
+        SupplierCombo.SelectedValue = supplierId ?? 0;
+        if (SupplierCombo.SelectedIndex < 0 && SupplierCombo.Items.Count > 0)
         {
             SupplierCombo.SelectedIndex = 0;
         }
@@ -64,91 +44,65 @@ public partial class TransactionWindow : Window
         var isArabic = GoldShopWpf.Services.LocalizationService.CurrentLanguage == "ar";
         TypeCombo.ItemsSource = new[]
         {
-            new TypeOption(isArabic ? "ذهب طالع" : "Gold Given", TransactionType.GoldGiven),
-            new TypeOption(isArabic ? "ذهب داخل" : "Gold Received", TransactionType.GoldReceived),
-            new TypeOption(isArabic ? "دفعة خارجة" : "Payment Issued", TransactionType.PaymentIssued),
-            new TypeOption(isArabic ? "دفعة داخلة" : "Payment Received", TransactionType.PaymentReceived)
+            new TypeOption(isArabic ? "خارج" : "OUT", TransactionType.Out),
+            new TypeOption(isArabic ? "داخل" : "IN", TransactionType.In)
         };
 
-        DatePicker.SelectedDate = date;
-        TypeCombo.SelectedValue = type;
-        AmountText.Text = amount == 0m ? string.Empty : amount.ToString("0.00", CultureInfo.CurrentCulture);
-        NotesText.Text = notes;
+        KaratCombo.ItemsSource = new[] { 18, 21, 22, 24 };
+        DatePicker.SelectedDate = transaction?.Date ?? DateTime.Today;
+        TypeCombo.SelectedValue = transaction?.Type ?? TransactionType.Out;
+        WeightText.Text = transaction == null ? string.Empty : transaction.OriginalWeight.ToString("0.####", CultureInfo.CurrentCulture);
+        KaratCombo.SelectedItem = transaction?.OriginalKarat ?? 21;
+        ManufacturingText.Text = transaction == null ? string.Empty : transaction.ManufacturingPerGram.ToString("0.####", CultureInfo.CurrentCulture);
+        ImprovementText.Text = transaction == null ? string.Empty : transaction.ImprovementPerGram.ToString("0.####", CultureInfo.CurrentCulture);
+        NotesText.Text = transaction?.Notes ?? string.Empty;
 
-        if (type is TransactionType.GoldGiven or TransactionType.GoldReceived)
-        {
-            ParseGoldDetails(details);
-        }
+        WeightText.TextChanged += (_, _) => UpdatePreview();
+        ManufacturingText.TextChanged += (_, _) => UpdatePreview();
+        ImprovementText.TextChanged += (_, _) => UpdatePreview();
+        KaratCombo.SelectionChanged += (_, _) => UpdatePreview();
 
-        UpdateGoldFieldsVisibility();
+        UpdatePreview();
     }
 
-    private void OnTypeChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+    private void UpdatePreview()
     {
-        UpdateGoldFieldsVisibility();
-    }
+        var equivalent21 = OriginalWeight > 0 ? TransactionService.CalculateEquivalent21(OriginalWeight, OriginalKarat) : 0m;
+        var totalManufacturing = OriginalWeight > 0 ? decimal.Round(OriginalWeight * ManufacturingPerGram, 4, MidpointRounding.AwayFromZero) : 0m;
+        var totalImprovement = equivalent21 > 0 ? decimal.Round(equivalent21 * ImprovementPerGram, 4, MidpointRounding.AwayFromZero) : 0m;
 
-    private void UpdateGoldFieldsVisibility()
-    {
-        var isGold = TransactionType is TransactionType.GoldGiven or TransactionType.GoldReceived;
-        var visibility = isGold ? Visibility.Visible : Visibility.Collapsed;
-        WeightLabel.Visibility = visibility;
-        WeightText.Visibility = visibility;
-        PurityLabel.Visibility = visibility;
-        PurityText.Visibility = visibility;
-    }
-
-    private void ParseGoldDetails(string details)
-    {
-        if (string.IsNullOrWhiteSpace(details))
-        {
-            return;
-        }
-
-        if (details.Contains("Weight", StringComparison.OrdinalIgnoreCase))
-        {
-            var parts = details.Split(',', StringSplitOptions.RemoveEmptyEntries);
-            foreach (var part in parts)
-            {
-                var trimmed = part.Trim();
-                if (trimmed.StartsWith("Weight", StringComparison.OrdinalIgnoreCase))
-                {
-                    var number = new string(trimmed.Where(ch => char.IsDigit(ch) || ch == '.' || ch == ',').ToArray());
-                    WeightText.Text = number;
-                }
-                else if (trimmed.StartsWith("Purity", StringComparison.OrdinalIgnoreCase))
-                {
-                    PurityText.Text = trimmed.Replace("Purity", string.Empty, StringComparison.OrdinalIgnoreCase).Trim();
-                }
-            }
-        }
+        EquivalentText.Text = $"21K Equivalent: {equivalent21:0.####} g";
+        ManufacturingTotalText.Text = $"Total Manufacturing: {totalManufacturing:0.####}";
+        ImprovementTotalText.Text = $"Total Improvement: {totalImprovement:0.####}";
+        TraceabilityText.Text = OriginalWeight > 0
+            ? $"This value is converted from {OriginalWeight:0.####} grams of {OriginalKarat} karat."
+            : "Enter weight and karat to preview the 21K conversion.";
     }
 
     private void OnSave(object sender, RoutedEventArgs e)
     {
         if (SupplierId == 0)
         {
-            MessageBox.Show(this, "Please select a supplier.", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show(this, "Please select a trader.", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
-        if (Amount <= 0)
+        try
         {
-            MessageBox.Show(this, "Amount must be greater than zero.", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
-            return;
+            TransactionService.Validate(OriginalWeight, OriginalKarat, ManufacturingPerGram, ImprovementPerGram);
+            DialogResult = true;
         }
-
-        if (TransactionType is TransactionType.GoldGiven or TransactionType.GoldReceived && GoldWeight <= 0)
+        catch (ArgumentException ex)
         {
-            MessageBox.Show(this, "Gold weight must be greater than zero.", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
-            return;
+            MessageBox.Show(this, ex.Message, "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
-
-        DialogResult = true;
     }
 
     private void OnCancel(object sender, RoutedEventArgs e)
     {
         DialogResult = false;
     }
+
+    private static decimal ParseDecimal(string text)
+        => decimal.TryParse(text, NumberStyles.Number, CultureInfo.CurrentCulture, out var value) ? value : 0m;
 }

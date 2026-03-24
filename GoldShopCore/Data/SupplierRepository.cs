@@ -12,7 +12,7 @@ public class SupplierRepository
         connection.Open();
 
         using var command = connection.CreateCommand();
-        command.CommandText = "SELECT Id, Name, Phone, Notes, CreatedAt FROM Suppliers ORDER BY Name";
+        command.CommandText = "SELECT Id, Name, Phone, WorkerName, WorkerPhone, Notes, CreatedAt FROM Suppliers ORDER BY Name";
 
         using var reader = command.ExecuteReader();
         while (reader.Read())
@@ -22,8 +22,10 @@ public class SupplierRepository
                 Id = reader.GetInt32(0),
                 Name = reader.GetString(1),
                 Phone = reader.IsDBNull(2) ? null : reader.GetString(2),
-                Notes = reader.IsDBNull(3) ? null : reader.GetString(3),
-                CreatedAt = DateTime.Parse(reader.GetString(4))
+                WorkerName = reader.IsDBNull(3) ? null : reader.GetString(3),
+                WorkerPhone = reader.IsDBNull(4) ? null : reader.GetString(4),
+                Notes = reader.IsDBNull(5) ? null : reader.GetString(5),
+                CreatedAt = DateTime.Parse(reader.GetString(6))
             });
         }
 
@@ -36,7 +38,7 @@ public class SupplierRepository
         connection.Open();
 
         using var command = connection.CreateCommand();
-        command.CommandText = "SELECT Id, Name, Phone, Notes, CreatedAt FROM Suppliers WHERE Id = $id";
+        command.CommandText = "SELECT Id, Name, Phone, WorkerName, WorkerPhone, Notes, CreatedAt FROM Suppliers WHERE Id = $id";
         command.Parameters.AddWithValue("$id", id);
 
         using var reader = command.ExecuteReader();
@@ -50,8 +52,10 @@ public class SupplierRepository
             Id = reader.GetInt32(0),
             Name = reader.GetString(1),
             Phone = reader.IsDBNull(2) ? null : reader.GetString(2),
-            Notes = reader.IsDBNull(3) ? null : reader.GetString(3),
-            CreatedAt = DateTime.Parse(reader.GetString(4))
+            WorkerName = reader.IsDBNull(3) ? null : reader.GetString(3),
+            WorkerPhone = reader.IsDBNull(4) ? null : reader.GetString(4),
+            Notes = reader.IsDBNull(5) ? null : reader.GetString(5),
+            CreatedAt = DateTime.Parse(reader.GetString(6))
         };
     }
 
@@ -62,12 +66,14 @@ public class SupplierRepository
 
         using var command = connection.CreateCommand();
         command.CommandText = @"
-INSERT INTO Suppliers (Name, Phone, Notes, CreatedAt)
-VALUES ($name, $phone, $notes, $createdAt);
+INSERT INTO Suppliers (Name, Phone, WorkerName, WorkerPhone, Notes, CreatedAt)
+VALUES ($name, $phone, $workerName, $workerPhone, $notes, $createdAt);
 SELECT last_insert_rowid();
 ";
         command.Parameters.AddWithValue("$name", supplier.Name);
         command.Parameters.AddWithValue("$phone", (object?)supplier.Phone ?? DBNull.Value);
+        command.Parameters.AddWithValue("$workerName", (object?)supplier.WorkerName ?? DBNull.Value);
+        command.Parameters.AddWithValue("$workerPhone", (object?)supplier.WorkerPhone ?? DBNull.Value);
         command.Parameters.AddWithValue("$notes", (object?)supplier.Notes ?? DBNull.Value);
         command.Parameters.AddWithValue("$createdAt", supplier.CreatedAt.ToString("yyyy-MM-dd"));
 
@@ -83,12 +89,14 @@ SELECT last_insert_rowid();
         using var command = connection.CreateCommand();
         command.CommandText = @"
 UPDATE Suppliers
-SET Name = $name, Phone = $phone, Notes = $notes
+SET Name = $name, Phone = $phone, WorkerName = $workerName, WorkerPhone = $workerPhone, Notes = $notes
 WHERE Id = $id;
 ";
         command.Parameters.AddWithValue("$id", supplier.Id);
         command.Parameters.AddWithValue("$name", supplier.Name);
         command.Parameters.AddWithValue("$phone", (object?)supplier.Phone ?? DBNull.Value);
+        command.Parameters.AddWithValue("$workerName", (object?)supplier.WorkerName ?? DBNull.Value);
+        command.Parameters.AddWithValue("$workerPhone", (object?)supplier.WorkerPhone ?? DBNull.Value);
         command.Parameters.AddWithValue("$notes", (object?)supplier.Notes ?? DBNull.Value);
 
         command.ExecuteNonQuery();

@@ -85,7 +85,7 @@ public class StatementForm : Form
             $"Supplier: {_supplier.Name}",
             $"Date Range: {from:yyyy-MM-dd} to {to:yyyy-MM-dd}",
             new string('-', 110),
-            string.Format("{0,-12} {1,-15} {2,-20} {3,10} {4,10} {5,8} {6,8} {7,10}", "Date", "Type", "Description", "Debit", "Credit", "Weight", "Purity", "Balance"),
+            string.Format("{0,-12} {1,-15} {2,-20} {3,14} {4,14} {5,8} {6,8} {7,14}", "Date", "Type", "Description", "Debit", "Credit", "Weight", "Purity", "Balance"),
             new string('-', 110)
         };
 
@@ -97,20 +97,20 @@ public class StatementForm : Form
             balance += debit - credit;
 
             lines.Add(string.Format(
-                "{0,-12} {1,-15} {2,-20} {3,10} {4,10} {5,8} {6,8} {7,10}",
+                "{0,-12} {1,-15} {2,-20} {3,14} {4,14} {5,8} {6,8} {7,14}",
                 transaction.Date.ToString("yyyy-MM-dd"),
                 transaction.Type,
                 Truncate(transaction.Description, 20),
-                debit == 0m ? "" : debit.ToString("0.00"),
-                credit == 0m ? "" : credit.ToString("0.00"),
+                debit == 0m ? "" : $"{debit:0.00} EGP",
+                credit == 0m ? "" : $"{credit:0.00} EGP",
                 transaction.Weight.HasValue ? transaction.Weight.Value.ToString("0.###") : "",
                 Truncate(transaction.Purity, 8),
-                balance.ToString("0.00")
+                $"{balance:0.00} EGP"
             ));
         }
 
         lines.Add(new string('-', 110));
-        lines.Add($"Final Balance: {balance:0.00}");
+        lines.Add($"Outstanding Balance: {balance:0.00} EGP");
 
         _printContent = string.Join(Environment.NewLine, lines);
         _statementText.Text = _printContent;
@@ -170,11 +170,11 @@ public class StatementForm : Form
 
     private static bool IsIncrease(TransactionType type)
     {
-        return type == TransactionType.GoldGiven || type == TransactionType.PaymentReceived;
+        return type == TransactionType.GoldGiven || type == TransactionType.PaymentIssued;
     }
 
     private static bool IsDecrease(TransactionType type)
     {
-        return type == TransactionType.GoldReceived || type == TransactionType.PaymentIssued;
+        return type == TransactionType.GoldReceived || type == TransactionType.PaymentReceived;
     }
 }

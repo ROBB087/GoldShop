@@ -9,15 +9,15 @@ namespace GoldShopWpf.ViewModels;
 
 public class DashboardViewModel : ViewModelBase
 {
-    private decimal _totalOutstanding;
+    private decimal _totalGold21;
     private int _supplierCount;
-    private decimal _totalGoldIssued;
-    private decimal _totalPaymentsThisWeek;
+    private decimal _totalManufacturingThisWeek;
+    private decimal _totalImprovementThisWeek;
 
-    public decimal TotalOutstanding
+    public decimal TotalGold21
     {
-        get => _totalOutstanding;
-        set => SetProperty(ref _totalOutstanding, value);
+        get => _totalGold21;
+        set => SetProperty(ref _totalGold21, value);
     }
 
     public int SupplierCount
@@ -26,16 +26,16 @@ public class DashboardViewModel : ViewModelBase
         set => SetProperty(ref _supplierCount, value);
     }
 
-    public decimal TotalGoldIssued
+    public decimal TotalManufacturingThisWeek
     {
-        get => _totalGoldIssued;
-        set => SetProperty(ref _totalGoldIssued, value);
+        get => _totalManufacturingThisWeek;
+        set => SetProperty(ref _totalManufacturingThisWeek, value);
     }
 
-    public decimal TotalPaymentsThisWeek
+    public decimal TotalImprovementThisWeek
     {
-        get => _totalPaymentsThisWeek;
-        set => SetProperty(ref _totalPaymentsThisWeek, value);
+        get => _totalImprovementThisWeek;
+        set => SetProperty(ref _totalImprovementThisWeek, value);
     }
 
     public ObservableCollection<BarItem> SupplierBalanceBars { get; } = new();
@@ -64,38 +64,37 @@ public class DashboardViewModel : ViewModelBase
         var transactionService = AppServices.TransactionService;
 
         var suppliers = supplierService.GetSuppliers();
-        var balances = supplierService.GetBalancesBySupplier();
-        var totalsAll = transactionService.GetTotalsAll(null, null);
+        var totalsAll = transactionService.GetSummaryAll(null, null);
+        var goldBySupplier = supplierService.GetTotalGold21BySupplier();
 
         SupplierCount = suppliers.Count;
-        TotalGoldIssued = totalsAll.goldGiven;
+        TotalGold21 = totalsAll.TotalGold21;
 
         var weekStart = DateTime.Today.AddDays(-7);
-        var weekTotals = transactionService.GetTotalsAll(weekStart, DateTime.Today);
-        TotalPaymentsThisWeek = weekTotals.paymentsIssued;
+        var weekTotals = transactionService.GetSummaryAll(weekStart, DateTime.Today);
+        TotalManufacturingThisWeek = weekTotals.TotalManufacturing;
+        TotalImprovementThisWeek = weekTotals.TotalImprovement;
 
-        TotalOutstanding = balances.Values.Sum();
-
-        BuildSupplierBalanceChart(suppliers, balances);
+        BuildSupplierBalanceChart(suppliers, goldBySupplier);
         BuildGoldPaymentChart(transactionService);
     }
 
-    private void BuildSupplierBalanceChart(List<Supplier> suppliers, Dictionary<int, decimal> balances)
+    private void BuildSupplierBalanceChart(List<Supplier> suppliers, Dictionary<int, decimal> totals)
     {
         SupplierBalanceBars.Clear();
 
-        var topSuppliers = suppliers.OrderByDescending(s => balances.ContainsKey(s.Id) ? balances[s.Id] : 0m).Take(10).ToList();
-        var max = topSuppliers.Select(s => balances.ContainsKey(s.Id) ? balances[s.Id] : 0m).DefaultIfEmpty(0m).Max();
+        var topSuppliers = suppliers.OrderByDescending(s => totals.ContainsKey(s.Id) ? totals[s.Id] : 0m).Take(10).ToList();
+        var max = topSuppliers.Select(s => totals.ContainsKey(s.Id) ? totals[s.Id] : 0m).DefaultIfEmpty(0m).Max();
         var maxHeight = 180d;
 
         foreach (var supplier in topSuppliers)
         {
-            balances.TryGetValue(supplier.Id, out var balance);
-            var height = max == 0m ? 0d : (double)(balance / max) * maxHeight;
+            totals.TryGetValue(supplier.Id, out var totalGold21);
+            var height = max == 0m ? 0d : (double)(totalGold21 / max) * maxHeight;
             SupplierBalanceBars.Add(new BarItem
             {
                 Label = supplier.Name,
-                Value = (double)balance,
+                Value = (double)totalGold21,
                 Height = height
             });
         }
@@ -111,8 +110,8 @@ public class DashboardViewModel : ViewModelBase
             .GroupBy(t => t.Date.Date)
             .ToDictionary(g => g.Key, g => new
             {
-                Gold = g.Where(x => x.Type == TransactionType.GoldGiven).Sum(x => x.Amount),
-                Payment = g.Where(x => x.Type == TransactionType.PaymentIssued).Sum(x => x.Amount)
+                Gold = g.Sum(x => x.Equivalent21),
+                Payment = g.Sum(x => x.TotalManufacturing + x.TotalImprovement)
             });
 
         var dates = Enumerable.Range(0, (to - from).Days + 1).Select(offset => from.AddDays(offset)).ToList();

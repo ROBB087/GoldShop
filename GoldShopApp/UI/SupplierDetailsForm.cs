@@ -47,7 +47,7 @@ public class SupplierDetailsForm : Form
         };
         headerPanel.Controls.Add(new Label { Text = "Supplier:", AutoSize = true, TextAlign = ContentAlignment.MiddleLeft });
         headerPanel.Controls.Add(new Label { Text = supplier.Name, AutoSize = true, Font = new Font(Font, FontStyle.Bold) });
-        _balanceLabel = new Label { Text = "Balance: 0.00", AutoSize = true, Margin = new Padding(20, 0, 0, 0) };
+        _balanceLabel = new Label { Text = "Outstanding Balance: 0.00 EGP", AutoSize = true, Margin = new Padding(20, 0, 0, 0) };
         _summaryLabel = new Label { Text = string.Empty, AutoSize = true, Margin = new Padding(20, 0, 0, 0) };
         headerPanel.Controls.Add(_balanceLabel);
         headerPanel.Controls.Add(_summaryLabel);
@@ -202,17 +202,17 @@ public class SupplierDetailsForm : Form
                 transaction.Date.ToString("yyyy-MM-dd"),
                 transaction.Type.ToString(),
                 transaction.Description ?? string.Empty,
-                debit == 0m ? string.Empty : debit.ToString("0.00"),
-                credit == 0m ? string.Empty : credit.ToString("0.00"),
+                debit == 0m ? string.Empty : $"{debit:0.00} EGP",
+                credit == 0m ? string.Empty : $"{credit:0.00} EGP",
                 transaction.Weight.HasValue ? transaction.Weight.Value.ToString("0.###") : string.Empty,
                 transaction.Purity ?? string.Empty,
-                balance.ToString("0.00")
+                $"{balance:0.00} EGP"
             );
         }
 
         var totals = _transactionService.GetTotals(_supplier.Id, from, to);
-        _balanceLabel.Text = $"Balance: {balance:0.00}";
-        _summaryLabel.Text = $"Gold Given: {totals.goldGiven:0.00} | Gold Received: {totals.goldReceived:0.00} | Payments Issued: {totals.paymentsIssued:0.00} | Payments Received: {totals.paymentsReceived:0.00}";
+        _balanceLabel.Text = $"Outstanding Balance: {balance:0.00} EGP";
+        _summaryLabel.Text = $"Gold Given: {totals.goldGiven:0.00} EGP | Gold Received: {totals.goldReceived:0.00} EGP | Payments Issued: {totals.paymentsIssued:0.00} EGP | Payments Received: {totals.paymentsReceived:0.00} EGP";
     }
 
     private void AddTransaction()
@@ -242,11 +242,11 @@ public class SupplierDetailsForm : Form
 
     private static bool IsIncrease(TransactionType type)
     {
-        return type == TransactionType.GoldGiven || type == TransactionType.PaymentReceived;
+        return type == TransactionType.GoldGiven || type == TransactionType.PaymentIssued;
     }
 
     private static bool IsDecrease(TransactionType type)
     {
-        return type == TransactionType.GoldReceived || type == TransactionType.PaymentIssued;
+        return type == TransactionType.GoldReceived || type == TransactionType.PaymentReceived;
     }
 }

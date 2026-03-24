@@ -114,11 +114,11 @@ public class MainForm : Form
         foreach (var supplier in _suppliers)
         {
             balances.TryGetValue(supplier.Id, out var balance);
-            var rowIndex = _grid.Rows.Add(supplier.Name, supplier.Phone ?? string.Empty, balance.ToString("0.00"));
+            var rowIndex = _grid.Rows.Add(supplier.Name, supplier.Phone ?? string.Empty, $"{balance:0.00} EGP");
             _grid.Rows[rowIndex].Tag = supplier.Id;
         }
 
-        _summaryLabel.Text = $"Totals | Gold Given: {totals.goldGiven:0.00} | Gold Received: {totals.goldReceived:0.00} | Payments Issued: {totals.paymentsIssued:0.00} | Payments Received: {totals.paymentsReceived:0.00}";
+        _summaryLabel.Text = $"Totals | Gold Given: {totals.goldGiven:0.00} EGP | Gold Received: {totals.goldReceived:0.00} EGP | Payments Issued: {totals.paymentsIssued:0.00} EGP | Payments Received: {totals.paymentsReceived:0.00} EGP";
     }
 
     private Supplier? GetSelectedSupplier()
@@ -142,7 +142,7 @@ public class MainForm : Form
         using var form = new SupplierForm();
         if (form.ShowDialog(this) == DialogResult.OK)
         {
-            _supplierService.AddSupplier(form.SupplierName, form.SupplierPhone, form.SupplierNotes);
+            _supplierService.AddSupplier(form.SupplierName, form.SupplierPhone, form.WorkerName, form.WorkerPhone, form.SupplierNotes);
             LoadSuppliers();
         }
     }
@@ -159,7 +159,7 @@ public class MainForm : Form
         using var form = new SupplierForm(supplier);
         if (form.ShowDialog(this) == DialogResult.OK)
         {
-            _supplierService.UpdateSupplier(supplier.Id, form.SupplierName, form.SupplierPhone, form.SupplierNotes);
+            _supplierService.UpdateSupplier(supplier.Id, form.SupplierName, form.SupplierPhone, form.WorkerName, form.WorkerPhone, form.SupplierNotes);
             LoadSuppliers();
         }
     }
