@@ -93,7 +93,7 @@ public class StatementViewModel : ViewModelBase
         {
             UiText.L("ReceiptTitle"),
             $"{UiText.L("LblTrader")}: {SelectedSupplier.Name}",
-            $"{UiText.L("ReceiptDateRange")}: {FromDate:yyyy-MM-dd} - {ToDate:yyyy-MM-dd}",
+            $"{UiText.L("ReceiptDateRange")}: {FromDate:yyyy/MM/dd} - {ToDate:yyyy/MM/dd}",
             new string('=', 72),
             $"{UiText.L("LblDate"),-12} {UiText.L("LblType"),-18} {UiText.L("LblWeight"),12} {UiText.L("LblAmount"),12}",
             new string('-', 72)
@@ -102,7 +102,7 @@ public class StatementViewModel : ViewModelBase
         foreach (var transaction in transactions)
         {
             lines.Add(
-                $"{transaction.Date:yyyy-MM-dd,-12} {FormatType(transaction),-18} {FormatNumber(transaction.OriginalWeight, UiText.L("LblWeightUnit")),12} {FormatNumber(transaction.TotalManufacturing + transaction.TotalImprovement, string.Empty),12}");
+                $"{transaction.Date:yyyy/MM/dd,-12} {FormatType(transaction),-18} {FormatNumber(transaction.OriginalWeight, UiText.L("LblWeightUnit")),12} {FormatNumber(transaction.TotalManufacturing + transaction.TotalImprovement, string.Empty),12}");
         }
 
         lines.Add(new string('=', 72));
@@ -134,7 +134,7 @@ public class StatementViewModel : ViewModelBase
 
     private void PrintStatement()
     {
-        var window = new Views.StatementWindow(
+        var window = new Views.ModernStatementWindow(
             SelectedSupplier?.Id ?? 0,
             SelectedSupplier?.Name ?? string.Empty,
             FromDate,

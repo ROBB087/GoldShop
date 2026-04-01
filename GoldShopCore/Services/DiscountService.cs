@@ -36,4 +36,9 @@ public class DiscountService
 
         _discountRepository.Add(discount);
     }
+
+    public void DeleteDiscount(int id)
+    {
+        _discountRepository.Delete(id);
+    }
 }

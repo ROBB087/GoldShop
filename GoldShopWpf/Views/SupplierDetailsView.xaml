@@ -1,346 +1,435 @@
 <UserControl x:Class="GoldShopWpf.Views.SupplierDetailsView"
+             x:Name="Root"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
-             mc:Ignorable="d">
-    <ScrollViewer VerticalScrollBarVisibility="Auto"
-                  HorizontalScrollBarVisibility="Disabled"
-                  CanContentScroll="False">
-        <Grid Margin="8">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-            </Grid.RowDefinitions>
+             FlowDirection="{DynamicResource AppFlowDirection}">
+    <UserControl.Resources>
+        <Style x:Key="SmallGhostButton" TargetType="Button" BasedOn="{StaticResource GhostButton}">
+            <Setter Property="Height" Value="42" />
+            <Setter Property="MinWidth" Value="112" />
+            <Setter Property="Padding" Value="14,8" />
+        </Style>
+        <Style x:Key="FilterLabelText" TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{StaticResource MutedTextBrush}" />
+            <Setter Property="Margin" Value="0,0,0,6" />
+        </Style>
+        <Style x:Key="MetricCard" TargetType="Border">
+            <Setter Property="Padding" Value="20" />
+            <Setter Property="CornerRadius" Value="18" />
+            <Setter Property="BorderBrush" Value="#E5EAF1" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Background" Value="#FAFBFD" />
+        </Style>
+        <Style x:Key="SectionTitleText" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="18" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="#101828" />
+        </Style>
+        <Style x:Key="SectionSubtitleText" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Foreground" Value="#667085" />
+            <Setter Property="Margin" Value="0,4,0,0" />
+        </Style>
+        <Style x:Key="MetricLabelText" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="#667085" />
+            <Setter Property="Margin" Value="0,0,0,12" />
+        </Style>
+        <Style x:Key="CountChipBorder" TargetType="Border">
+            <Setter Property="Padding" Value="12,8" />
+            <Setter Property="Background" Value="#F8FAFC" />
+            <Setter Property="BorderBrush" Value="#E2E8F0" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="12" />
+        </Style>
+        <Style x:Key="ActionsMenu" TargetType="Menu">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="FlowDirection" Value="LeftToRight" />
+        </Style>
+        <Style x:Key="ActionsMenuItem" TargetType="MenuItem">
+            <Setter Property="Padding" Value="10,6" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="FontSize" Value="18" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+        </Style>
+        <Style x:Key="TraderDetailsTabItemStyle" TargetType="TabItem">
+            <Setter Property="FontSize" Value="15" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="#667085" />
+            <Setter Property="Padding" Value="20,12" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TabItem">
+                        <Border x:Name="TabBorder" Background="Transparent" BorderBrush="Transparent" BorderThickness="0,0,0,2" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" ContentSource="Header" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter Property="Foreground" Value="#101828" />
+                                <Setter Property="FontWeight" Value="Bold" />
+                                <Setter TargetName="TabBorder" Property="BorderBrush" Value="#C8A11E" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="TraderDetailsRowStyle" TargetType="DataGridRow">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <EventSetter Event="PreviewMouseLeftButtonDown" Handler="DataGridRow_PreviewMouseLeftButtonDown" />
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#F8FAFC" />
+                </Trigger>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="#F5F7FB" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Resources>
 
-            <Border Grid.Row="0"
-                    Style="{StaticResource CardContainer}"
-                    Margin="0,0,0,12"
-                    Background="#FCFBF7"
-                    BorderBrush="#EEE6D6">
-                <Grid Margin="4">
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Style="{StaticResource CardContainer}" Margin="0,0,0,16" Padding="24" BorderBrush="#D7DEEC">
+            <Border.Background>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                    <GradientStop Color="#F7F8FD" Offset="0" />
+                    <GradientStop Color="#EEF1FB" Offset="1" />
+                </LinearGradientBrush>
+            </Border.Background>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0">
+                    <TextBlock Text="{Binding SelectedTrader.Name}" FontSize="24" FontWeight="SemiBold" Foreground="#0F172A" />
+                    <TextBlock Text="نظرة سريعة على الرصيد والخصومات والحركات." FontSize="13" Foreground="#475467" Margin="0,6,0,0" />
+                </StackPanel>
+                <Grid Grid.Column="1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="8" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <Button Grid.Column="0" Command="{Binding AddTransactionCommand}" Style="{StaticResource PrimaryButton}" Height="42" MinWidth="150">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="Plus" Margin="0,0,6,0" />
+                            <TextBlock Text="{DynamicResource BtnAddTransaction}" />
+                        </StackPanel>
+                    </Button>
+                    <Button Grid.Column="2" Command="{Binding RefreshCommand}" Style="{StaticResource SmallGhostButton}">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="Refresh" Margin="0,0,6,0" />
+                            <TextBlock Text="{DynamicResource BtnRefresh}" />
+                        </StackPanel>
+                    </Button>
+                </Grid>
+            </Grid>
+        </Border>
+
+        <Border Grid.Row="1" Style="{StaticResource CardContainer}" Margin="0,0,0,16" Padding="20" BorderBrush="#E4E8F1">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <Grid Grid.Column="0">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
-
-                    <Grid Grid.Row="0" Margin="8">
+                    <TextBlock Grid.Row="0" Text="فلترة الحركات" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,12" />
+                    <Grid Grid.Row="1">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="16" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="16" />
+                            <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-
-                        <Border Grid.Column="0"
-                                Padding="12,8"
-                                CornerRadius="14"
-                                Background="#FFF6DD"
-                                BorderBrush="#F0E1AF"
-                                BorderThickness="1">
-                            <TextBlock FontWeight="SemiBold"
-                                       Foreground="#6A5600">
-                                <TextBlock.Style>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="Text" Value="{Binding Transactions.Count, StringFormat=Transactions: {0}}" />
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=UserControl}, Path=FlowDirection}" Value="RightToLeft">
-                                                <Setter Property="Text" Value="{Binding Transactions.Count, StringFormat=الحركات: {0}}" />
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </TextBlock.Style>
-                            </TextBlock>
-                        </Border>
-
-                        <Border Grid.Column="1"
-                                Margin="16,0,0,0"
-                                Background="#FFFFFF"
-                                BorderBrush="#E4E8F0"
-                                BorderThickness="1"
-                                CornerRadius="18"
-                                Padding="14,10"
-                                HorizontalAlignment="Left"
-                                Width="360">
-                            <StackPanel Orientation="Horizontal">
-                                <materialDesign:PackIcon Kind="Magnify" Width="20" Height="20" VerticalAlignment="Center" Margin="0,0,8,0" />
-                                <TextBox Width="290"
-                                         Margin="0"
-                                         Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                                         ToolTip="{DynamicResource LblSearch}"
-                                         materialDesign:HintAssist.Hint="{DynamicResource LblSearch}" />
-                            </StackPanel>
-                        </Border>
+                        <StackPanel Grid.Column="0" Width="220">
+                            <TextBlock Text="{DynamicResource LblTrader}" Style="{StaticResource FilterLabelText}" />
+                            <ComboBox Width="220" ItemsSource="{Binding SupplierOptions}" SelectedItem="{Binding SelectedTrader, Mode=TwoWay}" DisplayMemberPath="Name" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="2" Width="250">
+                            <TextBlock Text="{DynamicResource LblFrom}" Style="{StaticResource FilterLabelText}" />
+                            <DatePicker Width="250" SelectedDate="{Binding FromDate, Mode=TwoWay}" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="4" Width="250">
+                            <TextBlock Text="{DynamicResource LblTo}" Style="{StaticResource FilterLabelText}" />
+                            <DatePicker Width="250" SelectedDate="{Binding ToDate, Mode=TwoWay}" />
+                        </StackPanel>
                     </Grid>
-
-                    <WrapPanel Grid.Row="1"
-                               Margin="8,0,8,8"
-                               Orientation="Horizontal">
-                        <StackPanel Width="320" Margin="0,0,16,0">
-                            <TextBlock Text="{DynamicResource LblTrader}"
-                                       FontSize="12"
-                                       FontWeight="SemiBold"
-                                       Foreground="{StaticResource MutedTextBrush}"
-                                       Margin="0,0,0,6" />
-                            <ComboBox Margin="0"
-                                      ItemsSource="{Binding SupplierOptions}"
-                                      SelectedItem="{Binding SelectedTrader, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                      DisplayMemberPath="Name" />
-                        </StackPanel>
-
-                        <StackPanel Width="220" Margin="0,0,16,0">
-                            <TextBlock Text="{DynamicResource LblFrom}"
-                                       FontSize="12"
-                                       FontWeight="SemiBold"
-                                       Foreground="{StaticResource MutedTextBrush}"
-                                       Margin="0,0,0,6" />
-                            <DatePicker Margin="0"
-                                        SelectedDate="{Binding FromDate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                        </StackPanel>
-
-                        <StackPanel Width="220" Margin="0,0,16,0">
-                            <TextBlock Text="{DynamicResource LblTo}"
-                                       FontSize="12"
-                                       FontWeight="SemiBold"
-                                       Foreground="{StaticResource MutedTextBrush}"
-                                       Margin="0,0,0,6" />
-                            <DatePicker Margin="0"
-                                        SelectedDate="{Binding ToDate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                        </StackPanel>
-
-                        <StackPanel Width="132" Margin="0,18,12,0">
-                            <Button MinWidth="132"
-                                    MinHeight="48"
-                                    Content="{DynamicResource LblSearch}"
-                                    Command="{Binding ApplyFilterCommand}"
-                                    Style="{StaticResource GhostButton}" />
-                        </StackPanel>
-
-                        <StackPanel Width="132" Margin="0,18,0,0">
-                            <Button MinWidth="132"
-                                    MinHeight="48"
-                                    Content="{DynamicResource BtnReset}"
-                                    Command="{Binding ClearFilterCommand}"
-                                    Style="{StaticResource GhostButton}" />
-                        </StackPanel>
-                    </WrapPanel>
-
-                    <WrapPanel Grid.Row="2"
-                               Margin="0,8,0,0"
-                               Orientation="Horizontal">
-                        <Button Command="{Binding AddTransactionCommand}"
-                                Style="{StaticResource PrimaryButton}"
-                                Margin="8"
-                                MinWidth="172"
-                                MinHeight="48">
-                            <StackPanel Orientation="Horizontal">
-                                <materialDesign:PackIcon Kind="Plus" Width="18" Height="18" Margin="0,0,6,0" />
-                                <TextBlock Text="{DynamicResource BtnAddTransaction}" />
-                            </StackPanel>
-                        </Button>
-                        <Button Command="{Binding AddDiscountCommand}"
-                                Style="{StaticResource GhostButton}"
-                                Margin="8"
-                                MinWidth="150"
-                                MinHeight="48">
-                            <StackPanel Orientation="Horizontal">
-                                <materialDesign:PackIcon Kind="Percent" Width="18" Height="18" Margin="0,0,6,0" />
-                                <TextBlock Text="{DynamicResource BtnAddDiscount}" />
-                            </StackPanel>
-                        </Button>
-                        <Button Command="{Binding EditTransactionCommand}"
-                                Style="{StaticResource GhostButton}"
-                                Margin="8"
-                                MinWidth="124"
-                                MinHeight="48">
-                            <StackPanel Orientation="Horizontal">
-                                <materialDesign:PackIcon Kind="Pencil" Width="18" Height="18" Margin="0,0,6,0" />
-                                <TextBlock Text="{DynamicResource BtnEdit}" />
-                            </StackPanel>
-                        </Button>
-                        <Button Command="{Binding DeleteTransactionCommand}"
-                                Style="{StaticResource GhostButton}"
-                                Margin="8"
-                                MinWidth="124"
-                                MinHeight="48">
-                            <StackPanel Orientation="Horizontal">
-                                <materialDesign:PackIcon Kind="Delete" Width="18" Height="18" Margin="0,0,6,0" Foreground="#D32F2F" />
-                                <TextBlock Text="{DynamicResource BtnDelete}" />
-                            </StackPanel>
-                        </Button>
-                        <Button Command="{Binding PrintStatementCommand}"
-                                Style="{StaticResource GhostButton}"
-                                Margin="8"
-                                MinWidth="190"
-                                MinHeight="48">
-                            <StackPanel Orientation="Horizontal">
-                                <materialDesign:PackIcon Kind="Printer" Width="18" Height="18" Margin="0,0,6,0" />
-                                <TextBlock Text="{DynamicResource NavStatement}" />
-                            </StackPanel>
-                        </Button>
-                    </WrapPanel>
                 </Grid>
+                <Button Grid.Column="1" Command="{Binding ClearFilterCommand}" Style="{StaticResource SmallGhostButton}" MinWidth="136" VerticalAlignment="Bottom">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="FilterOffOutline" Margin="0,0,6,0" />
+                        <TextBlock Text="{DynamicResource BtnReset}" />
+                    </StackPanel>
+                </Button>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="2" Margin="0,0,0,16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="16" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="16" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="16" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Border Grid.Column="0" Style="{StaticResource MetricCard}">
+                <StackPanel>
+                    <TextBlock Text="موقف الذهب" Style="{StaticResource MetricLabelText}" />
+                    <TextBlock Text="{Binding TotalGold21, Converter={StaticResource MoneyFormatConverter}, ConverterParameter='g'}" FontSize="28" FontWeight="Bold" />
+                </StackPanel>
             </Border>
-
-            <Border Grid.Row="1"
-                    Style="{StaticResource CardContainer}"
-                    Margin="0,0,0,12"
-                    Background="#FFFFFF"
-                    BorderBrush="#ECE8DD">
-                <Grid Margin="4,0,4,12">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
-
-                    <Border Grid.Column="0"
-                            Margin="8"
-                            Padding="18"
-                            Background="#F9FAFB"
-                            CornerRadius="18"
-                            BorderBrush="#E7ECF2"
-                            BorderThickness="1">
-                        <StackPanel>
-                            <TextBlock Text="{DynamicResource LblGoldPosition}" FontSize="13" FontWeight="SemiBold" Foreground="#667085" Margin="0,0,0,16" />
-                            <materialDesign:Card Padding="18" Background="#FFFFFF">
-                                <StackPanel>
-                                    <TextBlock Text="{DynamicResource LblTotalGold21}" Foreground="{StaticResource MutedTextBrush}" FontSize="12" Margin="0,0,0,8" />
-                                    <TextBlock Text="{Binding TotalGold21, Converter={StaticResource MoneyFormatConverter}, ConverterParameter='g'}" FontSize="28" FontWeight="Bold" />
-                                </StackPanel>
-                            </materialDesign:Card>
-                        </StackPanel>
-                    </Border>
-
-                    <Border Grid.Column="1"
-                            Margin="8"
-                            Padding="18"
-                            Background="#F9FAFB"
-                            CornerRadius="18"
-                            BorderBrush="#E7ECF2"
-                            BorderThickness="1">
-                        <StackPanel>
-                            <TextBlock Text="{DynamicResource LblCurrentCharges}" FontSize="13" FontWeight="SemiBold" Foreground="#667085" Margin="0,0,0,16" />
-                            <WrapPanel>
-                                <materialDesign:Card Width="220" Padding="18" Margin="0,0,12,0" Background="#FFFFFF">
-                                    <StackPanel>
-                                        <TextBlock Text="{DynamicResource LblTotalManufacturing}" Foreground="{StaticResource MutedTextBrush}" FontSize="12" Margin="0,0,0,8" />
-                                        <TextBlock Text="{Binding FinalManufacturing, Converter={StaticResource MoneyFormatConverter}, ConverterParameter='EGP'}" FontSize="28" FontWeight="Bold" />
-                                    </StackPanel>
-                                </materialDesign:Card>
-                                <materialDesign:Card Width="220" Padding="18" Background="#FFFFFF">
-                                    <StackPanel>
-                                        <TextBlock Text="{DynamicResource LblTotalImprovement}" Foreground="{StaticResource MutedTextBrush}" FontSize="12" Margin="0,0,0,8" />
-                                        <TextBlock Text="{Binding FinalImprovement, Converter={StaticResource MoneyFormatConverter}, ConverterParameter='EGP'}" FontSize="28" FontWeight="Bold" />
-                                    </StackPanel>
-                                </materialDesign:Card>
-                            </WrapPanel>
-                        </StackPanel>
-                    </Border>
-
-                    <Border Grid.Column="2"
-                            Margin="8"
-                            Padding="18"
-                            Background="#FFF8F4"
-                            CornerRadius="18"
-                            BorderBrush="#F2DDD2"
-                            BorderThickness="1">
-                        <StackPanel>
-                            <TextBlock Text="{DynamicResource LblAppliedDiscounts}" FontSize="13" FontWeight="SemiBold" Foreground="#9A3412" Margin="0,0,0,16" />
-                            <WrapPanel>
-                                <materialDesign:Card Width="220" Padding="18" Margin="0,0,12,0" Background="#FFFFFF">
-                                    <StackPanel>
-                                        <TextBlock Text="{DynamicResource LblManufacturingDiscounts}" Foreground="{StaticResource MutedTextBrush}" FontSize="12" Margin="0,0,0,8" />
-                                        <TextBlock Text="{Binding ManufacturingDiscounts, Converter={StaticResource MoneyFormatConverter}, ConverterParameter='EGP'}" FontSize="28" FontWeight="Bold" Foreground="#C62828" />
-                                    </StackPanel>
-                                </materialDesign:Card>
-                                <materialDesign:Card Width="220" Padding="18" Background="#FFFFFF">
-                                    <StackPanel>
-                                        <TextBlock Text="{DynamicResource LblImprovementDiscounts}" Foreground="{StaticResource MutedTextBrush}" FontSize="12" Margin="0,0,0,8" />
-                                        <TextBlock Text="{Binding ImprovementDiscounts, Converter={StaticResource MoneyFormatConverter}, ConverterParameter='EGP'}" FontSize="28" FontWeight="Bold" Foreground="#C62828" />
-                                    </StackPanel>
-                                </materialDesign:Card>
-                            </WrapPanel>
-                        </StackPanel>
-                    </Border>
-                </Grid>
+            <Border Grid.Column="2" Style="{StaticResource MetricCard}">
+                <StackPanel>
+                    <TextBlock Text="إجمالي المصنعية" Style="{StaticResource MetricLabelText}" />
+                    <TextBlock Text="{Binding TotalManufacturing, Converter={StaticResource MoneyFormatConverter}, ConverterParameter='EGP'}" FontSize="28" FontWeight="Bold" />
+                </StackPanel>
             </Border>
-
-            <Border Grid.Row="2"
-                    Style="{StaticResource CardContainer}"
-                    Margin="0,0,0,12"
-                    BorderBrush="#E7ECF2">
-                <Grid Margin="8">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
-
-                    <TextBlock Grid.Row="0"
-                               Text="{DynamicResource NavTransactions}"
-                               FontSize="18"
-                               FontWeight="SemiBold"
-                               Margin="8" />
-
-                    <DataGrid Grid.Row="1"
-                              Margin="8"
-                              Height="340"
-                              ItemsSource="{Binding Transactions}"
-                              SelectedItem="{Binding SelectedTransaction, Mode=TwoWay}"
-                              AutoGenerateColumns="False"
-                              CanUserAddRows="False"
-                              IsReadOnly="True"
-                              SelectionMode="Single"
-                              SelectionUnit="FullRow">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="{DynamicResource LblDate}" Binding="{Binding Date, StringFormat={}{0:yyyy-MM-dd}}" Width="140" MinWidth="140" ElementStyle="{StaticResource GridCellTextStyle}" />
-                            <DataGridTextColumn Header="{DynamicResource LblTrader}" Binding="{Binding SupplierName}" Width="*" MinWidth="180" ElementStyle="{StaticResource GridCellTextStyle}" />
-                            <DataGridTextColumn Header="{DynamicResource LblType}" Binding="{Binding Category, Converter={StaticResource TransactionCategoryToLabelConverter}}" Width="160" MinWidth="150" ElementStyle="{StaticResource GridCellTextStyle}" />
-                            <DataGridTextColumn Header="{DynamicResource LblWeight}" Binding="{Binding OriginalWeight, Converter={StaticResource MoneyFormatConverter}, ConverterParameter='g'}" Width="130" MinWidth="130" ElementStyle="{StaticResource GridCellTextStyle}" />
-                            <DataGridTextColumn Header="{DynamicResource LblKarat}" Binding="{Binding OriginalKarat}" Width="100" MinWidth="100" ElementStyle="{StaticResource GridCellTextStyle}" />
-                            <DataGridTextColumn Header="{DynamicResource LblEquivalent21}" Binding="{Binding Equivalent21, Converter={StaticResource MoneyFormatConverter}, ConverterParameter='g'}" Width="150" MinWidth="150" ElementStyle="{StaticResource GridCellTextStyle}" />
-                            <DataGridTextColumn Header="{DynamicResource LblTotalManufacturing}" Binding="{Binding TotalManufacturing, Converter={StaticResource MoneyFormatConverter}, ConverterParameter='EGP'}" Width="170" MinWidth="170" ElementStyle="{StaticResource GridCellTextStyle}" />
-                            <DataGridTextColumn Header="{DynamicResource LblTotalImprovement}" Binding="{Binding TotalImprovement, Converter={StaticResource MoneyFormatConverter}, ConverterParameter='EGP'}" Width="170" MinWidth="170" ElementStyle="{StaticResource GridCellTextStyle}" />
-                            <DataGridTextColumn Header="{DynamicResource LblNotes}" Binding="{Binding Notes}" Width="2*" MinWidth="240" ElementStyle="{StaticResource GridCellTextStyle}" />
-                        </DataGrid.Columns>
-                    </DataGrid>
-                </Grid>
+            <Border Grid.Column="4" Style="{StaticResource MetricCard}">
+                <StackPanel>
+                    <TextBlock Text="إجمالي التحسين" Style="{StaticResource MetricLabelText}" />
+                    <TextBlock Text="{Binding TotalImprovement, Converter={StaticResource MoneyFormatConverter}, ConverterParameter='EGP'}" FontSize="28" FontWeight="Bold" />
+                </StackPanel>
             </Border>
-
-            <Border Grid.Row="3"
-                    Style="{StaticResource CardContainer}"
-                    BorderBrush="#E7ECF2">
-                <Grid Margin="8">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
-
-                    <TextBlock Grid.Row="0"
-                               Text="{DynamicResource LblDiscounts}"
-                               FontSize="18"
-                               FontWeight="SemiBold"
-                               Margin="8" />
-
-                    <DataGrid Grid.Row="1"
-                              Margin="8"
-                              Height="240"
-                              ItemsSource="{Binding Discounts}"
-                              AutoGenerateColumns="False"
-                              CanUserAddRows="False"
-                              IsReadOnly="True">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="{DynamicResource LblDate}" Binding="{Binding CreatedAt, StringFormat={}{0:yyyy-MM-dd}}" Width="140" MinWidth="140" ElementStyle="{StaticResource GridCellTextStyle}" />
-                            <DataGridTextColumn Header="{DynamicResource LblTrader}" Binding="{Binding SupplierName}" Width="*" MinWidth="180" ElementStyle="{StaticResource GridCellTextStyle}" />
-                            <DataGridTextColumn Header="{DynamicResource LblType}" Binding="{Binding Type}" Width="180" MinWidth="170" ElementStyle="{StaticResource GridCellTextStyle}" />
-                            <DataGridTextColumn Header="{DynamicResource LblAmount}" Binding="{Binding Amount, Converter={StaticResource MoneyFormatConverter}, ConverterParameter='EGP'}" Width="170" MinWidth="170" ElementStyle="{StaticResource GridCellTextStyle}" />
-                            <DataGridTextColumn Header="{DynamicResource LblNotes}" Binding="{Binding Notes}" Width="*" MinWidth="240" ElementStyle="{StaticResource GridCellTextStyle}" />
-                        </DataGrid.Columns>
-                    </DataGrid>
-                </Grid>
+            <Border Grid.Column="6" Style="{StaticResource MetricCard}">
+                <StackPanel>
+                    <TextBlock Text="الخصومات" Style="{StaticResource MetricLabelText}" />
+                    <TextBlock Text="{Binding TotalDiscounts, Converter={StaticResource MoneyFormatConverter}, ConverterParameter='EGP'}" FontSize="28" FontWeight="Bold" />
+                </StackPanel>
             </Border>
         </Grid>
-    </ScrollViewer>
+
+        <Border Grid.Row="3" Style="{StaticResource CardContainer}" Padding="0" BorderBrush="#E5EAF1">
+            <TabControl BorderThickness="0" Background="Transparent" Padding="0">
+                <TabControl.Resources>
+                    <Style TargetType="TabItem" BasedOn="{StaticResource TraderDetailsTabItemStyle}" />
+                </TabControl.Resources>
+                <TabItem Header="الحركات">
+                    <Grid Margin="24">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <Border Grid.Row="0" Margin="0,0,0,16" Padding="16,12" Background="#FFF8E6" BorderBrush="#F1DEAB" BorderThickness="1" CornerRadius="14">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding HasCheckedTransactions}" Value="True">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="{Binding SelectedTransactionsLabel}" VerticalAlignment="Center" FontWeight="SemiBold" Foreground="#8A6C00" />
+                                <Grid Grid.Column="1">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="8" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <Button Grid.Column="0" Command="{Binding DeleteTransactionCommand}" Style="{StaticResource SmallGhostButton}" MinWidth="148">
+                                        <StackPanel Orientation="Horizontal">
+                                            <materialDesign:PackIcon Kind="Delete" Margin="0,0,6,0" Foreground="#B42318" />
+                                            <TextBlock Text="{DynamicResource BtnDeleteMultiple}" />
+                                        </StackPanel>
+                                    </Button>
+                                    <Button Grid.Column="2" Command="{Binding EditTransactionCommand}" Style="{StaticResource SmallGhostButton}" MinWidth="124">
+                                        <StackPanel Orientation="Horizontal">
+                                            <materialDesign:PackIcon Kind="Pencil" Margin="0,0,6,0" />
+                                            <TextBlock Text="{DynamicResource BtnEdit}" />
+                                        </StackPanel>
+                                    </Button>
+                                </Grid>
+                            </Grid>
+                        </Border>
+
+                        <Grid Grid.Row="1" Margin="0,0,0,16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="الحركات" Style="{StaticResource SectionTitleText}" />
+                                <TextBlock Text="سجل منظم للحركات مع تحديد جماعي وإجراءات سريعة." Style="{StaticResource SectionSubtitleText}" />
+                            </StackPanel>
+                            <Border Grid.Column="2" Style="{StaticResource CountChipBorder}">
+                                <TextBlock FontSize="12" FontWeight="SemiBold" Foreground="#475467">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Text" Value="{Binding Transactions.Count, StringFormat=Rows: {0}}" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=UserControl}, Path=FlowDirection}" Value="RightToLeft">
+                                                    <Setter Property="Text" Value="{Binding Transactions.Count, StringFormat=عدد الصفوف: {0}}" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </Border>
+                        </Grid>
+
+                        <DataGrid Grid.Row="2" ItemsSource="{Binding Transactions}" SelectedItem="{Binding SelectedTransaction, Mode=TwoWay}" AutoGenerateColumns="False" CanUserAddRows="False" CanUserSortColumns="True" IsReadOnly="True" RowHeight="42" ColumnHeaderHeight="42" RowStyle="{StaticResource TraderDetailsRowStyle}" SelectionMode="Extended" SelectionUnit="FullRow" FrozenColumnCount="1">
+                            <DataGrid.Columns>
+                                <DataGridTemplateColumn Width="56" CanUserSort="False">
+                                    <DataGridTemplateColumn.HeaderTemplate>
+                                        <DataTemplate>
+                                            <CheckBox IsThreeState="True" IsChecked="{Binding DataContext.AreAllVisibleTransactionsSelected, RelativeSource={RelativeSource AncestorType=DataGrid}, Mode=OneWay}" Click="OnSelectAllTransactionsClicked" ToolTip="{DynamicResource LblSelectAllRecords}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.HeaderTemplate>
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTextColumn Header="{DynamicResource LblDate}" Binding="{Binding Date, StringFormat={}{0:yyyy/MM/dd}}" Width="140" MinWidth="140" ElementStyle="{StaticResource GridCellTextStyle}" />
+                                <DataGridTextColumn Header="{DynamicResource LblTrader}" Binding="{Binding SupplierName}" Width="2*" MinWidth="180" ElementStyle="{StaticResource GridCellTextStyle}" />
+                                <DataGridTextColumn Header="{DynamicResource LblType}" Binding="{Binding Category, Converter={StaticResource TransactionCategoryToLabelConverter}}" Width="*" MinWidth="140">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource GridCellTextStyle}">
+                                            <Setter Property="Foreground" Value="{Binding Type, Converter={StaticResource TransactionTypeToBrushConverter}}" />
+                                            <Setter Property="FontWeight" Value="SemiBold" />
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Header="{DynamicResource LblWeight}" Binding="{Binding OriginalWeight, Converter={StaticResource MoneyFormatConverter}, ConverterParameter='g'}" Width="*" MinWidth="120" ElementStyle="{StaticResource GridCellTextStyle}" />
+                                <DataGridTextColumn Header="{DynamicResource LblKarat}" Binding="{Binding OriginalKarat}" Width="90" MinWidth="90" ElementStyle="{StaticResource GridCellTextStyle}" />
+                                <DataGridTextColumn Header="{DynamicResource LblTotalManufacturing}" Binding="{Binding TotalManufacturing, Converter={StaticResource MoneyFormatConverter}}" Width="*" MinWidth="168" ElementStyle="{StaticResource GridCellTextStyle}" />
+                                <DataGridTextColumn Header="{DynamicResource LblTotalImprovement}" Binding="{Binding TotalImprovement, Converter={StaticResource MoneyFormatConverter}}" Width="*" MinWidth="168" ElementStyle="{StaticResource GridCellTextStyle}" />
+                                <DataGridTextColumn Header="{DynamicResource LblLastUpdated}" Binding="{Binding UpdatedAt, StringFormat={}{0:yyyy/MM/dd HH:mm}}" Width="176" MinWidth="176" ElementStyle="{StaticResource GridCellTextStyle}" />
+                                <DataGridTemplateColumn Header="⋮" Width="72" CanUserSort="False">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Menu Style="{StaticResource ActionsMenu}" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                <MenuItem Header="⋮" Style="{StaticResource ActionsMenuItem}">
+                                                    <MenuItem Header="{DynamicResource BtnViewDetails}" Command="{Binding DataContext.ViewTransactionRowCommand, Source={x:Reference Root}}" CommandParameter="{Binding}" />
+                                                    <MenuItem Header="{DynamicResource BtnEdit}" Command="{Binding DataContext.EditTransactionRowCommand, Source={x:Reference Root}}" CommandParameter="{Binding}" />
+                                                    <Separator />
+                                                    <MenuItem Header="{DynamicResource BtnDelete}" Foreground="#B42318" Command="{Binding DataContext.DeleteTransactionRowCommand, Source={x:Reference Root}}" CommandParameter="{Binding}" />
+                                                </MenuItem>
+                                            </Menu>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </TabItem>
+                <TabItem Header="الخصومات">
+                    <Grid Margin="24">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <Grid Grid.Row="0" Margin="0,0,0,16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="12" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <Button Grid.Column="0" Command="{Binding AddDiscountCommand}" Style="{StaticResource PrimaryButton}" Height="42" MinWidth="150">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="Percent" Margin="0,0,6,0" />
+                                    <TextBlock Text="{DynamicResource BtnAddDiscount}" />
+                                </StackPanel>
+                            </Button>
+                            <Border Grid.Column="2" Style="{StaticResource MetricCard}" Width="250" Padding="16">
+                                <StackPanel>
+                                    <TextBlock Text="إجمالي خصومات التحسين" FontSize="13" FontWeight="SemiBold" Foreground="#667085" Margin="0,0,0,10" />
+                                    <TextBlock Text="{Binding ImprovementDiscounts, Converter={StaticResource MoneyFormatConverter}, ConverterParameter='EGP'}" FontSize="24" FontWeight="Bold" />
+                                </StackPanel>
+                            </Border>
+                            <Border Grid.Column="4" Style="{StaticResource MetricCard}" Width="250" Padding="16">
+                                <StackPanel>
+                                    <TextBlock Text="إجمالي خصومات المصنعية" FontSize="13" FontWeight="SemiBold" Foreground="#667085" Margin="0,0,0,10" />
+                                    <TextBlock Text="{Binding ManufacturingDiscounts, Converter={StaticResource MoneyFormatConverter}, ConverterParameter='EGP'}" FontSize="24" FontWeight="Bold" />
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+                        <Grid Grid.Row="1" Margin="0,0,0,16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="الخصومات" Style="{StaticResource SectionTitleText}" />
+                                <TextBlock Text="قائمة مستقلة لخصومات المصنعية والتحسين مع وصول مباشر للإجراءات." Style="{StaticResource SectionSubtitleText}" />
+                            </StackPanel>
+                            <Border Grid.Column="2" Style="{StaticResource CountChipBorder}">
+                                <TextBlock FontSize="12" FontWeight="SemiBold" Foreground="#475467">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Text" Value="{Binding Discounts.Count, StringFormat=Rows: {0}}" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=UserControl}, Path=FlowDirection}" Value="RightToLeft">
+                                                    <Setter Property="Text" Value="{Binding Discounts.Count, StringFormat=عدد الصفوف: {0}}" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </Border>
+                        </Grid>
+                        <DataGrid Grid.Row="2" ItemsSource="{Binding Discounts}" AutoGenerateColumns="False" CanUserAddRows="False" CanUserSortColumns="True" IsReadOnly="True" RowHeight="42" ColumnHeaderHeight="42" RowStyle="{StaticResource TraderDetailsRowStyle}">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="{DynamicResource LblDate}" Binding="{Binding CreatedAt, StringFormat={}{0:yyyy/MM/dd HH:mm}}" Width="180" MinWidth="180" ElementStyle="{StaticResource GridCellTextStyle}" />
+                                <DataGridTextColumn Header="{DynamicResource LblType}" Binding="{Binding Type}" Width="180" MinWidth="160" ElementStyle="{StaticResource GridCellTextStyle}" />
+                                <DataGridTextColumn Header="{DynamicResource LblAmount}" Binding="{Binding Amount, Converter={StaticResource MoneyFormatConverter}, ConverterParameter='EGP'}" Width="160" MinWidth="160" ElementStyle="{StaticResource GridCellTextStyle}" />
+                                <DataGridTextColumn Header="{DynamicResource LblNotes}" Binding="{Binding Notes}" Width="*" MinWidth="260" ElementStyle="{StaticResource GridCellTextStyle}" />
+                                <DataGridTemplateColumn Header="⋮" Width="72" CanUserSort="False">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Menu Style="{StaticResource ActionsMenu}" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                <MenuItem Header="⋮" Style="{StaticResource ActionsMenuItem}">
+                                                    <MenuItem Header="{DynamicResource BtnViewDetails}" Command="{Binding DataContext.ViewDiscountRowCommand, Source={x:Reference Root}}" CommandParameter="{Binding}" />
+                                                    <Separator />
+                                                    <MenuItem Header="{DynamicResource BtnDelete}" Foreground="#B42318" Command="{Binding DataContext.DeleteDiscountRowCommand, Source={x:Reference Root}}" CommandParameter="{Binding}" />
+                                                </MenuItem>
+                                            </Menu>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </TabItem>
+            </TabControl>
+        </Border>
+    </Grid>
 </UserControl>

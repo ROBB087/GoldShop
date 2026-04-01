@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Windows;
 using GoldShopWpf.Services;
 
 namespace GoldShopWpf.ViewModels;
@@ -7,6 +8,7 @@ public class WeeklyReportViewModel : ViewModelBase
 {
     private DateTime _fromDate = DateTime.Today.AddDays(-7);
     private DateTime _toDate = DateTime.Today;
+    private string _currentDateDisplay = DateTime.Now.ToString("yyyy/MM/dd hh:mm tt");
 
     public DateTime FromDate
     {
@@ -21,14 +23,43 @@ public class WeeklyReportViewModel : ViewModelBase
     }
 
     public ObservableCollection<WeeklyReportRow> Reports { get; } = new();
+    public ObservableCollection<ModernReportRow> ReportRows { get; } = new();
 
     public ObservableCollection<BarItem> TopBalanceBars { get; } = new();
 
+    public string ReportTitle => UiText.L("LblGoldMovementReportTitle");
+    public string CompanyName => UiText.L("LblCompanyName");
+    public string CurrentDateDisplay
+    {
+        get => _currentDateDisplay;
+        private set => SetProperty(ref _currentDateDisplay, value);
+    }
+
+    public decimal TotalWeight => ReportRows.Sum(row => row.Weight);
+    public decimal TotalValue => ReportRows.Sum(row => row.Value);
+    public decimal NetResult => Reports.Sum(row => row.TotalGold21);
+    public decimal TotalGold => Reports.Sum(row => row.TotalGold21);
+    public decimal TotalManufacturing => Reports.Sum(row => row.TotalManufacturing);
+    public decimal NetTotal => Reports.Sum(row => row.FinalManufacturing + row.FinalImprovement);
+
+    public string TotalWeightDisplay => $"{TotalWeight:0.####} {UiText.L("LblWeightUnit")}";
+    public string TotalValueDisplay => $"{TotalValue:0.##}";
+    public string NetResultDisplay => $"{NetResult:0.####} {UiText.L("LblWeightUnit")}";
+    public string TotalGoldDisplay => $"{TotalGold:0.####} {UiText.L("LblWeightUnit")}";
+    public string TotalManufacturingDisplay => $"{TotalManufacturing:0.##}";
+    public string NetTotalDisplay => $"{NetTotal:0.##}";
+
     public RelayCommand RefreshCommand { get; }
+    public RelayCommand ExportImageCommand { get; }
+    public RelayCommand ExportPdfCommand { get; }
+    public RelayCommand ShareCommand { get; }
 
     public WeeklyReportViewModel()
     {
         RefreshCommand = new RelayCommand(_ => Load());
+        ExportImageCommand = new RelayCommand(parameter => ExportImage(parameter as FrameworkElement), _ => ReportRows.Count > 0);
+        ExportPdfCommand = new RelayCommand(_ => ExportPdf(), _ => ReportRows.Count > 0);
+        ShareCommand = new RelayCommand(parameter => Share(parameter as FrameworkElement), _ => ReportRows.Count > 0);
         Load();
     }
 
@@ -41,9 +72,13 @@ public class WeeklyReportViewModel : ViewModelBase
         }
 
         Reports.Clear();
+        ReportRows.Clear();
+        CurrentDateDisplay = DateTime.Now.ToString("yyyy/MM/dd hh:mm tt");
 
         var reportService = AppServices.ReportService;
         var reports = reportService.GetWeeklyReport(FromDate.Date, ToDate.Date);
+        var suppliers = AppServices.SupplierService.GetSuppliers().ToDictionary(supplier => supplier.Id, supplier => supplier.Name);
+        var transactions = AppServices.TransactionService.GetTransactions(FromDate.Date, ToDate.Date);
 
         foreach (var report in reports)
         {
@@ -59,7 +94,29 @@ public class WeeklyReportViewModel : ViewModelBase
             });
         }
 
+        foreach (var transaction in transactions.OrderByDescending(transaction => transaction.Date).ThenByDescending(transaction => transaction.Id))
+        {
+            var type = transaction.Category switch
+            {
+                GoldShopCore.Models.TransactionCategories.GoldOutbound => UiText.L("LblGoldOutboundReport"),
+                GoldShopCore.Models.TransactionCategories.GoldReceipt => UiText.L("LblGoldReceiptReport"),
+                GoldShopCore.Models.TransactionCategories.CashPayment => UiText.L("LblCashPaymentReport"),
+                _ => transaction.Category
+            };
+
+            ReportRows.Add(new ModernReportRow
+            {
+                Date = transaction.Date,
+                Type = type,
+                Weight = transaction.OriginalWeight,
+                Item = transaction.ItemName ?? string.Empty,
+                Value = transaction.TotalManufacturing + transaction.TotalImprovement,
+                SupplierName = suppliers.TryGetValue(transaction.SupplierId, out var supplierName) ? supplierName : string.Empty
+            });
+        }
+
         BuildChart();
+        RefreshSummaries();
     }
 
     private void BuildChart()
@@ -79,5 +136,59 @@ public class WeeklyReportViewModel : ViewModelBase
                 Height = height
             });
         }
+
+        ExportImageCommand.RaiseCanExecuteChanged();
+        ExportPdfCommand.RaiseCanExecuteChanged();
+        ShareCommand.RaiseCanExecuteChanged();
+    }
+
+    private void RefreshSummaries()
+    {
+        OnPropertyChanged(nameof(TotalWeight));
+        OnPropertyChanged(nameof(TotalValue));
+        OnPropertyChanged(nameof(NetResult));
+        OnPropertyChanged(nameof(TotalGold));
+        OnPropertyChanged(nameof(TotalManufacturing));
+        OnPropertyChanged(nameof(NetTotal));
+        OnPropertyChanged(nameof(TotalWeightDisplay));
+        OnPropertyChanged(nameof(TotalValueDisplay));
+        OnPropertyChanged(nameof(NetResultDisplay));
+        OnPropertyChanged(nameof(TotalGoldDisplay));
+        OnPropertyChanged(nameof(TotalManufacturingDisplay));
+        OnPropertyChanged(nameof(NetTotalDisplay));
+    }
+
+    private void ExportImage(FrameworkElement? element)
+    {
+        if (element == null)
+        {
+            return;
+        }
+
+        var path = ReportExportService.ExportVisualAsPng(element, $"gold-movement-report-{DateTime.Now:yyyyMMdd-HHmm}");
+        if (!string.IsNullOrWhiteSpace(path))
+        {
+            MessageBox.Show(UiText.Format("MsgReportSaved", path), UiText.L("TitleExportImage"), MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+    }
+
+    private void ExportPdf()
+    {
+        var path = ReportExportService.ExportReportPdf(this, $"gold-movement-report-{DateTime.Now:yyyyMMdd-HHmm}");
+        if (!string.IsNullOrWhiteSpace(path))
+        {
+            MessageBox.Show(UiText.Format("MsgReportSaved", path), UiText.L("TitleExportPdf"), MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+    }
+
+    private void Share(FrameworkElement? element)
+    {
+        if (element == null)
+        {
+            return;
+        }
+
+        var path = ReportExportService.ExportVisualAsShareImage(element, $"gold-movement-report-share-{DateTime.Now:yyyyMMdd-HHmm}");
+        ReportExportService.ShareFile(path);
     }
 }

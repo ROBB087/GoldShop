@@ -1,6 +1,6 @@
 namespace GoldShopWpf.ViewModels;
 
-public class SupplierListItem
+public class SupplierListItem : SelectableViewModel
 {
     public int Id { get; init; }
     public string Name { get; init; } = string.Empty;

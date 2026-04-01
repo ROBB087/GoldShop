@@ -21,6 +21,8 @@ public static class UiText
             "Karat must be one of the supported values: 18, 21, 22, 24." => L("MsgKaratSupported"),
             "Manufacturing value must be zero or greater." => L("MsgManufacturingValueNonNegative"),
             "Refining value must be zero or greater." => L("MsgRefiningValueNonNegative"),
+            "Default manufacturing value must be zero or greater." => L("MsgDefaultManufacturingNonNegative"),
+            "Default refining value must be zero or greater." => L("MsgDefaultRefiningNonNegative"),
             "Gold receipt cannot include manufacturing or refining values." => L("MsgGoldReceiptNoCharges"),
             "Discount amount must be greater than zero." => L("MsgDiscountGreaterThanZero"),
             _ => message

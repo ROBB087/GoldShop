@@ -8,6 +8,7 @@ public class MainViewModel : ViewModelBase
 {
     private ViewModelBase _currentPage = null!;
     private string _pageTitle = "Dashboard";
+    private string _activePageKey = "Dashboard";
 
     public DashboardViewModel Dashboard { get; }
     public SuppliersViewModel Suppliers { get; }
@@ -16,6 +17,7 @@ public class MainViewModel : ViewModelBase
     public WeeklyReportViewModel WeeklyReport { get; }
     public StatementViewModel Statement { get; }
     public NotesViewModel Notes { get; }
+    public PricingSettingsViewModel PricingSettings { get; }
     public BackupViewModel Backup { get; }
 
     public ViewModelBase CurrentPage
@@ -30,6 +32,12 @@ public class MainViewModel : ViewModelBase
         set => SetProperty(ref _pageTitle, value);
     }
 
+    public string ActivePageKey
+    {
+        get => _activePageKey;
+        set => SetProperty(ref _activePageKey, value);
+    }
+
     public RelayCommand ShowDashboardCommand { get; }
     public RelayCommand ShowSuppliersCommand { get; }
     public RelayCommand ShowTransactionsCommand { get; }
@@ -37,6 +45,7 @@ public class MainViewModel : ViewModelBase
     public RelayCommand ShowWeeklyReportCommand { get; }
     public RelayCommand ShowStatementCommand { get; }
     public RelayCommand ShowNotesCommand { get; }
+    public RelayCommand ShowPricingSettingsCommand { get; }
     public RelayCommand ShowBackupCommand { get; }
     public RelayCommand BackupCommand { get; }
     public RelayCommand ToggleLanguageCommand { get; }
@@ -50,20 +59,22 @@ public class MainViewModel : ViewModelBase
         WeeklyReport = new WeeklyReportViewModel();
         Statement = new StatementViewModel();
         Notes = new NotesViewModel();
+        PricingSettings = new PricingSettingsViewModel();
         Backup = new BackupViewModel();
 
-        ShowDashboardCommand = new RelayCommand(_ => Navigate(Dashboard, L("NavDashboard")));
-        ShowSuppliersCommand = new RelayCommand(_ => Navigate(Suppliers, L("NavSuppliers")));
-        ShowTransactionsCommand = new RelayCommand(_ => Navigate(Transactions, L("NavTransactions")));
+        ShowDashboardCommand = new RelayCommand(_ => Navigate(Dashboard, L("NavDashboard"), "Dashboard"));
+        ShowSuppliersCommand = new RelayCommand(_ => Navigate(Suppliers, L("NavSuppliers"), "Suppliers"));
+        ShowTransactionsCommand = new RelayCommand(_ => Navigate(Transactions, L("NavTransactions"), "Transactions"));
         ShowSupplierDetailsCommand = new RelayCommand(_ =>
         {
             SupplierDetails.LoadAll();
-            Navigate(SupplierDetails, L("NavSupplierDetails"));
+            Navigate(SupplierDetails, L("NavSupplierDetails"), "SupplierDetails");
         });
-        ShowWeeklyReportCommand = new RelayCommand(_ => Navigate(WeeklyReport, L("NavWeeklyReport")));
-        ShowStatementCommand = new RelayCommand(_ => Navigate(Statement, L("NavStatement")));
-        ShowNotesCommand = new RelayCommand(_ => Navigate(Notes, L("NavNotes")));
-        ShowBackupCommand = new RelayCommand(_ => Navigate(Backup, L("NavBackup")));
+        ShowWeeklyReportCommand = new RelayCommand(_ => Navigate(WeeklyReport, L("NavWeeklyReport"), "WeeklyReport"));
+        ShowStatementCommand = new RelayCommand(_ => Navigate(Statement, L("NavStatement"), "Statement"));
+        ShowNotesCommand = new RelayCommand(_ => Navigate(Notes, L("NavNotes"), "Notes"));
+        ShowPricingSettingsCommand = new RelayCommand(_ => Navigate(PricingSettings, L("NavPricingSettings"), "PricingSettings"));
+        ShowBackupCommand = new RelayCommand(_ => Navigate(Backup, L("NavBackup"), "Backup"));
 
         BackupCommand = new RelayCommand(_ => BackupDatabase());
         ToggleLanguageCommand = new RelayCommand(_ => ToggleLanguage());
@@ -71,25 +82,26 @@ public class MainViewModel : ViewModelBase
         Suppliers.OpenDetailsRequested += supplier =>
         {
             SupplierDetails.LoadForSupplier(supplier);
-            Navigate(SupplierDetails, L("NavSupplierDetails"));
+            Navigate(SupplierDetails, L("NavSupplierDetails"), "SupplierDetails");
         };
 
         Dashboard.OpenQuickAddSupplier += () =>
         {
-            Navigate(Suppliers, L("NavSuppliers"));
+            Navigate(Suppliers, L("NavSuppliers"), "Suppliers");
             Suppliers.AddCommand.Execute(null);
         };
         Dashboard.OpenQuickAddTransaction += () =>
         {
-            Navigate(Transactions, L("NavTransactions"));
+            Navigate(Transactions, L("NavTransactions"), "Transactions");
             Transactions.AddCommand.Execute(null);
         };
 
         CurrentPage = Dashboard;
         PageTitle = L("NavDashboard");
+        ActivePageKey = "Dashboard";
     }
 
-    private void Navigate(ViewModelBase page, string title)
+    private void Navigate(ViewModelBase page, string title, string activePageKey)
     {
         switch (page)
         {
@@ -118,9 +130,13 @@ public class MainViewModel : ViewModelBase
             case NotesViewModel notes:
                 notes.Load();
                 break;
+            case PricingSettingsViewModel pricingSettings:
+                pricingSettings.Load();
+                break;
         }
 
         PageTitle = title;
+        ActivePageKey = activePageKey;
         CurrentPage = page;
     }
 
@@ -156,6 +172,7 @@ public class MainViewModel : ViewModelBase
             case WeeklyReportViewModel: PageTitle = L("NavWeeklyReport"); break;
             case StatementViewModel: PageTitle = L("NavStatement"); break;
             case NotesViewModel: PageTitle = L("NavNotes"); break;
+            case PricingSettingsViewModel: PageTitle = L("NavPricingSettings"); break;
             case BackupViewModel: PageTitle = L("NavBackup"); break;
         }
 

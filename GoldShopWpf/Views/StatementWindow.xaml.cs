@@ -83,7 +83,7 @@ public partial class StatementWindow : Window
             TextAlignment = TextAlignment.Center
         });
 
-        doc.Blocks.Add(new Paragraph(new Run($"{UiText.L("ReceiptDateRange")}: {from:yyyy-MM-dd} - {to:yyyy-MM-dd}"))
+        doc.Blocks.Add(new Paragraph(new Run($"{UiText.L("ReceiptDateRange")}: {from:yyyy/MM/dd} - {to:yyyy/MM/dd}"))
         {
             Foreground = Brushes.DimGray,
             Margin = new Thickness(0, 0, 0, 18),
@@ -116,7 +116,7 @@ public partial class StatementWindow : Window
         foreach (var transaction in transactions)
         {
             txTable.RowGroups[0].Rows.Add(CreateDataRow(
-                transaction.Date.ToString("yyyy-MM-dd"),
+                transaction.Date.ToString("yyyy/MM/dd"),
                 FormatType(transaction),
                 FormatNumber(transaction.OriginalWeight, UiText.L("LblWeightUnit")),
                 $"{transaction.OriginalKarat}",

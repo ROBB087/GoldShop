@@ -1,0 +1,84 @@
+<UserControl x:Class="GoldShopWpf.Views.PricingSettingsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             mc:Ignorable="d">
+    <Grid Margin="8">
+        <Border Padding="32"
+                CornerRadius="30"
+                BorderBrush="#E6EAF2"
+                BorderThickness="1"
+                HorizontalAlignment="Stretch"
+                VerticalAlignment="Top">
+            <Border.Background>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                    <GradientStop Color="#FFF9EC" Offset="0" />
+                    <GradientStop Color="#FFFDF7" Offset="1" />
+                </LinearGradientBrush>
+            </Border.Background>
+
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="320" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2">
+                    <TextBlock Text="{DynamicResource NavPricingSettings}" FontSize="28" FontWeight="SemiBold" Margin="0,0,0,8" />
+                    <TextBlock Text="{DynamicResource LblPricingSettingsSub}"
+                               FontSize="15"
+                               Foreground="#526077"
+                               Margin="0,0,0,24" />
+                </StackPanel>
+
+                <Border Grid.Row="1"
+                        Grid.Column="0"
+                        Grid.ColumnSpan="2"
+                        Background="#FFFFFF"
+                        BorderBrush="#EAD8A4"
+                        BorderThickness="1"
+                        CornerRadius="24"
+                        Padding="24">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="240" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Text="{DynamicResource LblManufacturingPerGram}" Grid.Row="0" Grid.Column="0" Margin="0,10,20,10" VerticalAlignment="Center" />
+                        <TextBox Text="{Binding DefaultManufacturingPerGram, UpdateSourceTrigger=PropertyChanged}" Grid.Row="0" Grid.Column="1" Margin="0,6,0,6" />
+
+                        <TextBlock Text="{DynamicResource LblImprovementPerGram}" Grid.Row="1" Grid.Column="0" Margin="0,10,20,10" VerticalAlignment="Center" />
+                        <TextBox Text="{Binding DefaultImprovementPerGram, UpdateSourceTrigger=PropertyChanged}" Grid.Row="1" Grid.Column="1" Margin="0,6,0,6" />
+                    </Grid>
+                </Border>
+
+                <Button Grid.Row="2"
+                        Grid.Column="1"
+                        Width="180"
+                        Height="52"
+                        HorizontalAlignment="Right"
+                        Margin="0,24,0,0"
+                        Style="{StaticResource PrimaryButton}"
+                        Command="{Binding SaveCommand}"
+                        ToolTip="{DynamicResource TooltipSave}">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="ContentSave" Width="18" Height="18" Margin="0,0,6,0" />
+                        <TextBlock Text="{DynamicResource BtnApply}" />
+                    </StackPanel>
+                </Button>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

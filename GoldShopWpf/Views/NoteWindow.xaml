@@ -1,0 +1,97 @@
+<Window x:Class="GoldShopWpf.Views.NoteWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        Title="{DynamicResource WindowAddNote}"
+        Height="660"
+        Width="860"
+        MinWidth="720"
+        MinHeight="560"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="CanResize"
+        FlowDirection="{DynamicResource AppFlowDirection}">
+    <Window.Resources>
+        <Style x:Key="NoteEditorTextBox" TargetType="TextBox" BasedOn="{StaticResource MaterialDesignOutlinedTextBox}">
+            <Setter Property="Margin" Value="0,8" />
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+            <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
+            <Setter Property="MinHeight" Value="320" />
+            <Setter Property="Padding" Value="14,14" />
+            <Setter Property="VerticalContentAlignment" Value="Top" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="AcceptsReturn" Value="True" />
+            <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />
+            <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
+            <Setter Property="FlowDirection" Value="{DynamicResource AppFlowDirection}" />
+            <Setter Property="materialDesign:HintAssist.HintOpacity" Value="0.55" />
+            <Setter Property="materialDesign:TextFieldAssist.DecorationVisibility" Value="Collapsed" />
+        </Style>
+    </Window.Resources>
+
+    <Grid Background="{DynamicResource AppBackgroundBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0"
+                Margin="20,20,20,0"
+                Padding="24"
+                CornerRadius="24"
+                Background="#F2F7FF"
+                BorderBrush="#D8E5FF"
+                BorderThickness="1">
+            <StackPanel Orientation="Horizontal">
+                <Border Width="54" Height="54" CornerRadius="16" Background="#DCEBFF">
+                    <materialDesign:PackIcon Kind="NotebookEditOutline" Width="24" Height="24" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="#2457C5" />
+                </Border>
+                <StackPanel Margin="14,0,0,0">
+                    <TextBlock x:Name="HeaderTitleText" FontSize="24" FontWeight="SemiBold" />
+                    <TextBlock Text="{DynamicResource SubNoteWindow}" Foreground="{StaticResource MutedTextBrush}" Margin="0,6,0,0" />
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <Border Grid.Row="1" Style="{StaticResource CardContainer}" Margin="20">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <Grid Margin="4">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="180" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Text="{DynamicResource LblClientName}" Grid.Row="0" Grid.Column="0" Margin="8,12" />
+                    <TextBox x:Name="ClientNameText" Grid.Row="0" Grid.Column="1" Margin="0,8" MaxLength="120" />
+
+                    <TextBlock Text="{DynamicResource LblNoteContent}" Grid.Row="1" Grid.Column="0" Margin="8,12" VerticalAlignment="Top" />
+                    <TextBox x:Name="NoteContentText"
+                             Grid.Row="1"
+                             Grid.Column="1"
+                             Style="{StaticResource NoteEditorTextBox}"
+                             MaxLength="4000"
+                             ToolTip="{DynamicResource LblNoteContent}" />
+
+                    <StackPanel Orientation="Horizontal" Grid.Row="2" Grid.Column="1" HorizontalAlignment="Right" Margin="0,20,0,0">
+                        <Button Width="140" Style="{StaticResource GhostButton}" Margin="12,0,0,0" Click="OnCancel" ToolTip="{DynamicResource TooltipCancel}">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="CloseCircleOutline" Width="18" Height="18" Margin="0,0,6,0" />
+                                <TextBlock Text="{DynamicResource BtnClear}" />
+                            </StackPanel>
+                        </Button>
+                        <Button Width="150" Style="{StaticResource PrimaryButton}" Click="OnSave" ToolTip="{DynamicResource TooltipSave}">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="ContentSave" Width="18" Height="18" Margin="0,0,6,0" />
+                                <TextBlock Text="{DynamicResource BtnApply}" />
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </Grid>
+            </ScrollViewer>
+        </Border>
+    </Grid>
+</Window>

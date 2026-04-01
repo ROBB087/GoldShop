@@ -30,7 +30,7 @@ public partial class WeeklyReportView : UserControl
         var lines = new List<string>
         {
             title,
-            $"{vm.FromDate:yyyy-MM-dd} - {vm.ToDate:yyyy-MM-dd}",
+            $"{vm.FromDate:yyyy/MM/dd} - {vm.ToDate:yyyy/MM/dd}",
             new string('-', 88),
             string.Format("{0,-20} {1,14} {2,14} {3,14}", supplierLabel, goldLabel, manufacturingLabel, improvementLabel),
             new string('-', 88)

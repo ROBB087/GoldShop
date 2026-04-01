@@ -26,6 +26,37 @@ public class SupplierDetailsViewModel : ViewModelBase
     public ObservableCollection<SupplierListItem> SupplierOptions { get; } = new();
     public ObservableCollection<TransactionRow> Transactions { get; } = new();
     public ObservableCollection<DiscountListItem> Discounts { get; } = new();
+    public bool? AreAllVisibleTransactionsSelected
+    {
+        get
+        {
+            if (Transactions.Count == 0)
+            {
+                return false;
+            }
+
+            var selectedCount = Transactions.Count(transaction => transaction.IsSelected);
+            if (selectedCount == 0)
+            {
+                return false;
+            }
+
+            return selectedCount == Transactions.Count ? true : null;
+        }
+        set
+        {
+            foreach (var transaction in Transactions)
+            {
+                transaction.IsSelected = value == true;
+            }
+
+            RefreshSelectionState();
+        }
+    }
+
+    public int CheckedTransactionCount => _allTransactions.Count(transaction => transaction.IsSelected);
+    public string SelectedTransactionsLabel => UiText.Format("LblSelectedCount", CheckedTransactionCount);
+    public bool HasCheckedTransactions => CheckedTransactionCount > 0;
 
     public SupplierListItem? SelectedTrader
     {
@@ -96,8 +127,7 @@ public class SupplierDetailsViewModel : ViewModelBase
         {
             if (SetProperty(ref _selectedTransaction, value))
             {
-                EditTransactionCommand.RaiseCanExecuteChanged();
-                DeleteTransactionCommand.RaiseCanExecuteChanged();
+                RefreshSelectionState();
             }
         }
     }
@@ -158,6 +188,7 @@ public class SupplierDetailsViewModel : ViewModelBase
 
     public decimal FinalManufacturing => TotalManufacturing - ManufacturingDiscounts;
     public decimal FinalImprovement => TotalImprovement - ImprovementDiscounts;
+    public decimal TotalDiscounts => ManufacturingDiscounts + ImprovementDiscounts;
 
     public RelayCommand ApplyFilterCommand { get; }
     public RelayCommand ClearFilterCommand { get; }
@@ -165,10 +196,17 @@ public class SupplierDetailsViewModel : ViewModelBase
     public RelayCommand AddDiscountCommand { get; }
     public RelayCommand EditTransactionCommand { get; }
     public RelayCommand DeleteTransactionCommand { get; }
+    public RelayCommand RefreshCommand { get; }
     public RelayCommand PrintStatementCommand { get; }
+    public RelayCommand ViewTransactionRowCommand { get; }
+    public RelayCommand EditTransactionRowCommand { get; }
+    public RelayCommand DeleteTransactionRowCommand { get; }
+    public RelayCommand ViewDiscountRowCommand { get; }
+    public RelayCommand DeleteDiscountRowCommand { get; }
 
     public SupplierDetailsViewModel()
     {
+        Transactions.CollectionChanged += OnTransactionsCollectionChanged;
         ApplyFilterCommand = new RelayCommand(_ =>
         {
             if (SelectedTrader != null)
@@ -188,9 +226,21 @@ public class SupplierDetailsViewModel : ViewModelBase
         });
         AddTransactionCommand = new RelayCommand(_ => AddTransaction(), _ => Supplier != null);
         AddDiscountCommand = new RelayCommand(_ => AddDiscount(), _ => Supplier != null);
-        EditTransactionCommand = new RelayCommand(_ => EditTransaction(), _ => Supplier != null && SelectedTransaction != null);
-        DeleteTransactionCommand = new RelayCommand(_ => DeleteTransaction(), _ => Supplier != null && SelectedTransaction != null);
+        EditTransactionCommand = new RelayCommand(_ => EditTransaction(), _ => GetEditableTransaction() != null);
+        DeleteTransactionCommand = new RelayCommand(_ => DeleteTransactions(), _ => GetCheckedTransactions().Count > 0);
+        RefreshCommand = new RelayCommand(_ =>
+        {
+            if (SelectedTrader != null)
+            {
+                LoadTraderData(SelectedTrader.Id);
+            }
+        }, _ => SelectedTrader != null);
         PrintStatementCommand = new RelayCommand(_ => PrintStatement(), _ => Supplier != null);
+        ViewTransactionRowCommand = new RelayCommand(row => ViewTransactionRow(row as TransactionRow), row => row is TransactionRow);
+        EditTransactionRowCommand = new RelayCommand(row => EditTransaction(row as TransactionRow), row => row is TransactionRow);
+        DeleteTransactionRowCommand = new RelayCommand(row => DeleteTransactions(row as TransactionRow), row => row is TransactionRow);
+        ViewDiscountRowCommand = new RelayCommand(row => ViewDiscountRow(row as DiscountListItem), row => row is DiscountListItem);
+        DeleteDiscountRowCommand = new RelayCommand(row => DeleteDiscountRow(row as DiscountListItem), row => row is DiscountListItem);
 
         LoadSupplierOptions();
     }
@@ -215,6 +265,16 @@ public class SupplierDetailsViewModel : ViewModelBase
         ToDate ??= DateTime.Today;
         LoadSupplierOptions();
         SelectTrader(SelectedTrader?.Id ?? Supplier?.Id ?? AllTradersId, loadData: SupplierOptions.Count > 0);
+    }
+
+    public void SetVisibleTransactionSelection(bool isSelected)
+    {
+        foreach (var transaction in Transactions)
+        {
+            transaction.IsSelected = isSelected;
+        }
+
+        RefreshSelectionState();
     }
 
     private void LoadSupplierOptions()
@@ -285,6 +345,7 @@ public class SupplierDetailsViewModel : ViewModelBase
                     Type = transaction.Type,
                     Category = transaction.Category,
                     OriginalWeight = transaction.OriginalWeight,
+                    ItemName = transaction.ItemName ?? string.Empty,
                     OriginalKarat = transaction.OriginalKarat,
                     Equivalent21 = transaction.Equivalent21,
                     ManufacturingPerGram = transaction.ManufacturingPerGram,
@@ -336,6 +397,7 @@ public class SupplierDetailsViewModel : ViewModelBase
                 Type = transaction.Type,
                 Category = transaction.Category,
                 OriginalWeight = transaction.OriginalWeight,
+                ItemName = transaction.ItemName ?? string.Empty,
                 OriginalKarat = transaction.OriginalKarat,
                 Equivalent21 = transaction.Equivalent21,
                 ManufacturingPerGram = transaction.ManufacturingPerGram,
@@ -367,6 +429,8 @@ public class SupplierDetailsViewModel : ViewModelBase
 
     private void ApplySearchFilter()
     {
+        var selectedTransactionId = SelectedTransaction?.Id;
+
         Transactions.Clear();
         Discounts.Clear();
 
@@ -376,6 +440,7 @@ public class SupplierDetailsViewModel : ViewModelBase
         {
             if (!string.IsNullOrWhiteSpace(query) &&
                 !transaction.SupplierName.ToLowerInvariant().Contains(query) &&
+                !transaction.ItemName.ToLowerInvariant().Contains(query) &&
                 !transaction.Notes.ToLowerInvariant().Contains(query) &&
                 !transaction.Traceability.ToLowerInvariant().Contains(query))
             {
@@ -396,6 +461,11 @@ public class SupplierDetailsViewModel : ViewModelBase
 
             Discounts.Add(discount);
         }
+
+        SelectedTransaction = selectedTransactionId.HasValue
+            ? Transactions.FirstOrDefault(transaction => transaction.Id == selectedTransactionId.Value)
+            : null;
+        RefreshSelectionState();
     }
 
     private void AddTransaction()
@@ -405,7 +475,12 @@ public class SupplierDetailsViewModel : ViewModelBase
             return;
         }
 
-        var dialog = new Views.TransactionWindow(Supplier.Id, SupplierOptions.Where(s => s.Id != AllTradersId));
+        var defaults = AppServices.PricingSettingsService.GetLatest();
+        var dialog = new Views.TransactionWindow(
+            Supplier.Id,
+            GetPopupSuppliers(),
+            defaults.DefaultManufacturingPerGram,
+            defaults.DefaultImprovementPerGram);
         if (dialog.ShowDialog() != true)
         {
             return;
@@ -418,11 +493,15 @@ public class SupplierDetailsViewModel : ViewModelBase
                 dialog.TransactionDate,
                 dialog.TransactionCategory,
                 dialog.OriginalWeight,
+                dialog.ItemName,
                 dialog.OriginalKarat,
                 dialog.ManufacturingPerGram,
                 dialog.ImprovementPerGram,
                 dialog.Notes);
-            LoadTraderData(Supplier.Id);
+            if (SelectedTrader != null)
+            {
+                LoadTraderData(SelectedTrader.Id);
+            }
         }
         catch (ArgumentException ex)
         {
@@ -446,7 +525,10 @@ public class SupplierDetailsViewModel : ViewModelBase
         try
         {
             AppServices.DiscountService.AddDiscount(Supplier.Id, dialog.DiscountType, dialog.Amount, dialog.Notes);
-            LoadTraderData(Supplier.Id);
+            if (SelectedTrader != null)
+            {
+                LoadTraderData(SelectedTrader.Id);
+            }
         }
         catch (ArgumentException ex)
         {
@@ -454,41 +536,29 @@ public class SupplierDetailsViewModel : ViewModelBase
         }
     }
 
-    private void EditTransaction()
+    private void ViewTransactionRow(TransactionRow? transaction)
     {
-        if (Supplier == null || SelectedTransaction == null)
-        {
-            return;
-        }
-
-        var transaction = Transactions.FirstOrDefault(t => t.Id == SelectedTransaction.Id);
         if (transaction == null)
         {
             return;
         }
 
-        var item = new TransactionListItem
-        {
-            Id = transaction.Id,
-            SupplierId = Supplier.Id,
-            SupplierName = Supplier.Name,
-            Date = transaction.Date,
-            Type = transaction.Type,
-            Category = transaction.Category,
-            OriginalWeight = transaction.OriginalWeight,
-            OriginalKarat = transaction.OriginalKarat,
-            Equivalent21 = transaction.Equivalent21,
-            ManufacturingPerGram = transaction.ManufacturingPerGram,
-            ImprovementPerGram = transaction.ImprovementPerGram,
-            TotalManufacturing = transaction.TotalManufacturing,
-            TotalImprovement = transaction.TotalImprovement,
-            Traceability = transaction.Traceability,
-            Notes = transaction.Notes,
-            CreatedAt = transaction.CreatedAt,
-            UpdatedAt = transaction.UpdatedAt
-        };
+        var item = CreateTransactionListItem(transaction);
+        var dialog = new Views.TransactionWindow(item, GetPopupSuppliers(), isReadOnly: true);
+        dialog.ShowDialog();
+    }
 
-        var dialog = new Views.TransactionWindow(item, SupplierOptions.Where(s => s.Id != AllTradersId));
+    private void EditTransaction(TransactionRow? requestedTransaction = null)
+    {
+        var editableTransaction = requestedTransaction ?? GetEditableTransaction();
+        if (editableTransaction == null)
+        {
+            return;
+        }
+
+        var item = CreateTransactionListItem(editableTransaction);
+
+        var dialog = new Views.TransactionWindow(item, GetPopupSuppliers());
         if (dialog.ShowDialog() != true)
         {
             return;
@@ -497,16 +567,20 @@ public class SupplierDetailsViewModel : ViewModelBase
         try
         {
             AppServices.TransactionService.UpdateTransaction(
-                SelectedTransaction.Id,
-                Supplier.Id,
+                editableTransaction.Id,
+                dialog.SupplierId,
                 dialog.TransactionDate,
                 dialog.TransactionCategory,
                 dialog.OriginalWeight,
+                dialog.ItemName,
                 dialog.OriginalKarat,
                 dialog.ManufacturingPerGram,
                 dialog.ImprovementPerGram,
                 dialog.Notes);
-            LoadTraderData(Supplier.Id);
+            if (SelectedTrader != null)
+            {
+                LoadTraderData(SelectedTrader.Id);
+            }
         }
         catch (ArgumentException ex)
         {
@@ -514,26 +588,76 @@ public class SupplierDetailsViewModel : ViewModelBase
         }
     }
 
-    private void DeleteTransaction()
+    private void DeleteTransactions(TransactionRow? transaction = null)
     {
-        if (SelectedTransaction == null)
+        var deleteTargets = transaction == null ? GetCheckedTransactions() : [transaction];
+        if (deleteTargets.Count == 0)
         {
             return;
         }
 
+        var message = GetDeleteConfirmationMessage(deleteTargets.Count);
         var result = System.Windows.MessageBox.Show(
-            UiText.L("MsgDeleteTransactionConfirm"),
+            message,
             UiText.L("TitleConfirmDelete"),
             System.Windows.MessageBoxButton.YesNo,
             System.Windows.MessageBoxImage.Warning);
 
         if (result == System.Windows.MessageBoxResult.Yes)
         {
-            AppServices.TransactionService.DeleteTransaction(SelectedTransaction.Id);
+            foreach (var item in deleteTargets)
+            {
+                AppServices.TransactionService.DeleteTransaction(item.Id);
+            }
+
             if (SelectedTrader != null)
             {
                 LoadTraderData(SelectedTrader.Id);
             }
+        }
+    }
+
+    private List<SupplierListItem> GetPopupSuppliers()
+        => SupplierOptions.Where(s => s.Id != AllTradersId).ToList();
+
+    private void ViewDiscountRow(DiscountListItem? discount)
+    {
+        if (discount == null)
+        {
+            return;
+        }
+
+        var title = $"{discount.Type} - {discount.Amount:0.####}";
+        var notes = string.IsNullOrWhiteSpace(discount.Notes) ? "-" : discount.Notes;
+        System.Windows.MessageBox.Show(
+            $"التاريخ: {discount.CreatedAt:yyyy/MM/dd HH:mm}{Environment.NewLine}النوع: {discount.Type}{Environment.NewLine}القيمة: {discount.Amount:0.####}{Environment.NewLine}الملاحظات: {notes}",
+            title,
+            System.Windows.MessageBoxButton.OK,
+            System.Windows.MessageBoxImage.Information);
+    }
+
+    private void DeleteDiscountRow(DiscountListItem? discount)
+    {
+        if (discount == null)
+        {
+            return;
+        }
+
+        var result = System.Windows.MessageBox.Show(
+            UiText.L("MsgDeleteSingleRecordConfirm"),
+            UiText.L("TitleConfirmDelete"),
+            System.Windows.MessageBoxButton.YesNo,
+            System.Windows.MessageBoxImage.Warning);
+
+        if (result != System.Windows.MessageBoxResult.Yes)
+        {
+            return;
+        }
+
+        AppServices.DiscountService.DeleteDiscount(discount.Id);
+        if (SelectedTrader != null)
+        {
+            LoadTraderData(SelectedTrader.Id);
         }
     }
 
@@ -565,6 +689,7 @@ public class SupplierDetailsViewModel : ViewModelBase
         Transactions.Clear();
         Discounts.Clear();
         ApplySummary(new TraderSummary());
+        RefreshSelectionState();
     }
 
     private void SelectTrader(int? traderId, bool loadData = false)
@@ -592,5 +717,103 @@ public class SupplierDetailsViewModel : ViewModelBase
             Supplier = null;
             ResetViewState();
         }
+    }
+
+    private void OnTransactionsCollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+    {
+        if (e.OldItems != null)
+        {
+            foreach (var item in e.OldItems.OfType<TransactionRow>())
+            {
+                item.PropertyChanged -= OnTransactionPropertyChanged;
+            }
+        }
+
+        if (e.NewItems != null)
+        {
+            foreach (var item in e.NewItems.OfType<TransactionRow>())
+            {
+                item.PropertyChanged += OnTransactionPropertyChanged;
+            }
+        }
+    }
+
+    private void OnTransactionPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(TransactionRow.IsSelected))
+        {
+            RefreshSelectionState();
+        }
+    }
+
+    private TransactionRow? GetEditableTransaction()
+    {
+        var checkedTransactions = GetCheckedTransactions();
+        if (checkedTransactions.Count == 1)
+        {
+            return checkedTransactions[0];
+        }
+
+        if (checkedTransactions.Count > 1)
+        {
+            return null;
+        }
+
+        return SelectedTransaction?.IsSelected == true ? SelectedTransaction : null;
+    }
+
+    private List<TransactionRow> GetCheckedTransactions()
+    {
+        return Transactions.Where(transaction => transaction.IsSelected).ToList();
+    }
+
+    private void RefreshSelectionState()
+    {
+        OnPropertyChanged(nameof(AreAllVisibleTransactionsSelected));
+        OnPropertyChanged(nameof(CheckedTransactionCount));
+        OnPropertyChanged(nameof(SelectedTransactionsLabel));
+        OnPropertyChanged(nameof(HasCheckedTransactions));
+        AddTransactionCommand.RaiseCanExecuteChanged();
+        AddDiscountCommand.RaiseCanExecuteChanged();
+        EditTransactionCommand.RaiseCanExecuteChanged();
+        DeleteTransactionCommand.RaiseCanExecuteChanged();
+        RefreshCommand.RaiseCanExecuteChanged();
+    }
+
+    private string GetDeleteConfirmationMessage(int targetCount)
+    {
+        if (targetCount > 0 && targetCount == _allTransactions.Count && _allTransactions.Count > 0)
+        {
+            return UiText.L("MsgDeleteAllRecordsConfirm");
+        }
+
+        return targetCount == 1
+            ? UiText.L("MsgDeleteSingleRecordConfirm")
+            : UiText.Format("MsgDeleteSelectedRecordsConfirm", targetCount);
+    }
+
+    private TransactionListItem CreateTransactionListItem(TransactionRow transaction)
+    {
+        return new TransactionListItem
+        {
+            Id = transaction.Id,
+            SupplierId = Supplier?.Id ?? SelectedTrader?.Id ?? 0,
+            SupplierName = transaction.SupplierName,
+            Date = transaction.Date,
+            Type = transaction.Type,
+            Category = transaction.Category,
+            OriginalWeight = transaction.OriginalWeight,
+            ItemName = transaction.ItemName,
+            OriginalKarat = transaction.OriginalKarat,
+            Equivalent21 = transaction.Equivalent21,
+            ManufacturingPerGram = transaction.ManufacturingPerGram,
+            ImprovementPerGram = transaction.ImprovementPerGram,
+            TotalManufacturing = transaction.TotalManufacturing,
+            TotalImprovement = transaction.TotalImprovement,
+            Traceability = transaction.Traceability,
+            Notes = transaction.Notes,
+            CreatedAt = transaction.CreatedAt,
+            UpdatedAt = transaction.UpdatedAt
+        };
     }
 }

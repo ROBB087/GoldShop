@@ -9,6 +9,7 @@ namespace GoldShopWpf.Views;
 
 public partial class TransactionWindow : Window
 {
+    private readonly bool _isReadOnly;
     private sealed record CategoryOption(string Label, string Category);
 
     public int SupplierId => SupplierCombo.SelectedItem is SupplierListItem s ? s.Id : 0;
@@ -16,25 +17,45 @@ public partial class TransactionWindow : Window
     public string TransactionCategory => (string)(TypeCombo.SelectedValue ?? TransactionCategories.GoldOutbound);
     public TransactionType TransactionType => TransactionCategory == TransactionCategories.GoldOutbound ? TransactionType.Out : TransactionType.In;
     public decimal OriginalWeight => ParseDecimal(WeightText.Text);
+    public string? ItemName => string.IsNullOrWhiteSpace(ItemText.Text) ? null : ItemText.Text.Trim();
     public int OriginalKarat => KaratCombo.SelectedItem is int karat ? karat : 21;
     public decimal ManufacturingPerGram => ParseDecimal(ManufacturingText.Text);
     public decimal ImprovementPerGram => ParseDecimal(ImprovementText.Text);
     public string? Notes => string.IsNullOrWhiteSpace(NotesText.Text) ? null : NotesText.Text.Trim();
 
     public TransactionWindow(int? supplierId, IEnumerable<SupplierListItem> suppliers)
-        : this(null, supplierId, suppliers)
+        : this(null, supplierId, suppliers, null, null)
+    {
+    }
+
+    public TransactionWindow(int? supplierId, IEnumerable<SupplierListItem> suppliers, decimal defaultManufacturingPerGram, decimal defaultImprovementPerGram)
+        : this(null, supplierId, suppliers, defaultManufacturingPerGram, defaultImprovementPerGram)
     {
     }
 
     public TransactionWindow(TransactionListItem transaction, IEnumerable<SupplierListItem> suppliers)
-        : this(transaction, transaction.SupplierId, suppliers)
+        : this(transaction, transaction.SupplierId, suppliers, null, null, false)
     {
     }
 
-    private TransactionWindow(TransactionListItem? transaction, int? supplierId, IEnumerable<SupplierListItem> suppliers)
+    public TransactionWindow(TransactionListItem transaction, IEnumerable<SupplierListItem> suppliers, bool isReadOnly)
+        : this(transaction, transaction.SupplierId, suppliers, null, null, isReadOnly)
+    {
+    }
+
+    private TransactionWindow(
+        TransactionListItem? transaction,
+        int? supplierId,
+        IEnumerable<SupplierListItem> suppliers,
+        decimal? defaultManufacturingPerGram,
+        decimal? defaultImprovementPerGram,
+        bool isReadOnly = false)
     {
         InitializeComponent();
-        Title = UiText.L(transaction == null ? "WindowAddTransaction" : "WindowEditTransaction");
+        _isReadOnly = isReadOnly;
+        Title = isReadOnly
+            ? UiText.L("BtnViewDetails")
+            : UiText.L(transaction == null ? "WindowAddTransaction" : "WindowEditTransaction");
         HeaderTitleText.Text = Title;
 
         SupplierCombo.ItemsSource = suppliers.ToList();
@@ -50,9 +71,10 @@ public partial class TransactionWindow : Window
         DatePicker.SelectedDate = transaction?.Date ?? DateTime.Today;
         TypeCombo.SelectedValue = TransactionCategories.Normalize(transaction?.Category, transaction?.Type ?? TransactionType.Out);
         WeightText.Text = transaction == null || transaction.OriginalWeight == 0 ? string.Empty : transaction.OriginalWeight.ToString("0.####", CultureInfo.CurrentCulture);
+        ItemText.Text = transaction?.ItemName ?? string.Empty;
         KaratCombo.SelectedItem = transaction?.OriginalKarat ?? 21;
-        ManufacturingText.Text = GetManufacturingText(transaction);
-        ImprovementText.Text = GetImprovementText(transaction);
+        ManufacturingText.Text = GetManufacturingText(transaction, defaultManufacturingPerGram);
+        ImprovementText.Text = GetImprovementText(transaction, defaultImprovementPerGram);
         NotesText.Text = transaction?.Notes ?? string.Empty;
 
         WeightText.TextChanged += (_, _) => UpdatePreview();
@@ -62,6 +84,7 @@ public partial class TransactionWindow : Window
         TypeCombo.SelectionChanged += (_, _) => UpdateFormForCategory();
 
         UpdateFormForCategory();
+        ApplyReadOnlyState();
     }
 
     private void UpdateFormForCategory()
@@ -72,6 +95,8 @@ public partial class TransactionWindow : Window
 
         WeightLabel.Visibility = isCashPayment ? Visibility.Collapsed : Visibility.Visible;
         WeightText.Visibility = isCashPayment ? Visibility.Collapsed : Visibility.Visible;
+        ItemLabel.Visibility = isCashPayment ? Visibility.Collapsed : Visibility.Visible;
+        ItemText.Visibility = isCashPayment ? Visibility.Collapsed : Visibility.Visible;
         KaratLabel.Visibility = isCashPayment ? Visibility.Collapsed : Visibility.Visible;
         KaratCombo.Visibility = isCashPayment ? Visibility.Collapsed : Visibility.Visible;
 
@@ -92,6 +117,7 @@ public partial class TransactionWindow : Window
         if (isCashPayment)
         {
             WeightText.Text = "0";
+            ItemText.Text = string.Empty;
             KaratCombo.SelectedItem = 21;
         }
 
@@ -190,14 +216,33 @@ public partial class TransactionWindow : Window
         DialogResult = false;
     }
 
+    private void ApplyReadOnlyState()
+    {
+        if (!_isReadOnly)
+        {
+            return;
+        }
+
+        SupplierCombo.IsEnabled = false;
+        DatePicker.IsEnabled = false;
+        TypeCombo.IsEnabled = false;
+        WeightText.IsReadOnly = true;
+        ItemText.IsReadOnly = true;
+        KaratCombo.IsEnabled = false;
+        ManufacturingText.IsReadOnly = true;
+        ImprovementText.IsReadOnly = true;
+        NotesText.IsReadOnly = true;
+        SaveButton.Visibility = Visibility.Collapsed;
+    }
+
     private static decimal ParseDecimal(string text)
         => decimal.TryParse(text, NumberStyles.Number, CultureInfo.CurrentCulture, out var value) ? value : 0m;
 
-    private static string GetManufacturingText(TransactionListItem? transaction)
+    private static string GetManufacturingText(TransactionListItem? transaction, decimal? defaultValue)
     {
         if (transaction == null)
         {
-            return string.Empty;
+            return defaultValue.GetValueOrDefault().ToString("0.####", CultureInfo.CurrentCulture);
         }
 
         return transaction.Category == TransactionCategories.CashPayment
@@ -205,11 +250,11 @@ public partial class TransactionWindow : Window
             : transaction.ManufacturingPerGram.ToString("0.####", CultureInfo.CurrentCulture);
     }
 
-    private static string GetImprovementText(TransactionListItem? transaction)
+    private static string GetImprovementText(TransactionListItem? transaction, decimal? defaultValue)
     {
         if (transaction == null)
         {
-            return string.Empty;
+            return defaultValue.GetValueOrDefault().ToString("0.####", CultureInfo.CurrentCulture);
         }
 
         return transaction.Category == TransactionCategories.CashPayment

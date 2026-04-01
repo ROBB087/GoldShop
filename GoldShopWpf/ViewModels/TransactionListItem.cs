@@ -2,7 +2,7 @@ using GoldShopCore.Models;
 
 namespace GoldShopWpf.ViewModels;
 
-public class TransactionListItem
+public class TransactionListItem : SelectableViewModel
 {
     public int Id { get; init; }
     public int SupplierId { get; init; }
@@ -11,6 +11,7 @@ public class TransactionListItem
     public TransactionType Type { get; init; }
     public string Category { get; init; } = TransactionCategories.GoldOutbound;
     public decimal OriginalWeight { get; init; }
+    public string ItemName { get; init; } = string.Empty;
     public int OriginalKarat { get; init; }
     public decimal Equivalent21 { get; init; }
     public decimal ManufacturingPerGram { get; init; }

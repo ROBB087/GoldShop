@@ -33,7 +33,7 @@
                         <WrapPanel>
                             <StackPanel Width="240" Margin="0,0,16,0">
                                 <TextBlock Text="{DynamicResource LblSupplier}" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource MutedTextBrush}" Margin="0,0,0,6" />
-                                <ComboBox Width="240" ItemsSource="{Binding Suppliers}" SelectedItem="{Binding SelectedSupplier}" DisplayMemberPath="Name" Margin="0" />
+                                <ComboBox Style="{StaticResource SearchableTraderComboBox}" Width="240" ItemsSource="{Binding Suppliers}" SelectedItem="{Binding SelectedSupplier}" DisplayMemberPath="Name" Margin="0" />
                             </StackPanel>
                             <StackPanel Width="220" Margin="0,0,16,0">
                                 <TextBlock Text="{DynamicResource LblFrom}" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource MutedTextBrush}" Margin="0,0,0,6" />

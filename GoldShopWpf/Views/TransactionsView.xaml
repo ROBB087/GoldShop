@@ -1,27 +1,88 @@
 <UserControl x:Class="GoldShopWpf.Views.TransactionsView"
+             x:Name="Root"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             FlowDirection="{DynamicResource AppFlowDirection}"
              mc:Ignorable="d">
-    <Grid Margin="8">
+    <UserControl.Resources>
+        <Style x:Key="HeaderTitleIconWrap" TargetType="Border">
+            <Setter Property="Width" Value="48" />
+            <Setter Property="Height" Value="48" />
+            <Setter Property="CornerRadius" Value="16" />
+            <Setter Property="Background" Value="#3A2F63" />
+            <Setter Property="BorderBrush" Value="#6655A6" />
+            <Setter Property="BorderThickness" Value="1" />
+        </Style>
+        <Style x:Key="HeaderActionButton" TargetType="Button" BasedOn="{StaticResource GhostButton}">
+            <Setter Property="Height" Value="44" />
+            <Setter Property="MinWidth" Value="112" />
+            <Setter Property="Padding" Value="16,8" />
+        </Style>
+        <Style x:Key="FilterLabelText" TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{StaticResource MutedTextBrush}" />
+            <Setter Property="Margin" Value="0,0,0,6" />
+        </Style>
+        <Style x:Key="BulkActionButton" TargetType="Button" BasedOn="{StaticResource GhostButton}">
+            <Setter Property="Height" Value="40" />
+            <Setter Property="MinWidth" Value="116" />
+            <Setter Property="Padding" Value="14,8" />
+            <Setter Property="Margin" Value="0,0,8,0" />
+        </Style>
+        <Style x:Key="SectionTitleText" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="18" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="#101828" />
+        </Style>
+        <Style x:Key="SectionSubtitleText" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Foreground" Value="#667085" />
+            <Setter Property="Margin" Value="0,4,0,0" />
+        </Style>
+        <Style x:Key="CountChipBorder" TargetType="Border">
+            <Setter Property="Padding" Value="12,8" />
+            <Setter Property="Background" Value="#F8FAFC" />
+            <Setter Property="BorderBrush" Value="#E2E8F0" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="12" />
+        </Style>
+        <Style x:Key="ActionsMenu" TargetType="Menu">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="FlowDirection" Value="LeftToRight" />
+        </Style>
+        <Style x:Key="ActionsMenuItem" TargetType="MenuItem">
+            <Setter Property="Padding" Value="10,6" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="FontSize" Value="18" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Margin="24">
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
         <Border Grid.Row="0"
-                Margin="0,0,0,18"
-                Padding="28"
-                CornerRadius="28"
-                BorderBrush="#E7E3F6"
-                BorderThickness="1">
+                Style="{StaticResource CardContainer}"
+                Margin="0,0,0,16"
+                Padding="24"
+                BorderBrush="#D7DEEC">
             <Border.Background>
                 <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                    <GradientStop Color="#FBFAFF" Offset="0" />
-                    <GradientStop Color="#F2EEFF" Offset="1" />
+                    <GradientStop Color="#F7F8FD" Offset="0" />
+                    <GradientStop Color="#EEF1FB" Offset="1" />
                 </LinearGradientBrush>
             </Border.Background>
             <Grid>
@@ -30,85 +91,227 @@
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <StackPanel>
-                    <TextBlock Text="{DynamicResource NavTransactions}" FontSize="28" FontWeight="SemiBold" Margin="0,0,0,8" />
-                    <TextBlock Text="{DynamicResource LblTransactionsSub}"
-                               FontSize="15"
-                               Foreground="#5B4C7A"
-                               Margin="0,0,0,18" />
-                    <WrapPanel>
-                        <StackPanel Width="260" Margin="0,0,16,0">
-                            <TextBlock Text="{DynamicResource LblTrader}" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource MutedTextBrush}" Margin="0,0,0,6" />
-                            <ComboBox ItemsSource="{Binding Suppliers}" SelectedItem="{Binding SelectedSupplier}" DisplayMemberPath="Name" Margin="0" />
-                        </StackPanel>
-                        <StackPanel Width="220" Margin="0,0,16,0">
-                            <TextBlock Text="{DynamicResource LblFrom}" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource MutedTextBrush}" Margin="0,0,0,6" />
-                            <DatePicker SelectedDate="{Binding FromDate}" Width="220" Margin="0" />
-                        </StackPanel>
-                        <StackPanel Width="220">
-                            <TextBlock Text="{DynamicResource LblTo}" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource MutedTextBrush}" Margin="0,0,0,6" />
-                            <DatePicker SelectedDate="{Binding ToDate}" Width="220" Margin="0" />
-                        </StackPanel>
-                    </WrapPanel>
-                </StackPanel>
+                <Grid Grid.Column="0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="12" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
 
-                <WrapPanel Grid.Column="1" VerticalAlignment="Top">
-                    <Button Command="{Binding AddCommand}" Style="{StaticResource PrimaryButton}" Margin="0,0,10,0" MinWidth="164">
+                    <Border Grid.Column="0"
+                            Style="{StaticResource HeaderTitleIconWrap}">
+                        <materialDesign:PackIcon Kind="SwapHorizontalCircleOutline"
+                                                 Width="22"
+                                                 Height="22"
+                                                 HorizontalAlignment="Center"
+                                                 VerticalAlignment="Center"
+                                                 Foreground="White" />
+                    </Border>
+
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="{DynamicResource NavTransactions}"
+                                   FontSize="24"
+                                   FontWeight="SemiBold"
+                                   Foreground="#0F172A"
+                                   Margin="0,0,0,4" />
+                        <TextBlock Text="{DynamicResource LblTransactionsSub}"
+                                   FontSize="13"
+                                   Foreground="#475467" />
+                    </StackPanel>
+                </Grid>
+
+                <Grid Grid.Column="1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="12" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="8" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <Button Grid.Column="2"
+                            Command="{Binding AddCommand}"
+                            Style="{StaticResource PrimaryButton}"
+                            Height="44"
+                            MinWidth="156"
+                            Padding="18,8">
                         <StackPanel Orientation="Horizontal">
-                            <materialDesign:PackIcon Kind="CashFast" Width="18" Height="18" Margin="0,0,6,0" />
+                            <materialDesign:PackIcon Kind="Plus" Margin="0,0,6,0" />
                             <TextBlock Text="{DynamicResource BtnAddTransaction}" />
                         </StackPanel>
                     </Button>
-                    <Button Command="{Binding EditCommand}" Style="{StaticResource GhostButton}" Margin="0,0,10,0" MinWidth="118">
+
+                    <Button Grid.Column="4"
+                            Command="{Binding RefreshCommand}"
+                            Style="{StaticResource HeaderActionButton}">
                         <StackPanel Orientation="Horizontal">
-                            <materialDesign:PackIcon Kind="Pencil" Width="18" Height="18" Margin="0,0,6,0" />
-                            <TextBlock Text="{DynamicResource BtnEdit}" />
+                            <materialDesign:PackIcon Kind="Refresh" Margin="0,0,6,0" />
+                            <TextBlock Text="{DynamicResource BtnRefresh}" />
                         </StackPanel>
                     </Button>
-                    <Button Command="{Binding DeleteCommand}" Style="{StaticResource GhostButton}" MinWidth="118">
-                        <StackPanel Orientation="Horizontal">
-                            <materialDesign:PackIcon Kind="Delete" Width="18" Height="18" Margin="0,0,6,0" Foreground="#D32F2F" />
-                            <TextBlock Text="{DynamicResource BtnDelete}" />
-                        </StackPanel>
-                    </Button>
-                </WrapPanel>
+                </Grid>
+
             </Grid>
         </Border>
 
         <Border Grid.Row="1"
                 Style="{StaticResource CardContainer}"
-                Margin="0,0,0,18"
-                BorderBrush="#E7ECF2">
+                Margin="0,0,0,16"
+                Padding="20"
+                BorderBrush="#E4E8F1">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <Border Background="#F7F8FC"
-                        BorderBrush="#E6EAF2"
-                        BorderThickness="1"
-                        CornerRadius="18"
-                        Padding="14,10">
-                    <StackPanel Orientation="Horizontal">
-                        <materialDesign:PackIcon Kind="Magnify" Width="20" Height="20" VerticalAlignment="Center" Margin="0,0,8,0" />
-                        <TextBox Width="260"
-                                 Margin="0"
-                                 Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                                 ToolTip="{DynamicResource LblSearch}"
-                                 materialDesign:HintAssist.Hint="{DynamicResource LblSearch}" />
-                    </StackPanel>
-                </Border>
+                <Grid Grid.Column="0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
 
-                <StackPanel Grid.Column="1" Orientation="Horizontal">
-                    <Border Padding="12,8"
-                            CornerRadius="14"
-                            Background="#F6F8FC"
-                            BorderBrush="#E3EAF5"
-                            BorderThickness="1"
-                            Margin="0,0,12,0">
-                        <TextBlock FontWeight="SemiBold"
-                                   Foreground="#4D5B73">
+                    <TextBlock Grid.Row="0"
+                               Text="فلترة الحركات"
+                               FontSize="16"
+                               FontWeight="SemiBold"
+                               Margin="0,0,0,12" />
+
+                    <Grid Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="16" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="16" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Grid.Column="0" Width="220">
+                            <TextBlock Text="{DynamicResource LblTrader}" Style="{StaticResource FilterLabelText}" />
+                            <ComboBox Width="220"
+                                      Style="{StaticResource SearchableTraderComboBox}"
+                                      ItemsSource="{Binding Suppliers}"
+                                      SelectedItem="{Binding SelectedSupplier}"
+                                      DisplayMemberPath="Name"
+                                      Margin="0" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="2" Width="250">
+                            <TextBlock Text="{DynamicResource LblFrom}" Style="{StaticResource FilterLabelText}" />
+                            <DatePicker SelectedDate="{Binding FromDate}" Width="250" Margin="0" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="4" Width="250">
+                            <TextBlock Text="{DynamicResource LblTo}" Style="{StaticResource FilterLabelText}" />
+                            <DatePicker SelectedDate="{Binding ToDate}" Width="250" Margin="0" />
+                        </StackPanel>
+                    </Grid>
+                </Grid>
+
+                <Button Grid.Column="1"
+                        Command="{Binding ResetFiltersCommand}"
+                        Style="{StaticResource GhostButton}"
+                        Height="44"
+                        MinWidth="124"
+                        VerticalAlignment="Bottom">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="FilterOffOutline" Margin="0,0,6,0" />
+                        <TextBlock Text="{DynamicResource BtnReset}" />
+                    </StackPanel>
+                </Button>
+            </Grid>
+        </Border>
+
+        <Border Grid.Row="2"
+                Margin="0,0,0,16"
+                Padding="16,12"
+                Background="#FFF8E6"
+                BorderBrush="#F1DEAB"
+                BorderThickness="1"
+                CornerRadius="14">
+            <Border.Style>
+                <Style TargetType="Border">
+                    <Setter Property="Opacity" Value="0" />
+                    <Setter Property="Visibility" Value="Collapsed" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding HasCheckedTransactions}" Value="True">
+                            <Setter Property="Opacity" Value="1" />
+                            <Setter Property="Visibility" Value="Visible" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Border.Style>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0"
+                           Text="{Binding SelectedCountLabel}"
+                           VerticalAlignment="Center"
+                           FontWeight="SemiBold"
+                           Foreground="#8A6C00" />
+
+                <Grid Grid.Column="1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="8" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <Button Grid.Column="0"
+                            Command="{Binding DeleteCommand}"
+                            Style="{StaticResource BulkActionButton}"
+                            MinWidth="148">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="Delete" Margin="0,0,6,0" Foreground="#B42318" />
+                            <TextBlock Text="{DynamicResource BtnDeleteMultiple}" />
+                        </StackPanel>
+                    </Button>
+
+                    <Button Grid.Column="2"
+                            Command="{Binding EditCommand}"
+                            Style="{StaticResource BulkActionButton}">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="Pencil" Margin="0,0,6,0" />
+                            <TextBlock Text="{DynamicResource BtnEdit}" />
+                        </StackPanel>
+                    </Button>
+                </Grid>
+            </Grid>
+        </Border>
+
+        <Border Grid.Row="3"
+                Style="{StaticResource CardContainer}"
+                Margin="0"
+                Padding="0"
+                BorderBrush="#E5EAF1">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <Grid Grid.Row="0" Margin="24,24,24,16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="{DynamicResource LblTransactionLedger}"
+                                   Style="{StaticResource SectionTitleText}" />
+                        <TextBlock Text="عرض سريع ومنظم للحركات اليومية مع فلاتر واضحة وإجراءات جماعية منفصلة."
+                                   Style="{StaticResource SectionSubtitleText}" />
+                    </StackPanel>
+
+                    <Border Grid.Column="2"
+                            Style="{StaticResource CountChipBorder}">
+                        <TextBlock FontSize="12"
+                                   FontWeight="SemiBold"
+                                   Foreground="#475467">
                             <TextBlock.Style>
                                 <Style TargetType="TextBlock">
                                     <Setter Property="Text" Value="{Binding FilteredTransactions.Count, StringFormat=Rows: {0}}" />
@@ -121,34 +324,56 @@
                             </TextBlock.Style>
                         </TextBlock>
                     </Border>
-                    <Button Content="{DynamicResource BtnRefresh}" Style="{StaticResource GhostButton}" Command="{Binding RefreshCommand}" ToolTip="{DynamicResource BtnRefresh}" />
-                </StackPanel>
-            </Grid>
-        </Border>
+                </Grid>
 
-        <Border Grid.Row="2"
-                Style="{StaticResource CardContainer}"
-                BorderBrush="#E7ECF2">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="*" />
-                </Grid.RowDefinitions>
-
-                <TextBlock Grid.Row="0" Text="{DynamicResource LblTransactionLedger}" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,14" />
                 <DataGrid Grid.Row="1"
+                          Margin="0,0,0,8"
                           ItemsSource="{Binding FilteredTransactions}"
                           SelectedItem="{Binding SelectedTransaction}"
                           AutoGenerateColumns="False"
                           CanUserAddRows="False"
-                          IsReadOnly="True"
+                          CanUserDeleteRows="False"
                           CanUserSortColumns="True"
-                          SelectionMode="Single"
-                          SelectionUnit="FullRow">
+                          CanUserReorderColumns="False"
+                          IsReadOnly="True"
+                          RowHeight="42"
+                          ColumnHeaderHeight="42"
+                          SelectionMode="Extended"
+                          SelectionUnit="FullRow"
+                          FrozenColumnCount="1">
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="{DynamicResource LblDate}" Binding="{Binding Date, StringFormat={}{0:yyyy-MM-dd}}" Width="130" MinWidth="130" ElementStyle="{StaticResource GridCellTextStyle}" />
-                        <DataGridTextColumn Header="{DynamicResource LblTrader}" Binding="{Binding SupplierName}" Width="2*" MinWidth="180" ElementStyle="{StaticResource GridCellTextStyle}" />
-                        <DataGridTextColumn Header="{DynamicResource LblType}" Binding="{Binding Category, Converter={StaticResource TransactionCategoryToLabelConverter}}" Width="*" MinWidth="150">
+                        <DataGridTemplateColumn Width="56" CanUserSort="False">
+                            <DataGridTemplateColumn.HeaderTemplate>
+                                <DataTemplate>
+                                    <CheckBox IsThreeState="True"
+                                              IsChecked="{Binding DataContext.AreAllVisibleSelected, RelativeSource={RelativeSource AncestorType=DataGrid}, Mode=TwoWay}"
+                                              ToolTip="{DynamicResource LblSelectAllRecords}"
+                                              HorizontalAlignment="Center"
+                                              VerticalAlignment="Center" />
+                                </DataTemplate>
+                            </DataGridTemplateColumn.HeaderTemplate>
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                              HorizontalAlignment="Center"
+                                              VerticalAlignment="Center" />
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTextColumn Header="{DynamicResource LblDate}"
+                                            Binding="{Binding Date, StringFormat={}{0:yyyy/MM/dd}}"
+                                            Width="140"
+                                            MinWidth="140"
+                                            ElementStyle="{StaticResource GridCellTextStyle}" />
+                        <DataGridTextColumn Header="{DynamicResource LblTrader}"
+                                            Binding="{Binding SupplierName}"
+                                            Width="2*"
+                                            MinWidth="180"
+                                            ElementStyle="{StaticResource GridCellTextStyle}" />
+                        <DataGridTextColumn Header="{DynamicResource LblType}"
+                                            Binding="{Binding Category, Converter={StaticResource TransactionCategoryToLabelConverter}}"
+                                            Width="*"
+                                            MinWidth="140">
                             <DataGridTextColumn.ElementStyle>
                                 <Style TargetType="TextBlock" BasedOn="{StaticResource GridCellTextStyle}">
                                     <Setter Property="Foreground" Value="{Binding Type, Converter={StaticResource TransactionTypeToBrushConverter}}" />
@@ -156,11 +381,55 @@
                                 </Style>
                             </DataGridTextColumn.ElementStyle>
                         </DataGridTextColumn>
-                        <DataGridTextColumn Header="{DynamicResource LblWeight}" Binding="{Binding OriginalWeight, Converter={StaticResource MoneyFormatConverter}, ConverterParameter='g'}" Width="*" MinWidth="120" ElementStyle="{StaticResource GridCellTextStyle}" />
-                        <DataGridTextColumn Header="{DynamicResource LblKarat}" Binding="{Binding OriginalKarat}" Width="*" MinWidth="100" ElementStyle="{StaticResource GridCellTextStyle}" />
-                        <DataGridTextColumn Header="{DynamicResource LblTotalManufacturing}" Binding="{Binding TotalManufacturing, Converter={StaticResource MoneyFormatConverter}}" Width="*" MinWidth="170" ElementStyle="{StaticResource GridCellTextStyle}" />
-                        <DataGridTextColumn Header="{DynamicResource LblTotalImprovement}" Binding="{Binding TotalImprovement, Converter={StaticResource MoneyFormatConverter}}" Width="*" MinWidth="170" ElementStyle="{StaticResource GridCellTextStyle}" />
-                        <DataGridTextColumn Header="{DynamicResource LblUpdatedAt}" Binding="{Binding UpdatedAt, StringFormat={}{0:yyyy-MM-dd HH:mm}}" Width="180" MinWidth="180" ElementStyle="{StaticResource GridCellTextStyle}" />
+                        <DataGridTextColumn Header="{DynamicResource LblWeight}"
+                                            Binding="{Binding OriginalWeight, Converter={StaticResource MoneyFormatConverter}, ConverterParameter='g'}"
+                                            Width="*"
+                                            MinWidth="120"
+                                            ElementStyle="{StaticResource GridCellTextStyle}" />
+                        <DataGridTextColumn Header="{DynamicResource LblKarat}"
+                                            Binding="{Binding OriginalKarat}"
+                                            Width="90"
+                                            MinWidth="90"
+                                            ElementStyle="{StaticResource GridCellTextStyle}" />
+                        <DataGridTextColumn Header="{DynamicResource LblTotalManufacturing}"
+                                            Binding="{Binding TotalManufacturing, Converter={StaticResource MoneyFormatConverter}}"
+                                            Width="*"
+                                            MinWidth="168"
+                                            ElementStyle="{StaticResource GridCellTextStyle}" />
+                        <DataGridTextColumn Header="{DynamicResource LblTotalImprovement}"
+                                            Binding="{Binding TotalImprovement, Converter={StaticResource MoneyFormatConverter}}"
+                                            Width="*"
+                                            MinWidth="168"
+                                            ElementStyle="{StaticResource GridCellTextStyle}" />
+                        <DataGridTextColumn Header="{DynamicResource LblLastUpdated}"
+                                            Binding="{Binding UpdatedAt, StringFormat={}{0:yyyy/MM/dd HH:mm}}"
+                                            Width="176"
+                                            MinWidth="176"
+                                            ElementStyle="{StaticResource GridCellTextStyle}" />
+                        <DataGridTemplateColumn Header="⋮" Width="72" CanUserSort="False">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Menu Style="{StaticResource ActionsMenu}"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center">
+                                        <MenuItem Header="⋮"
+                                                  Style="{StaticResource ActionsMenuItem}">
+                                            <MenuItem Header="{DynamicResource BtnViewDetails}"
+                                                      Command="{Binding DataContext.ViewRowCommand, Source={x:Reference Root}}"
+                                                      CommandParameter="{Binding}" />
+                                            <MenuItem Header="{DynamicResource BtnEdit}"
+                                                      Command="{Binding DataContext.EditRowCommand, Source={x:Reference Root}}"
+                                                      CommandParameter="{Binding}" />
+                                            <Separator />
+                                            <MenuItem Header="{DynamicResource BtnDelete}"
+                                                      Foreground="#B42318"
+                                                      Command="{Binding DataContext.DeleteRowCommand, Source={x:Reference Root}}"
+                                                      CommandParameter="{Binding}" />
+                                        </MenuItem>
+                                    </Menu>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
                     </DataGrid.Columns>
                 </DataGrid>
             </Grid>

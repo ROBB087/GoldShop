@@ -5,6 +5,12 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              mc:Ignorable="d">
+    <UserControl.Resources>
+        <Style x:Key="NotesCellTextStyle" TargetType="TextBlock" BasedOn="{StaticResource GridCellTextStyle}">
+            <Setter Property="ToolTip" Value="{Binding Content}" />
+        </Style>
+    </UserControl.Resources>
+
     <Grid Margin="8">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -15,48 +21,71 @@
                 Margin="0,0,0,18"
                 Padding="28"
                 CornerRadius="28"
-                BorderBrush="#E5E9F2"
+                BorderBrush="#D8E5FF"
                 BorderThickness="1">
             <Border.Background>
                 <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                    <GradientStop Color="#F8FBFF" Offset="0" />
-                    <GradientStop Color="#EDF4FF" Offset="1" />
+                    <GradientStop Color="#F5F9FF" Offset="0" />
+                    <GradientStop Color="#EAF2FF" Offset="1" />
                 </LinearGradientBrush>
             </Border.Background>
             <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <StackPanel>
+                <StackPanel Grid.Row="0" Grid.Column="0">
                     <TextBlock Text="{DynamicResource NavNotes}" FontSize="28" FontWeight="SemiBold" Margin="0,0,0,8" />
                     <TextBlock Text="{DynamicResource LblNotesPageSub}"
                                FontSize="15"
                                Foreground="#53647F"
                                Margin="0,0,0,18" />
-                    <Border Background="#FFFFFF"
-                            BorderBrush="#DCE6F5"
+                </StackPanel>
+
+                <Button Grid.Row="0"
+                        Grid.Column="1"
+                        Command="{Binding AddCommand}"
+                        Style="{StaticResource PrimaryButton}"
+                        MinWidth="164"
+                        HorizontalAlignment="Right">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="Plus" Width="18" Height="18" Margin="0,0,6,0" />
+                        <TextBlock Text="{DynamicResource BtnAddNote}" />
+                    </StackPanel>
+                </Button>
+
+                <Grid Grid.Row="1" Grid.ColumnSpan="2">
+                    <Border Width="380"
+                            Background="#FFFFFF"
+                            BorderBrush="#D8E5FF"
                             BorderThickness="1"
                             CornerRadius="18"
-                            Padding="14,10"
-                            Width="360">
+                            Padding="14,10">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="HorizontalAlignment" Value="Right" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=UserControl}, Path=FlowDirection}" Value="LeftToRight">
+                                        <Setter Property="HorizontalAlignment" Value="Left" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
                         <StackPanel Orientation="Horizontal">
                             <materialDesign:PackIcon Kind="Magnify" Width="20" Height="20" VerticalAlignment="Center" Margin="0,0,8,0" />
-                            <TextBox Width="290"
+                            <TextBox Width="308"
                                      Margin="0"
                                      Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
                                      ToolTip="{DynamicResource LblSearch}"
                                      materialDesign:HintAssist.Hint="{DynamicResource LblSearch}" />
                         </StackPanel>
                     </Border>
-                </StackPanel>
-
-                <Button Grid.Column="1"
-                        Content="{DynamicResource BtnRefresh}"
-                        Style="{StaticResource GhostButton}"
-                        Command="{Binding RefreshCommand}"
-                        ToolTip="{DynamicResource BtnRefresh}" />
+                </Grid>
             </Grid>
         </Border>
 
@@ -67,18 +96,133 @@
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
 
-                <TextBlock Grid.Row="0" Text="{DynamicResource LblNotesRegister}" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,14" />
-                <DataGrid Grid.Row="1"
-                          ItemsSource="{Binding Notes}"
-                          AutoGenerateColumns="False"
-                          CanUserAddRows="False"
-                          IsReadOnly="True">
-                    <DataGrid.Columns>
-                        <DataGridTextColumn Header="{DynamicResource LblClientName}" Binding="{Binding ClientName}" Width="220" MinWidth="220" ElementStyle="{StaticResource GridCellTextStyle}" />
-                        <DataGridTextColumn Header="{DynamicResource LblNotes}" Binding="{Binding Notes}" Width="*" MinWidth="320" ElementStyle="{StaticResource GridCellTextStyle}" />
-                        <DataGridTextColumn Header="{DynamicResource LblDate}" Binding="{Binding Date, StringFormat={}{0:yyyy-MM-dd}}" Width="160" MinWidth="160" ElementStyle="{StaticResource GridCellTextStyle}" />
-                    </DataGrid.Columns>
-                </DataGrid>
+                <Grid Grid.Row="0" Margin="0,0,0,16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel>
+                        <TextBlock Text="{DynamicResource LblNotesRegister}" FontSize="18" FontWeight="SemiBold" />
+                        <TextBlock Foreground="{StaticResource MutedTextBrush}" Margin="0,6,0,0">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Text" Value="{Binding Notes.Count, StringFormat={}{0} records}" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=UserControl}, Path=FlowDirection}" Value="RightToLeft">
+                                            <Setter Property="Text" Value="{Binding Notes.Count, StringFormat=عدد الملاحظات: {0}}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                        <Button Command="{Binding RefreshCommand}" Style="{StaticResource GhostButton}" Margin="0,0,10,0">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="Refresh" Width="18" Height="18" Margin="0,0,6,0" />
+                                <TextBlock Text="{DynamicResource BtnRefresh}" />
+                            </StackPanel>
+                        </Button>
+                        <Button Command="{Binding EditCommand}" Style="{StaticResource GhostButton}" Margin="0,0,10,0" MinWidth="118">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="Pencil" Width="18" Height="18" Margin="0,0,6,0" />
+                                <TextBlock Text="{DynamicResource BtnEdit}" />
+                            </StackPanel>
+                        </Button>
+                        <Button Command="{Binding DeleteCommand}" Style="{StaticResource GhostButton}" MinWidth="156">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="Delete" Width="18" Height="18" Margin="0,0,6,0" Foreground="#D32F2F" />
+                                <TextBlock Text="{DynamicResource BtnDeleteMultiple}" />
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </Grid>
+
+                <Grid Grid.Row="1">
+                    <DataGrid ItemsSource="{Binding NotesView}"
+                              SelectedItem="{Binding SelectedNote, Mode=TwoWay}"
+                              AutoGenerateColumns="False"
+                              CanUserAddRows="False"
+                              CanUserDeleteRows="False"
+                              CanUserReorderColumns="False"
+                              CanUserResizeRows="False"
+                              CanUserSortColumns="True"
+                              IsReadOnly="True"
+                              SelectionMode="Single"
+                              SelectionUnit="FullRow"
+                              FrozenColumnCount="1"
+                              KeyboardNavigation.TabNavigation="Continue"
+                              ScrollViewer.IsDeferredScrollingEnabled="True">
+                        <DataGrid.Columns>
+                            <DataGridTemplateColumn Width="68" MinWidth="68" SortMemberPath="IsSelected">
+                                <DataGridTemplateColumn.HeaderTemplate>
+                                    <DataTemplate>
+                                        <CheckBox IsThreeState="True"
+                                                  IsChecked="{Binding DataContext.AreAllVisibleSelected, RelativeSource={RelativeSource AncestorType=UserControl}, Mode=TwoWay}"
+                                                  HorizontalAlignment="Center"
+                                                  VerticalAlignment="Center"
+                                                  ToolTip="{DynamicResource LblSelectAll}" />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.HeaderTemplate>
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                  HorizontalAlignment="Center"
+                                                  VerticalAlignment="Center"
+                                                  Focusable="True" />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTextColumn Header="{DynamicResource LblClientName}"
+                                                Binding="{Binding ClientName}"
+                                                SortMemberPath="ClientName"
+                                                Width="220"
+                                                MinWidth="180"
+                                                ElementStyle="{StaticResource GridCellTextStyle}" />
+                            <DataGridTemplateColumn Header="{DynamicResource LblNoteContent}" SortMemberPath="Content" Width="*" MinWidth="420">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Content}"
+                                                   ToolTip="{Binding Content}"
+                                                   Style="{StaticResource GridCellTextStyle}" />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTextColumn Header="{DynamicResource LblCreatedAt}"
+                                                Binding="{Binding CreatedAt, StringFormat={}{0:yyyy/MM/dd hh:mm tt}}"
+                                                SortMemberPath="CreatedAt"
+                                                Width="210"
+                                                MinWidth="210"
+                                                ElementStyle="{StaticResource GridCellTextStyle}" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+
+                    <Border Background="#FAFBFE"
+                            BorderBrush="#E7ECF2"
+                            BorderThickness="1"
+                            CornerRadius="18"
+                            Padding="32"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Notes.Count}" Value="0">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <StackPanel Width="320">
+                            <materialDesign:PackIcon Kind="NotebookOutline" Width="44" Height="44" HorizontalAlignment="Center" Foreground="#5B7DBB" />
+                            <TextBlock Text="{DynamicResource LblNoNotes}" FontSize="18" FontWeight="SemiBold" TextAlignment="Center" Margin="0,14,0,8" />
+                            <TextBlock Text="{DynamicResource LblNoNotesSub}" Foreground="{StaticResource MutedTextBrush}" TextAlignment="Center" />
+                        </StackPanel>
+                    </Border>
+                </Grid>
             </Grid>
         </Border>
     </Grid>

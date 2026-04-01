@@ -110,6 +110,17 @@ VALUES ($supplierId, $type, $amount, $notes, $createdAt);";
         command.ExecuteNonQuery();
     }
 
+    public void Delete(int id)
+    {
+        using var connection = new SqliteConnection(Database.ConnectionString);
+        connection.Open();
+
+        using var command = connection.CreateCommand();
+        command.CommandText = "DELETE FROM Discounts WHERE Id = $id;";
+        command.Parameters.AddWithValue("$id", id);
+        command.ExecuteNonQuery();
+    }
+
     public (decimal manufacturingDiscounts, decimal improvementDiscounts) GetDiscountTotals(int supplierId, DateTime? from, DateTime? to)
     {
         using var connection = new SqliteConnection(Database.ConnectionString);

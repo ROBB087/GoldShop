@@ -55,7 +55,7 @@
                     </Grid.ColumnDefinitions>
 
                     <TextBlock Text="{DynamicResource LblTrader}" Grid.Row="0" Grid.Column="0" Margin="8,12" />
-                    <ComboBox x:Name="SupplierCombo" Grid.Row="0" Grid.Column="1" DisplayMemberPath="Name" SelectedValuePath="Id" Margin="0,8" />
+                    <ComboBox x:Name="SupplierCombo" Style="{StaticResource SearchableTraderComboBox}" Grid.Row="0" Grid.Column="1" DisplayMemberPath="Name" SelectedValuePath="Id" Margin="0,8" />
 
                     <TextBlock Text="{DynamicResource LblDate}" Grid.Row="1" Grid.Column="0" Margin="8,12" />
                     <DatePicker x:Name="DatePicker" Grid.Row="1" Grid.Column="1" Margin="0,8" HorizontalAlignment="Stretch" />
@@ -66,16 +66,19 @@
                     <TextBlock x:Name="WeightLabel" Text="{DynamicResource LblWeight}" Grid.Row="3" Grid.Column="0" Margin="8,12" />
                     <TextBox x:Name="WeightText" Grid.Row="3" Grid.Column="1" Margin="0,8" />
 
-                    <TextBlock x:Name="KaratLabel" Text="{DynamicResource LblKarat}" Grid.Row="4" Grid.Column="0" Margin="8,12" />
-                    <ComboBox x:Name="KaratCombo" Grid.Row="4" Grid.Column="1" Margin="0,8" />
+                    <TextBlock x:Name="ItemLabel" Text="{DynamicResource LblItem}" Grid.Row="4" Grid.Column="0" Margin="8,12" />
+                    <TextBox x:Name="ItemText" Grid.Row="4" Grid.Column="1" Margin="0,8" TabIndex="4" />
 
-                    <TextBlock x:Name="ManufacturingLabel" Text="{DynamicResource LblManufacturingPerGram}" Grid.Row="5" Grid.Column="0" Margin="8,12" />
-                    <TextBox x:Name="ManufacturingText" Grid.Row="5" Grid.Column="1" Margin="0,8" />
+                    <TextBlock x:Name="KaratLabel" Text="{DynamicResource LblKarat}" Grid.Row="5" Grid.Column="0" Margin="8,12" />
+                    <ComboBox x:Name="KaratCombo" Grid.Row="5" Grid.Column="1" Margin="0,8" />
 
-                    <TextBlock x:Name="ImprovementLabel" Text="{DynamicResource LblImprovementPerGram}" Grid.Row="6" Grid.Column="0" Margin="8,12" />
-                    <TextBox x:Name="ImprovementText" Grid.Row="6" Grid.Column="1" Margin="0,8" />
+                    <TextBlock x:Name="ManufacturingLabel" Text="{DynamicResource LblManufacturingPerGram}" Grid.Row="6" Grid.Column="0" Margin="8,12" />
+                    <TextBox x:Name="ManufacturingText" Grid.Row="6" Grid.Column="1" Margin="0,8" />
 
-                    <Border Grid.Row="7" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,12" Padding="16" Background="#FFF8E1" CornerRadius="16" BorderBrush="#F2DDA6" BorderThickness="1">
+                    <TextBlock x:Name="ImprovementLabel" Text="{DynamicResource LblImprovementPerGram}" Grid.Row="7" Grid.Column="0" Margin="8,12" />
+                    <TextBox x:Name="ImprovementText" Grid.Row="7" Grid.Column="1" Margin="0,8" />
+
+                    <Border Grid.Row="8" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,12" Padding="16" Background="#FFF8E1" CornerRadius="16" BorderBrush="#F2DDA6" BorderThickness="1">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
@@ -103,17 +106,17 @@
                         </Grid>
                     </Border>
 
-                    <TextBlock Text="{DynamicResource LblNotes}" Grid.Row="8" Grid.Column="0" Margin="8,12" VerticalAlignment="Top" />
-                    <TextBox x:Name="NotesText" Grid.Row="8" Grid.Column="1" Margin="0,8" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="170" VerticalScrollBarVisibility="Auto" />
+                    <TextBlock Text="{DynamicResource LblNotes}" Grid.Row="9" Grid.Column="0" Margin="8,12" VerticalAlignment="Top" />
+                    <TextBox x:Name="NotesText" Grid.Row="9" Grid.Column="1" Margin="0,8" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="170" VerticalScrollBarVisibility="Auto" />
 
-                    <StackPanel Orientation="Horizontal" Grid.Row="9" Grid.Column="1" HorizontalAlignment="Right" Margin="0,20,0,0">
-                        <Button Width="140" Style="{StaticResource GhostButton}" Margin="12,0,0,0" Click="OnCancel" ToolTip="{DynamicResource TooltipCancel}">
+                    <StackPanel Orientation="Horizontal" Grid.Row="10" Grid.Column="1" HorizontalAlignment="Right" Margin="0,20,0,0">
+                        <Button x:Name="CancelButton" Width="140" Style="{StaticResource GhostButton}" Margin="12,0,0,0" Click="OnCancel" ToolTip="{DynamicResource TooltipCancel}">
                             <StackPanel Orientation="Horizontal">
                                 <materialDesign:PackIcon Kind="CloseCircleOutline" Width="18" Height="18" Margin="0,0,6,0" />
                                 <TextBlock Text="{DynamicResource BtnClear}" />
                             </StackPanel>
                         </Button>
-                        <Button Width="150" Style="{StaticResource PrimaryButton}" Click="OnSave" ToolTip="{DynamicResource TooltipSave}">
+                        <Button x:Name="SaveButton" Width="150" Style="{StaticResource PrimaryButton}" Click="OnSave" ToolTip="{DynamicResource TooltipSave}">
                             <StackPanel Orientation="Horizontal">
                                 <materialDesign:PackIcon Kind="ContentSave" Width="18" Height="18" Margin="0,0,6,0" />
                                 <TextBlock Text="{DynamicResource BtnApply}" />

@@ -27,13 +27,16 @@
             <views:TransactionsView />
         </DataTemplate>
         <DataTemplate DataType="{x:Type vm:WeeklyReportViewModel}">
-            <views:WeeklyReportView />
+            <views:ModernReportView />
         </DataTemplate>
         <DataTemplate DataType="{x:Type vm:StatementViewModel}">
             <views:StatementView />
         </DataTemplate>
         <DataTemplate DataType="{x:Type vm:NotesViewModel}">
             <views:NotesView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:PricingSettingsViewModel}">
+            <views:PricingSettingsView />
         </DataTemplate>
         <DataTemplate DataType="{x:Type vm:BackupViewModel}">
             <views:BackupView />
@@ -55,53 +58,132 @@
                     <TextBlock Text="{DynamicResource LblAppTitle}" Foreground="{DynamicResource SidebarTextBrush}" FontSize="18" FontWeight="SemiBold" Margin="10,0,0,0" />
                 </StackPanel>
 
-                <Button Style="{StaticResource SidebarButton}" Command="{Binding ShowDashboardCommand}" ToolTip="{DynamicResource TooltipDashboard}" Margin="0,0,0,8">
-                    <StackPanel Orientation="Horizontal">
-                        <materialDesign:PackIcon Kind="Home" Width="18" Height="18" Margin="0,0,10,0" Foreground="{StaticResource SidebarIconBrush}" />
-                        <TextBlock Text="{DynamicResource NavDashboard}" Foreground="{DynamicResource SidebarTextBrush}" TextWrapping="NoWrap" />
-                    </StackPanel>
+                <Button Style="{StaticResource SidebarButton}" Command="{Binding ShowDashboardCommand}" ToolTip="{DynamicResource TooltipDashboard}">
+                    <Grid>
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="4" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                        <Border Grid.Column="0" Background="{StaticResource GoldBrush}" CornerRadius="999">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding ActivePageKey, Converter={StaticResource ActivePageMatchConverter}, ConverterParameter=Dashboard}" Value="True">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                        </Border>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="12,0,0,0">
+                            <materialDesign:PackIcon Kind="Home" Width="18" Height="18" Margin="0,0,10,0">
+                                <materialDesign:PackIcon.Style>
+                                    <Style TargetType="materialDesign:PackIcon" BasedOn="{StaticResource {x:Type materialDesign:PackIcon}}">
+                                        <Setter Property="Foreground" Value="{StaticResource SidebarIconBrush}" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding ActivePageKey, Converter={StaticResource ActivePageMatchConverter}, ConverterParameter=Dashboard}" Value="True">
+                                                <Setter Property="Foreground" Value="{StaticResource GoldBrush}" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </materialDesign:PackIcon.Style>
+                            </materialDesign:PackIcon>
+                            <TextBlock Text="{DynamicResource NavDashboard}" TextWrapping="NoWrap">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+                                        <Setter Property="Foreground" Value="{DynamicResource SidebarTextBrush}" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding ActivePageKey, Converter={StaticResource ActivePageMatchConverter}, ConverterParameter=Dashboard}" Value="True">
+                                                <Setter Property="Foreground" Value="{StaticResource GoldBrush}" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </StackPanel>
+                    </Grid>
                 </Button>
-                <Button Style="{StaticResource SidebarButton}" Command="{Binding ShowSuppliersCommand}" ToolTip="{DynamicResource TooltipSuppliers}" Margin="0,0,0,8">
-                    <StackPanel Orientation="Horizontal">
-                        <materialDesign:PackIcon Kind="AccountGroup" Width="18" Height="18" Margin="0,0,10,0" Foreground="{StaticResource SidebarIconBrush}" />
-                        <TextBlock Text="{DynamicResource NavSuppliers}" Foreground="{DynamicResource SidebarTextBrush}" TextWrapping="NoWrap" />
-                    </StackPanel>
+                <Button Style="{StaticResource SidebarButton}" Command="{Binding ShowSuppliersCommand}" ToolTip="{DynamicResource TooltipSuppliers}">
+                    <Grid>
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="4" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                        <Border Grid.Column="0" Background="{StaticResource GoldBrush}" CornerRadius="999">
+                            <Border.Style><Style TargetType="Border"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding ActivePageKey, Converter={StaticResource ActivePageMatchConverter}, ConverterParameter=Suppliers}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></Border.Style>
+                        </Border>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="12,0,0,0">
+                            <materialDesign:PackIcon Kind="AccountGroup" Width="18" Height="18" Margin="0,0,10,0">
+                                <materialDesign:PackIcon.Style><Style TargetType="materialDesign:PackIcon" BasedOn="{StaticResource {x:Type materialDesign:PackIcon}}"><Setter Property="Foreground" Value="{StaticResource SidebarIconBrush}" /><Style.Triggers><DataTrigger Binding="{Binding ActivePageKey, Converter={StaticResource ActivePageMatchConverter}, ConverterParameter=Suppliers}" Value="True"><Setter Property="Foreground" Value="{StaticResource GoldBrush}" /></DataTrigger></Style.Triggers></Style></materialDesign:PackIcon.Style>
+                            </materialDesign:PackIcon>
+                            <TextBlock Text="{DynamicResource NavSuppliers}" TextWrapping="NoWrap"><TextBlock.Style><Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}"><Setter Property="Foreground" Value="{DynamicResource SidebarTextBrush}" /><Style.Triggers><DataTrigger Binding="{Binding ActivePageKey, Converter={StaticResource ActivePageMatchConverter}, ConverterParameter=Suppliers}" Value="True"><Setter Property="Foreground" Value="{StaticResource GoldBrush}" /></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock>
+                        </StackPanel>
+                    </Grid>
                 </Button>
-                <Button Style="{StaticResource SidebarButton}" Command="{Binding ShowTransactionsCommand}" ToolTip="{DynamicResource TooltipTransactions}" Margin="0,0,0,8">
-                    <StackPanel Orientation="Horizontal">
-                        <materialDesign:PackIcon Kind="Cash" Width="18" Height="18" Margin="0,0,10,0" Foreground="{StaticResource SidebarIconBrush}" />
-                        <TextBlock Text="{DynamicResource NavTransactions}" Foreground="{DynamicResource SidebarTextBrush}" TextWrapping="NoWrap" />
-                    </StackPanel>
+                <Button Style="{StaticResource SidebarButton}" Command="{Binding ShowTransactionsCommand}" ToolTip="{DynamicResource TooltipTransactions}">
+                    <Grid>
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="4" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                        <Border Grid.Column="0" Background="{StaticResource GoldBrush}" CornerRadius="999"><Border.Style><Style TargetType="Border"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding ActivePageKey, Converter={StaticResource ActivePageMatchConverter}, ConverterParameter=Transactions}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></Border.Style></Border>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="12,0,0,0">
+                            <materialDesign:PackIcon Kind="Cash" Width="18" Height="18" Margin="0,0,10,0"><materialDesign:PackIcon.Style><Style TargetType="materialDesign:PackIcon" BasedOn="{StaticResource {x:Type materialDesign:PackIcon}}"><Setter Property="Foreground" Value="{StaticResource SidebarIconBrush}" /><Style.Triggers><DataTrigger Binding="{Binding ActivePageKey, Converter={StaticResource ActivePageMatchConverter}, ConverterParameter=Transactions}" Value="True"><Setter Property="Foreground" Value="{StaticResource GoldBrush}" /></DataTrigger></Style.Triggers></Style></materialDesign:PackIcon.Style></materialDesign:PackIcon>
+                            <TextBlock Text="{DynamicResource NavTransactions}" TextWrapping="NoWrap"><TextBlock.Style><Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}"><Setter Property="Foreground" Value="{DynamicResource SidebarTextBrush}" /><Style.Triggers><DataTrigger Binding="{Binding ActivePageKey, Converter={StaticResource ActivePageMatchConverter}, ConverterParameter=Transactions}" Value="True"><Setter Property="Foreground" Value="{StaticResource GoldBrush}" /></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock>
+                        </StackPanel>
+                    </Grid>
                 </Button>
-                <Button Style="{StaticResource SidebarButton}" Command="{Binding ShowSupplierDetailsCommand}" ToolTip="{DynamicResource TooltipSupplierDetails}" Margin="0,0,0,8">
-                    <StackPanel Orientation="Horizontal">
-                        <materialDesign:PackIcon Kind="AccountDetails" Width="18" Height="18" Margin="0,0,10,0" Foreground="{StaticResource SidebarIconBrush}" />
-                        <TextBlock Text="{DynamicResource NavSupplierDetails}" Foreground="{DynamicResource SidebarTextBrush}" TextWrapping="NoWrap" />
-                    </StackPanel>
+                <Button Style="{StaticResource SidebarButton}" Command="{Binding ShowSupplierDetailsCommand}" ToolTip="{DynamicResource TooltipSupplierDetails}">
+                    <Grid>
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="4" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                        <Border Grid.Column="0" Background="{StaticResource GoldBrush}" CornerRadius="999"><Border.Style><Style TargetType="Border"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding ActivePageKey, Converter={StaticResource ActivePageMatchConverter}, ConverterParameter=SupplierDetails}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></Border.Style></Border>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="12,0,0,0">
+                            <materialDesign:PackIcon Kind="AccountDetails" Width="18" Height="18" Margin="0,0,10,0"><materialDesign:PackIcon.Style><Style TargetType="materialDesign:PackIcon" BasedOn="{StaticResource {x:Type materialDesign:PackIcon}}"><Setter Property="Foreground" Value="{StaticResource SidebarIconBrush}" /><Style.Triggers><DataTrigger Binding="{Binding ActivePageKey, Converter={StaticResource ActivePageMatchConverter}, ConverterParameter=SupplierDetails}" Value="True"><Setter Property="Foreground" Value="{StaticResource GoldBrush}" /></DataTrigger></Style.Triggers></Style></materialDesign:PackIcon.Style></materialDesign:PackIcon>
+                            <TextBlock Text="{DynamicResource NavSupplierDetails}" TextWrapping="NoWrap"><TextBlock.Style><Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}"><Setter Property="Foreground" Value="{DynamicResource SidebarTextBrush}" /><Style.Triggers><DataTrigger Binding="{Binding ActivePageKey, Converter={StaticResource ActivePageMatchConverter}, ConverterParameter=SupplierDetails}" Value="True"><Setter Property="Foreground" Value="{StaticResource GoldBrush}" /></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock>
+                        </StackPanel>
+                    </Grid>
                 </Button>
-                <Button Style="{StaticResource SidebarButton}" Command="{Binding ShowWeeklyReportCommand}" ToolTip="{DynamicResource TooltipWeeklyReport}" Margin="0,0,0,8">
-                    <StackPanel Orientation="Horizontal">
-                        <materialDesign:PackIcon Kind="ChartLine" Width="18" Height="18" Margin="0,0,10,0" Foreground="{StaticResource SidebarIconBrush}" />
-                        <TextBlock Text="{DynamicResource NavWeeklyReport}" Foreground="{DynamicResource SidebarTextBrush}" TextWrapping="NoWrap" />
-                    </StackPanel>
+                <Button Style="{StaticResource SidebarButton}" Command="{Binding ShowWeeklyReportCommand}" ToolTip="{DynamicResource TooltipWeeklyReport}">
+                    <Grid>
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="4" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                        <Border Grid.Column="0" Background="{StaticResource GoldBrush}" CornerRadius="999"><Border.Style><Style TargetType="Border"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding ActivePageKey, Converter={StaticResource ActivePageMatchConverter}, ConverterParameter=WeeklyReport}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></Border.Style></Border>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="12,0,0,0">
+                            <materialDesign:PackIcon Kind="ChartLine" Width="18" Height="18" Margin="0,0,10,0"><materialDesign:PackIcon.Style><Style TargetType="materialDesign:PackIcon" BasedOn="{StaticResource {x:Type materialDesign:PackIcon}}"><Setter Property="Foreground" Value="{StaticResource SidebarIconBrush}" /><Style.Triggers><DataTrigger Binding="{Binding ActivePageKey, Converter={StaticResource ActivePageMatchConverter}, ConverterParameter=WeeklyReport}" Value="True"><Setter Property="Foreground" Value="{StaticResource GoldBrush}" /></DataTrigger></Style.Triggers></Style></materialDesign:PackIcon.Style></materialDesign:PackIcon>
+                            <TextBlock Text="{DynamicResource NavWeeklyReport}" TextWrapping="NoWrap"><TextBlock.Style><Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}"><Setter Property="Foreground" Value="{DynamicResource SidebarTextBrush}" /><Style.Triggers><DataTrigger Binding="{Binding ActivePageKey, Converter={StaticResource ActivePageMatchConverter}, ConverterParameter=WeeklyReport}" Value="True"><Setter Property="Foreground" Value="{StaticResource GoldBrush}" /></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock>
+                        </StackPanel>
+                    </Grid>
                 </Button>
-                <Button Style="{StaticResource SidebarButton}" Command="{Binding ShowStatementCommand}" ToolTip="{DynamicResource TooltipStatement}" Margin="0,0,0,8">
-                    <StackPanel Orientation="Horizontal">
-                        <materialDesign:PackIcon Kind="FileDocumentOutline" Width="18" Height="18" Margin="0,0,10,0" Foreground="{StaticResource SidebarIconBrush}" />
-                        <TextBlock Text="{DynamicResource NavStatement}" Foreground="{DynamicResource SidebarTextBrush}" TextWrapping="NoWrap" />
-                    </StackPanel>
+                <Button Style="{StaticResource SidebarButton}" Command="{Binding ShowStatementCommand}" ToolTip="{DynamicResource TooltipStatement}">
+                    <Grid>
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="4" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                        <Border Grid.Column="0" Background="{StaticResource GoldBrush}" CornerRadius="999"><Border.Style><Style TargetType="Border"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding ActivePageKey, Converter={StaticResource ActivePageMatchConverter}, ConverterParameter=Statement}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></Border.Style></Border>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="12,0,0,0">
+                            <materialDesign:PackIcon Kind="FileDocumentOutline" Width="18" Height="18" Margin="0,0,10,0"><materialDesign:PackIcon.Style><Style TargetType="materialDesign:PackIcon" BasedOn="{StaticResource {x:Type materialDesign:PackIcon}}"><Setter Property="Foreground" Value="{StaticResource SidebarIconBrush}" /><Style.Triggers><DataTrigger Binding="{Binding ActivePageKey, Converter={StaticResource ActivePageMatchConverter}, ConverterParameter=Statement}" Value="True"><Setter Property="Foreground" Value="{StaticResource GoldBrush}" /></DataTrigger></Style.Triggers></Style></materialDesign:PackIcon.Style></materialDesign:PackIcon>
+                            <TextBlock Text="{DynamicResource NavStatement}" TextWrapping="NoWrap"><TextBlock.Style><Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}"><Setter Property="Foreground" Value="{DynamicResource SidebarTextBrush}" /><Style.Triggers><DataTrigger Binding="{Binding ActivePageKey, Converter={StaticResource ActivePageMatchConverter}, ConverterParameter=Statement}" Value="True"><Setter Property="Foreground" Value="{StaticResource GoldBrush}" /></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock>
+                        </StackPanel>
+                    </Grid>
                 </Button>
-                <Button Style="{StaticResource SidebarButton}" Command="{Binding ShowNotesCommand}" ToolTip="{DynamicResource TooltipNotes}" Margin="0,0,0,8">
-                    <StackPanel Orientation="Horizontal">
-                        <materialDesign:PackIcon Kind="NotebookOutline" Width="18" Height="18" Margin="0,0,10,0" Foreground="{StaticResource SidebarIconBrush}" />
-                        <TextBlock Text="{DynamicResource NavNotes}" Foreground="{DynamicResource SidebarTextBrush}" TextWrapping="NoWrap" />
-                    </StackPanel>
+                <Button Style="{StaticResource SidebarButton}" Command="{Binding ShowNotesCommand}" ToolTip="{DynamicResource TooltipNotes}">
+                    <Grid>
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="4" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                        <Border Grid.Column="0" Background="{StaticResource GoldBrush}" CornerRadius="999"><Border.Style><Style TargetType="Border"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding ActivePageKey, Converter={StaticResource ActivePageMatchConverter}, ConverterParameter=Notes}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></Border.Style></Border>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="12,0,0,0">
+                            <materialDesign:PackIcon Kind="NotebookOutline" Width="18" Height="18" Margin="0,0,10,0"><materialDesign:PackIcon.Style><Style TargetType="materialDesign:PackIcon" BasedOn="{StaticResource {x:Type materialDesign:PackIcon}}"><Setter Property="Foreground" Value="{StaticResource SidebarIconBrush}" /><Style.Triggers><DataTrigger Binding="{Binding ActivePageKey, Converter={StaticResource ActivePageMatchConverter}, ConverterParameter=Notes}" Value="True"><Setter Property="Foreground" Value="{StaticResource GoldBrush}" /></DataTrigger></Style.Triggers></Style></materialDesign:PackIcon.Style></materialDesign:PackIcon>
+                            <TextBlock Text="{DynamicResource NavNotes}" TextWrapping="NoWrap"><TextBlock.Style><Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}"><Setter Property="Foreground" Value="{DynamicResource SidebarTextBrush}" /><Style.Triggers><DataTrigger Binding="{Binding ActivePageKey, Converter={StaticResource ActivePageMatchConverter}, ConverterParameter=Notes}" Value="True"><Setter Property="Foreground" Value="{StaticResource GoldBrush}" /></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock>
+                        </StackPanel>
+                    </Grid>
+                </Button>
+                <Button Style="{StaticResource SidebarButton}" Command="{Binding ShowPricingSettingsCommand}" ToolTip="{DynamicResource TooltipPricingSettings}">
+                    <Grid>
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="4" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                        <Border Grid.Column="0" Background="{StaticResource GoldBrush}" CornerRadius="999"><Border.Style><Style TargetType="Border"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding ActivePageKey, Converter={StaticResource ActivePageMatchConverter}, ConverterParameter=PricingSettings}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></Border.Style></Border>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="12,0,0,0">
+                            <materialDesign:PackIcon Kind="TuneVariant" Width="18" Height="18" Margin="0,0,10,0"><materialDesign:PackIcon.Style><Style TargetType="materialDesign:PackIcon" BasedOn="{StaticResource {x:Type materialDesign:PackIcon}}"><Setter Property="Foreground" Value="{StaticResource SidebarIconBrush}" /><Style.Triggers><DataTrigger Binding="{Binding ActivePageKey, Converter={StaticResource ActivePageMatchConverter}, ConverterParameter=PricingSettings}" Value="True"><Setter Property="Foreground" Value="{StaticResource GoldBrush}" /></DataTrigger></Style.Triggers></Style></materialDesign:PackIcon.Style></materialDesign:PackIcon>
+                            <TextBlock Text="{DynamicResource NavPricingSettings}" TextWrapping="NoWrap"><TextBlock.Style><Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}"><Setter Property="Foreground" Value="{DynamicResource SidebarTextBrush}" /><Style.Triggers><DataTrigger Binding="{Binding ActivePageKey, Converter={StaticResource ActivePageMatchConverter}, ConverterParameter=PricingSettings}" Value="True"><Setter Property="Foreground" Value="{StaticResource GoldBrush}" /></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock>
+                        </StackPanel>
+                    </Grid>
                 </Button>
                 <Button Style="{StaticResource SidebarButton}" Command="{Binding ShowBackupCommand}" ToolTip="{DynamicResource TooltipBackup}">
-                    <StackPanel Orientation="Horizontal">
-                        <materialDesign:PackIcon Kind="Database" Width="18" Height="18" Margin="0,0,10,0" Foreground="{StaticResource SidebarIconBrush}" />
-                        <TextBlock Text="{DynamicResource NavBackup}" Foreground="{DynamicResource SidebarTextBrush}" TextWrapping="NoWrap" />
-                    </StackPanel>
+                    <Grid>
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="4" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                        <Border Grid.Column="0" Background="{StaticResource GoldBrush}" CornerRadius="999"><Border.Style><Style TargetType="Border"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding ActivePageKey, Converter={StaticResource ActivePageMatchConverter}, ConverterParameter=Backup}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></Border.Style></Border>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="12,0,0,0">
+                            <materialDesign:PackIcon Kind="Database" Width="18" Height="18" Margin="0,0,10,0"><materialDesign:PackIcon.Style><Style TargetType="materialDesign:PackIcon" BasedOn="{StaticResource {x:Type materialDesign:PackIcon}}"><Setter Property="Foreground" Value="{StaticResource SidebarIconBrush}" /><Style.Triggers><DataTrigger Binding="{Binding ActivePageKey, Converter={StaticResource ActivePageMatchConverter}, ConverterParameter=Backup}" Value="True"><Setter Property="Foreground" Value="{StaticResource GoldBrush}" /></DataTrigger></Style.Triggers></Style></materialDesign:PackIcon.Style></materialDesign:PackIcon>
+                            <TextBlock Text="{DynamicResource NavBackup}" TextWrapping="NoWrap"><TextBlock.Style><Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}"><Setter Property="Foreground" Value="{DynamicResource SidebarTextBrush}" /><Style.Triggers><DataTrigger Binding="{Binding ActivePageKey, Converter={StaticResource ActivePageMatchConverter}, ConverterParameter=Backup}" Value="True"><Setter Property="Foreground" Value="{StaticResource GoldBrush}" /></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock>
+                        </StackPanel>
+                    </Grid>
                 </Button>
             </StackPanel>
         </Border>

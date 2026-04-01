@@ -17,3 +17,7 @@
 
 # Local publish output
 publish/
+
+# Local .NET SDK/tooling caches
+.dotnet/
+.dotnet-cli/

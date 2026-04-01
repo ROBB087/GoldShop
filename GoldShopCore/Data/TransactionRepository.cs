@@ -27,10 +27,10 @@ public class TransactionRepository
         using var command = connection.CreateCommand();
         command.CommandText = @"
 INSERT INTO SupplierTransactions
-    (SupplierId, TxnDate, Type, Description, Amount, Weight, Purity, OriginalWeight, OriginalKarat, Equivalent21,
+    (SupplierId, TxnDate, Type, ItemName, Description, Amount, Weight, Purity, OriginalWeight, OriginalKarat, Equivalent21,
      ManufacturingPerGram, ImprovementPerGram, TotalManufacturing, TotalImprovement, Category, Notes, CreatedAt, UpdatedAt)
 VALUES
-    ($supplierId, $date, $type, $description, $equivalent21, $originalWeight, $purity, $originalWeight, $originalKarat, $equivalent21,
+    ($supplierId, $date, $type, $itemName, $description, $equivalent21, $originalWeight, $purity, $originalWeight, $originalKarat, $equivalent21,
      $manufacturingPerGram, $improvementPerGram, $totalManufacturing, $totalImprovement, $category, $notes, $createdAt, $updatedAt);";
 
         BindTransaction(command, transaction);
@@ -48,6 +48,7 @@ UPDATE SupplierTransactions
 SET SupplierId = $supplierId,
     TxnDate = $date,
     Type = $type,
+    ItemName = $itemName,
     Description = $description,
     Amount = $equivalent21,
     Weight = $originalWeight,
@@ -213,7 +214,7 @@ GROUP BY SupplierId;";
         using var command = connection.CreateCommand();
         var where = BuildDateFilter(command, supplierId, from, to);
         command.CommandText = $@"
-SELECT Id, SupplierId, TxnDate, Type, Category, Description, OriginalWeight, OriginalKarat, Equivalent21,
+SELECT Id, SupplierId, TxnDate, Type, Category, ItemName, Description, OriginalWeight, OriginalKarat, Equivalent21,
        ManufacturingPerGram, ImprovementPerGram, TotalManufacturing, TotalImprovement, Notes, CreatedAt, UpdatedAt
 FROM SupplierTransactions
 {where}
@@ -229,17 +230,18 @@ ORDER BY TxnDate DESC, Id DESC;";
                 Date = DateTime.Parse(reader.GetString(2)),
                 Type = ParseType(reader.GetString(3)),
                 Category = TransactionCategories.Normalize(reader.IsDBNull(4) ? null : reader.GetString(4), ParseType(reader.GetString(3))),
-                Description = reader.IsDBNull(5) ? null : reader.GetString(5),
-                OriginalWeight = ReadDecimal(reader, 6),
-                OriginalKarat = reader.GetInt32(7),
-                Equivalent21 = ReadDecimal(reader, 8),
-                ManufacturingPerGram = ReadDecimal(reader, 9),
-                ImprovementPerGram = ReadDecimal(reader, 10),
-                TotalManufacturing = ReadDecimal(reader, 11),
-                TotalImprovement = ReadDecimal(reader, 12),
-                Notes = reader.IsDBNull(13) ? null : reader.GetString(13),
-                CreatedAt = DateTime.Parse(reader.GetString(14)),
-                UpdatedAt = DateTime.Parse(reader.GetString(15))
+                ItemName = reader.IsDBNull(5) ? null : reader.GetString(5),
+                Description = reader.IsDBNull(6) ? null : reader.GetString(6),
+                OriginalWeight = ReadDecimal(reader, 7),
+                OriginalKarat = reader.GetInt32(8),
+                Equivalent21 = ReadDecimal(reader, 9),
+                ManufacturingPerGram = ReadDecimal(reader, 10),
+                ImprovementPerGram = ReadDecimal(reader, 11),
+                TotalManufacturing = ReadDecimal(reader, 12),
+                TotalImprovement = ReadDecimal(reader, 13),
+                Notes = reader.IsDBNull(14) ? null : reader.GetString(14),
+                CreatedAt = DateTime.Parse(reader.GetString(15)),
+                UpdatedAt = DateTime.Parse(reader.GetString(16))
             });
         }
 
@@ -273,6 +275,7 @@ ORDER BY TxnDate DESC, Id DESC;";
         command.Parameters.AddWithValue("$supplierId", transaction.SupplierId);
         command.Parameters.AddWithValue("$date", transaction.Date.ToString("yyyy-MM-dd"));
         command.Parameters.AddWithValue("$type", transaction.Type.ToString());
+        command.Parameters.AddWithValue("$itemName", (object?)transaction.ItemName ?? DBNull.Value);
         command.Parameters.AddWithValue("$description", (object?)transaction.Description ?? DBNull.Value);
         command.Parameters.AddWithValue("$originalWeight", (double)transaction.OriginalWeight);
         command.Parameters.AddWithValue("$originalKarat", transaction.OriginalKarat);
