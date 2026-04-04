@@ -8,8 +8,7 @@ public class SupplierRepository
     public List<Supplier> GetAll()
     {
         var suppliers = new List<Supplier>();
-        using var connection = new SqliteConnection(Database.ConnectionString);
-        connection.Open();
+        using var connection = Database.OpenConnection();
 
         using var command = connection.CreateCommand();
         command.CommandText = "SELECT Id, Name, Phone, WorkerName, WorkerPhone, Notes, CreatedAt FROM Suppliers ORDER BY Name";
@@ -34,8 +33,7 @@ public class SupplierRepository
 
     public Supplier? GetById(int id)
     {
-        using var connection = new SqliteConnection(Database.ConnectionString);
-        connection.Open();
+        using var connection = Database.OpenConnection();
 
         using var command = connection.CreateCommand();
         command.CommandText = "SELECT Id, Name, Phone, WorkerName, WorkerPhone, Notes, CreatedAt FROM Suppliers WHERE Id = $id";
@@ -61,10 +59,17 @@ public class SupplierRepository
 
     public int Add(Supplier supplier)
     {
-        using var connection = new SqliteConnection(Database.ConnectionString);
-        connection.Open();
+        using var connection = Database.OpenConnection();
+        using var transaction = connection.BeginTransaction();
+        var id = Add(connection, transaction, supplier);
+        transaction.Commit();
+        return id;
+    }
 
+    public int Add(SqliteConnection connection, SqliteTransaction transaction, Supplier supplier)
+    {
         using var command = connection.CreateCommand();
+        command.Transaction = transaction;
         command.CommandText = @"
 INSERT INTO Suppliers (Name, Phone, WorkerName, WorkerPhone, Notes, CreatedAt)
 VALUES ($name, $phone, $workerName, $workerPhone, $notes, $createdAt);
@@ -77,14 +82,12 @@ SELECT last_insert_rowid();
         command.Parameters.AddWithValue("$notes", (object?)supplier.Notes ?? DBNull.Value);
         command.Parameters.AddWithValue("$createdAt", supplier.CreatedAt.ToString("yyyy-MM-dd"));
 
-        var id = (long)command.ExecuteScalar()!;
-        return (int)id;
+        return (int)(long)command.ExecuteScalar()!;
     }
 
     public void Update(Supplier supplier)
     {
-        using var connection = new SqliteConnection(Database.ConnectionString);
-        connection.Open();
+        using var connection = Database.OpenConnection();
 
         using var command = connection.CreateCommand();
         command.CommandText = @"
@@ -104,8 +107,7 @@ WHERE Id = $id;
 
     public void Delete(int id)
     {
-        using var connection = new SqliteConnection(Database.ConnectionString);
-        connection.Open();
+        using var connection = Database.OpenConnection();
 
         using var command = connection.CreateCommand();
         command.CommandText = "DELETE FROM Suppliers WHERE Id = $id;";

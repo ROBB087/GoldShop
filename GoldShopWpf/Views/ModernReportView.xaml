@@ -6,7 +6,7 @@
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              mc:Ignorable="d">
     <Grid Margin="8" Background="{DynamicResource AppBackgroundBrush}">
-        <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
             <StackPanel x:Name="ReportCaptureSurface">
                 <Border Style="{StaticResource CardContainer}" Padding="28" Margin="0,0,0,18" BorderBrush="#E6EAF2">
                     <Grid>
@@ -71,13 +71,13 @@
                         </WrapPanel>
 
                         <WrapPanel Grid.Row="3" Grid.ColumnSpan="2" Margin="0,26,0,0">
-                            <StackPanel Width="220" Margin="0,0,16,0">
+                            <StackPanel MinWidth="180" Margin="0,0,16,8">
                                 <TextBlock Text="{DynamicResource LblFrom}" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource MutedTextBrush}" Margin="0,0,0,6" />
-                                <DatePicker SelectedDate="{Binding FromDate}" Width="220" Margin="0" />
+                                <DatePicker SelectedDate="{Binding FromDate}" Margin="0" />
                             </StackPanel>
-                            <StackPanel Width="220" Margin="0,0,16,0">
+                            <StackPanel MinWidth="180" Margin="0,0,16,8">
                                 <TextBlock Text="{DynamicResource LblTo}" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource MutedTextBrush}" Margin="0,0,0,6" />
-                                <DatePicker SelectedDate="{Binding ToDate}" Width="220" Margin="0" />
+                                <DatePicker SelectedDate="{Binding ToDate}" Margin="0" />
                             </StackPanel>
                             <Button Style="{StaticResource GhostButton}" Margin="0,24,0,0" MinWidth="120" Command="{Binding RefreshCommand}">
                                 <StackPanel Orientation="Horizontal">
@@ -87,34 +87,28 @@
                             </Button>
                         </WrapPanel>
 
-                        <Grid Grid.Row="4" Grid.ColumnSpan="2" Margin="0,28,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-
-                            <materialDesign:Card Grid.Column="0" Margin="0,0,12,0" Padding="20" Background="#F8FBFF">
+                        <WrapPanel Grid.Row="4" Grid.ColumnSpan="2" Margin="0,28,0,0">
+                            <materialDesign:Card Margin="0,0,12,12" Padding="20" Background="#F8FBFF" MinWidth="220">
                                 <StackPanel>
                                     <TextBlock Text="{DynamicResource LblTotalWeightReport}" Foreground="{StaticResource MutedTextBrush}" FontSize="12" />
                                     <TextBlock Text="{Binding TotalWeightDisplay}" FontSize="28" FontWeight="Bold" Margin="0,10,0,0" />
                                 </StackPanel>
                             </materialDesign:Card>
 
-                            <materialDesign:Card Grid.Column="1" Margin="12,0" Padding="20" Background="#FFF9F0">
+                            <materialDesign:Card Margin="0,0,12,12" Padding="20" Background="#FFF9F0" MinWidth="220">
                                 <StackPanel>
                                     <TextBlock Text="{DynamicResource LblTotalValueReport}" Foreground="{StaticResource MutedTextBrush}" FontSize="12" />
                                     <TextBlock Text="{Binding TotalValueDisplay}" FontSize="28" FontWeight="Bold" Margin="0,10,0,0" />
                                 </StackPanel>
                             </materialDesign:Card>
 
-                            <materialDesign:Card Grid.Column="2" Margin="12,0,0,0" Padding="20" Background="#F5FAF7">
+                            <materialDesign:Card Margin="0,0,0,12" Padding="20" Background="#F5FAF7" MinWidth="220">
                                 <StackPanel>
                                     <TextBlock Text="{DynamicResource LblNetResultReport}" Foreground="{StaticResource MutedTextBrush}" FontSize="12" />
                                     <TextBlock Text="{Binding NetResultDisplay}" FontSize="28" FontWeight="Bold" Margin="0,10,0,0" />
                                 </StackPanel>
                             </materialDesign:Card>
-                        </Grid>
+                        </WrapPanel>
                     </Grid>
                 </Border>
 

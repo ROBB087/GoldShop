@@ -5,7 +5,7 @@
         Title="{DynamicResource WindowAddNote}"
         Height="660"
         Width="860"
-        MinWidth="720"
+        MinWidth="620"
         MinHeight="560"
         WindowStartupLocation="CenterOwner"
         ResizeMode="CanResize"
@@ -61,7 +61,7 @@
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="180" />
+                        <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
 
@@ -76,20 +76,20 @@
                              MaxLength="4000"
                              ToolTip="{DynamicResource LblNoteContent}" />
 
-                    <StackPanel Orientation="Horizontal" Grid.Row="2" Grid.Column="1" HorizontalAlignment="Right" Margin="0,20,0,0">
-                        <Button Width="140" Style="{StaticResource GhostButton}" Margin="12,0,0,0" Click="OnCancel" ToolTip="{DynamicResource TooltipCancel}">
+                    <WrapPanel Grid.Row="2" Grid.Column="1" HorizontalAlignment="Right" Margin="0,20,0,0">
+                        <Button MinWidth="140" Style="{StaticResource GhostButton}" Margin="12,0,0,8" Click="OnCancel" ToolTip="{DynamicResource TooltipCancel}">
                             <StackPanel Orientation="Horizontal">
                                 <materialDesign:PackIcon Kind="CloseCircleOutline" Width="18" Height="18" Margin="0,0,6,0" />
                                 <TextBlock Text="{DynamicResource BtnClear}" />
                             </StackPanel>
                         </Button>
-                        <Button Width="150" Style="{StaticResource PrimaryButton}" Click="OnSave" ToolTip="{DynamicResource TooltipSave}">
+                        <Button MinWidth="150" Style="{StaticResource PrimaryButton}" Click="OnSave" ToolTip="{DynamicResource TooltipSave}">
                             <StackPanel Orientation="Horizontal">
                                 <materialDesign:PackIcon Kind="ContentSave" Width="18" Height="18" Margin="0,0,6,0" />
                                 <TextBlock Text="{DynamicResource BtnApply}" />
                             </StackPanel>
                         </Button>
-                    </StackPanel>
+                    </WrapPanel>
                 </Grid>
             </ScrollViewer>
         </Border>

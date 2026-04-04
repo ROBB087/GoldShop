@@ -5,12 +5,20 @@ namespace GoldShopCore.Services;
 
 public class TransactionService
 {
-    private static readonly HashSet<int> ValidKarats = new([18, 21, 22, 24]);
+    private static readonly HashSet<int> ValidKarats = new([18, 21, 24]);
     private readonly TransactionRepository _transactionRepository;
+    private readonly DiscountRepository _discountRepository;
+    private readonly TraderSummaryRepository _traderSummaryRepository;
+    private readonly AuditService _auditService;
+    private readonly CacheService _cacheService;
 
-    public TransactionService(TransactionRepository transactionRepository)
+    public TransactionService(TransactionRepository transactionRepository, DiscountRepository discountRepository, TraderSummaryRepository traderSummaryRepository, AuditService auditService, CacheService cacheService)
     {
         _transactionRepository = transactionRepository;
+        _discountRepository = discountRepository;
+        _traderSummaryRepository = traderSummaryRepository;
+        _auditService = auditService;
+        _cacheService = cacheService;
     }
 
     public List<SupplierTransaction> GetTransactions(int supplierId, DateTime? from, DateTime? to)
@@ -19,11 +27,48 @@ public class TransactionService
     public List<SupplierTransaction> GetTransactions(DateTime? from, DateTime? to)
         => _transactionRepository.GetAll(from, to);
 
+    public PagedResult<SupplierTransaction> GetTransactionsPage(int? supplierId, DateTime? from, DateTime? to, int pageNumber, int pageSize)
+        => _transactionRepository.GetPaged(supplierId, from, to, pageNumber, pageSize);
+
     public TraderSummary GetSummary(int supplierId, DateTime? from, DateTime? to)
-        => _transactionRepository.GetSummary(supplierId, from, to);
+    {
+        if (!from.HasValue && !to.HasValue)
+        {
+            var cached = _cacheService.GetTraderSummary(supplierId, () => _traderSummaryRepository.GetByTrader(supplierId));
+            if (cached != null)
+            {
+                return MapSummary(cached);
+            }
+        }
+
+        var summary = _transactionRepository.GetSummary(supplierId, from, to);
+        var discounts = _discountRepository.GetDiscountTotals(supplierId, from, to);
+        summary.ManufacturingDiscounts = discounts.manufacturingDiscounts;
+        summary.ImprovementDiscounts = discounts.improvementDiscounts;
+        return summary;
+    }
 
     public TraderSummary GetSummaryAll(DateTime? from, DateTime? to)
-        => _transactionRepository.GetSummaryAll(from, to);
+    {
+        if (!from.HasValue && !to.HasValue)
+        {
+            var snapshots = _cacheService.GetTraderSummaries(_traderSummaryRepository.GetAll).Values;
+            return new TraderSummary
+            {
+                TotalGold21 = snapshots.Sum(item => item.TotalEquivalent21),
+                TotalManufacturing = snapshots.Sum(item => item.TotalManufacturing),
+                TotalImprovement = snapshots.Sum(item => item.TotalImprovement),
+                ManufacturingDiscounts = snapshots.Sum(item => item.ManufacturingDiscounts),
+                ImprovementDiscounts = snapshots.Sum(item => item.ImprovementDiscounts)
+            };
+        }
+
+        var summary = _transactionRepository.GetSummaryAll(from, to);
+        var discounts = _discountRepository.GetDiscountTotalsAll(from, to);
+        summary.ManufacturingDiscounts = discounts.manufacturingDiscounts;
+        summary.ImprovementDiscounts = discounts.improvementDiscounts;
+        return summary;
+    }
 
     public Dictionary<int, decimal> GetTotalGold21BySupplier()
         => _transactionRepository.GetTotalGold21BySupplier();
@@ -31,7 +76,13 @@ public class TransactionService
     public Dictionary<int, decimal> GetNetGold21BySupplier()
         => _transactionRepository.GetNetGold21BySupplier();
 
-    public void AddTransaction(
+    public List<SupplierSummaryRow> GetSupplierSummaries(DateTime? from, DateTime? to)
+        => _transactionRepository.GetSupplierSummaries(from, to);
+
+    public List<DailyTransactionTotals> GetDailyTotals(DateTime from, DateTime to)
+        => _transactionRepository.GetDailyTotals(from, to);
+
+    public int AddTransaction(
         int supplierId,
         DateTime date,
         string category,
@@ -56,7 +107,24 @@ public class TransactionService
             now,
             now);
 
-        _transactionRepository.Add(transaction);
+        try
+        {
+            using var connection = Database.OpenConnection();
+            using var sqliteTransaction = connection.BeginTransaction();
+            var id = _transactionRepository.Add(connection, sqliteTransaction, transaction);
+            var summarySnapshot = _traderSummaryRepository.ApplyTransactionInsert(connection, sqliteTransaction, transaction);
+            sqliteTransaction.Commit();
+            _cacheService.SetTraderSummary(summarySnapshot);
+
+            transaction.Id = id;
+            _auditService.Log("SupplierTransaction", id, "Create", null, transaction);
+            return id;
+        }
+        catch (Exception ex)
+        {
+            FileLogService.LogError("AddTransaction failed", ex);
+            throw;
+        }
     }
 
     public void UpdateTransaction(
@@ -71,9 +139,13 @@ public class TransactionService
         decimal improvementValue,
         string? notes)
     {
-        var existing = _transactionRepository.GetBySupplier(supplierId, null, null).FirstOrDefault(t => t.Id == id);
-        var createdAt = existing?.CreatedAt ?? DateTime.Now;
-        var transaction = CreateTransaction(
+        var existing = _transactionRepository.GetById(id);
+        if (existing == null || existing.IsDeleted)
+        {
+            throw new InvalidOperationException("Transaction was not found.");
+        }
+
+        var updated = CreateTransaction(
             supplierId,
             date,
             category,
@@ -83,16 +155,75 @@ public class TransactionService
             manufacturingValue,
             improvementValue,
             notes,
-            createdAt,
+            existing.CreatedAt,
             DateTime.Now);
+        updated.Id = id;
+        updated.IsDeleted = false;
 
-        transaction.Id = id;
-        _transactionRepository.Update(transaction);
+        try
+        {
+            using var connection = Database.OpenConnection();
+            using var sqliteTransaction = connection.BeginTransaction();
+            _transactionRepository.Update(connection, sqliteTransaction, updated);
+            var affectedTraderIds = new HashSet<int> { existing.SupplierId, updated.SupplierId };
+            foreach (var traderId in affectedTraderIds)
+            {
+                var snapshot = traderId == existing.SupplierId && traderId == updated.SupplierId
+                    ? _traderSummaryRepository.ApplyTransactionUpdate(connection, sqliteTransaction, existing, updated)
+                    : null;
+
+                if (snapshot != null)
+                {
+                    _cacheService.SetTraderSummary(snapshot);
+                }
+                else
+                {
+                    _traderSummaryRepository.RefreshForTrader(connection, sqliteTransaction, traderId);
+                    var refreshed = _traderSummaryRepository.GetByTrader(connection, sqliteTransaction, traderId);
+                    if (refreshed != null)
+                    {
+                        _cacheService.SetTraderSummary(refreshed);
+                    }
+                }
+            }
+
+            sqliteTransaction.Commit();
+            _auditService.Log("SupplierTransaction", id, "Edit", existing, updated);
+        }
+        catch (Exception ex)
+        {
+            FileLogService.LogError("UpdateTransaction failed", ex);
+            throw;
+        }
     }
 
     public void DeleteTransaction(int id)
     {
-        _transactionRepository.Delete(id);
+        var existing = _transactionRepository.GetById(id);
+        if (existing == null || existing.IsDeleted)
+        {
+            throw new InvalidOperationException("Transaction was not found.");
+        }
+
+        var deletedAt = DateTime.Now;
+        try
+        {
+            using var connection = Database.OpenConnection();
+            using var sqliteTransaction = connection.BeginTransaction();
+            _transactionRepository.SoftDelete(connection, sqliteTransaction, id, deletedAt);
+            existing.IsDeleted = true;
+            existing.DeletedAt = deletedAt;
+            existing.UpdatedAt = deletedAt;
+            var summarySnapshot = _traderSummaryRepository.ApplyTransactionDelete(connection, sqliteTransaction, existing);
+            sqliteTransaction.Commit();
+            _cacheService.SetTraderSummary(summarySnapshot);
+            _auditService.Log("SupplierTransaction", id, "Delete", existing, null);
+        }
+        catch (Exception ex)
+        {
+            FileLogService.LogError("DeleteTransaction failed", ex);
+            throw;
+        }
     }
 
     private static SupplierTransaction CreateTransaction(
@@ -160,6 +291,7 @@ public class TransactionService
             TotalManufacturing = totalManufacturing,
             TotalImprovement = totalImprovement,
             Notes = string.IsNullOrWhiteSpace(notes) ? null : notes.Trim(),
+            IsDeleted = false,
             CreatedAt = createdAt,
             UpdatedAt = updatedAt
         };
@@ -205,7 +337,7 @@ public class TransactionService
 
         if (!ValidKarats.Contains(originalKarat))
         {
-            throw new ArgumentException("Karat must be one of the supported values: 18, 21, 22, 24.", nameof(originalKarat));
+            throw new ArgumentException("Karat must be one of the supported values: 18, 21, 24.", nameof(originalKarat));
         }
 
         if (manufacturingValue < 0)
@@ -222,5 +354,17 @@ public class TransactionService
         {
             throw new ArgumentException("Gold receipt cannot include manufacturing or refining values.");
         }
+    }
+
+    private static TraderSummary MapSummary(TraderSummarySnapshot snapshot)
+    {
+        return new TraderSummary
+        {
+            TotalGold21 = snapshot.TotalEquivalent21,
+            TotalManufacturing = snapshot.TotalManufacturing,
+            TotalImprovement = snapshot.TotalImprovement,
+            ManufacturingDiscounts = snapshot.ManufacturingDiscounts,
+            ImprovementDiscounts = snapshot.ImprovementDiscounts
+        };
     }
 }

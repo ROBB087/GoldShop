@@ -45,12 +45,16 @@
             <SolidColorBrush x:Key="GoldBrush" Color="#D4AF37" />
             <SolidColorBrush x:Key="GoldValueBrush" Color="#B8860B" />
             <SolidColorBrush x:Key="AccentGreenBrush" Color="#2E7D32" />
+            <SolidColorBrush x:Key="ToastSuccessBrush" Color="#14532D" />
+            <SolidColorBrush x:Key="ToastWarningBrush" Color="#9A3412" />
+            <SolidColorBrush x:Key="ToastErrorBrush" Color="#991B1B" />
+            <SolidColorBrush x:Key="ToastForegroundBrush" Color="#FFFFFF" />
 
             <Thickness x:Key="PagePadding">24</Thickness>
             <Thickness x:Key="CardPadding">24</Thickness>
             <Thickness x:Key="ControlMargin">0,0,0,16</Thickness>
 
-            <FontFamily x:Key="AppFontFamily">Segoe UI</FontFamily>
+            <FontFamily x:Key="AppFontFamily">Tahoma</FontFamily>
             <FlowDirection x:Key="AppFlowDirection">RightToLeft</FlowDirection>
             <Style TargetType="Window">
                 <Setter Property="FontFamily" Value="{DynamicResource AppFontFamily}" />
@@ -143,6 +147,26 @@
                 <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
                 <Setter Property="TextElement.Foreground" Value="{DynamicResource TextBrush}" />
                 <Setter Property="materialDesign:ButtonAssist.CornerRadius" Value="12" />
+                <Setter Property="RenderTransformOrigin" Value="0.5,0.5" />
+                <Setter Property="RenderTransform">
+                    <Setter.Value>
+                        <ScaleTransform ScaleX="1" ScaleY="1" />
+                    </Setter.Value>
+                </Setter>
+                <Style.Triggers>
+                    <Trigger Property="IsPressed" Value="True">
+                        <Setter Property="Opacity" Value="0.92" />
+                        <Setter Property="RenderTransform">
+                            <Setter.Value>
+                                <ScaleTransform ScaleX="0.985" ScaleY="0.985" />
+                            </Setter.Value>
+                        </Setter>
+                    </Trigger>
+                    <Trigger Property="IsEnabled" Value="False">
+                        <Setter Property="Opacity" Value="0.55" />
+                        <Setter Property="Cursor" Value="Arrow" />
+                    </Trigger>
+                </Style.Triggers>
             </Style>
 
             <Style x:Key="PrimaryButton" TargetType="Button" BasedOn="{StaticResource MaterialDesignFlatButton}">
@@ -159,6 +183,12 @@
                 <Style.Triggers>
                     <Trigger Property="IsMouseOver" Value="True">
                         <Setter Property="Background" Value="{DynamicResource PrimaryHoverBrush}" />
+                    </Trigger>
+                    <Trigger Property="IsPressed" Value="True">
+                        <Setter Property="Background" Value="#D9B700" />
+                    </Trigger>
+                    <Trigger Property="IsEnabled" Value="False">
+                        <Setter Property="Background" Value="#F4E8A8" />
                     </Trigger>
                 </Style.Triggers>
             </Style>
@@ -178,6 +208,9 @@
                 <Style.Triggers>
                     <Trigger Property="IsMouseOver" Value="True">
                         <Setter Property="Background" Value="#E6DCC8" />
+                    </Trigger>
+                    <Trigger Property="IsPressed" Value="True">
+                        <Setter Property="Background" Value="#DCCFB6" />
                     </Trigger>
                 </Style.Triggers>
             </Style>
@@ -221,6 +254,55 @@
                 <Setter Property="Orientation" Value="Horizontal" />
                 <Setter Property="FlowDirection" Value="LeftToRight" />
                 <Setter Property="VerticalAlignment" Value="Center" />
+                <Setter Property="ItemHeight" Value="Auto" />
+                <Setter Property="ItemWidth" Value="Auto" />
+            </Style>
+
+            <Style x:Key="CompactCommandBar" TargetType="Border">
+                <Setter Property="Background" Value="#F8FAFC" />
+                <Setter Property="BorderBrush" Value="#E2E8F0" />
+                <Setter Property="BorderThickness" Value="0,0,0,1" />
+                <Setter Property="Padding" Value="10,8" />
+            </Style>
+
+            <Style x:Key="CompactToolbarButton" TargetType="Button" BasedOn="{StaticResource GhostButton}">
+                <Setter Property="Height" Value="34" />
+                <Setter Property="MinWidth" Value="84" />
+                <Setter Property="Padding" Value="10,4" />
+                <Setter Property="Margin" Value="0,0,8,0" />
+                <Setter Property="FontSize" Value="12" />
+                <Setter Property="FontWeight" Value="SemiBold" />
+                <Setter Property="materialDesign:ButtonAssist.CornerRadius" Value="10" />
+            </Style>
+
+            <Style x:Key="CompactPrimaryToolbarButton" TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
+                <Setter Property="Height" Value="34" />
+                <Setter Property="MinWidth" Value="84" />
+                <Setter Property="Padding" Value="10,4" />
+                <Setter Property="Margin" Value="0,0,8,0" />
+                <Setter Property="FontSize" Value="12" />
+                <Setter Property="FontWeight" Value="SemiBold" />
+                <Setter Property="materialDesign:ButtonAssist.CornerRadius" Value="10" />
+            </Style>
+
+            <Style x:Key="CompactDangerToolbarButton" TargetType="Button" BasedOn="{StaticResource DangerGhostButton}">
+                <Setter Property="Height" Value="34" />
+                <Setter Property="MinWidth" Value="84" />
+                <Setter Property="Padding" Value="10,4" />
+                <Setter Property="Margin" Value="0,0,8,0" />
+                <Setter Property="FontSize" Value="12" />
+                <Setter Property="FontWeight" Value="SemiBold" />
+                <Setter Property="materialDesign:ButtonAssist.CornerRadius" Value="10" />
+            </Style>
+
+            <Style x:Key="CompactIconButton" TargetType="Button" BasedOn="{StaticResource GhostButton}">
+                <Setter Property="Height" Value="28" />
+                <Setter Property="MinWidth" Value="28" />
+                <Setter Property="Width" Value="28" />
+                <Setter Property="Padding" Value="4" />
+                <Setter Property="Margin" Value="0,0,4,0" />
+                <Setter Property="FontSize" Value="12" />
+                <Setter Property="materialDesign:ButtonAssist.CornerRadius" Value="8" />
             </Style>
 
             <Style x:Key="SelectionBadge" TargetType="Border">
@@ -445,7 +527,7 @@
 
             <Style TargetType="DataGrid">
                 <Setter Property="FontFamily" Value="{DynamicResource AppFontFamily}" />
-                <Setter Property="FontSize" Value="14" />
+                <Setter Property="FontSize" Value="13" />
                 <Setter Property="Foreground" Value="{DynamicResource GridTextBrush}" />
                 <Setter Property="Background" Value="{DynamicResource GridBackgroundBrush}" />
                 <Setter Property="RowBackground" Value="{DynamicResource GridBackgroundBrush}" />
@@ -456,8 +538,8 @@
                 <Setter Property="HeadersVisibility" Value="Column" />
                 <Setter Property="BorderThickness" Value="0" />
                 <Setter Property="Margin" Value="0" />
-                <Setter Property="RowHeight" Value="46" />
-                <Setter Property="ColumnHeaderHeight" Value="44" />
+                <Setter Property="RowHeight" Value="34" />
+                <Setter Property="ColumnHeaderHeight" Value="36" />
                 <Setter Property="SelectionMode" Value="Single" />
                 <Setter Property="SelectionUnit" Value="FullRow" />
                 <Setter Property="CanUserResizeRows" Value="False" />
@@ -471,7 +553,7 @@
                 <Setter Property="VirtualizingPanel.CacheLengthUnit" Value="Page" />
                 <Setter Property="ScrollViewer.CanContentScroll" Value="True" />
                 <Setter Property="ScrollViewer.IsDeferredScrollingEnabled" Value="True" />
-                <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Auto" />
+                <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
                 <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />
             </Style>
 
@@ -481,8 +563,8 @@
                 <Setter Property="Foreground" Value="{DynamicResource GridTextBrush}" />
                 <Setter Property="BorderBrush" Value="{DynamicResource GridLineBrush}" />
                 <Setter Property="BorderThickness" Value="0,0,0,1" />
-                <Setter Property="Padding" Value="8,4" />
-                <Setter Property="MinHeight" Value="36" />
+                <Setter Property="Padding" Value="6,3" />
+                <Setter Property="MinHeight" Value="32" />
                 <Setter Property="HorizontalContentAlignment" Value="Center" />
                 <Setter Property="VerticalContentAlignment" Value="Center" />
                 <Setter Property="TextBlock.TextAlignment" Value="Center" />
@@ -490,7 +572,7 @@
 
             <Style TargetType="DataGridCell">
                 <Setter Property="BorderThickness" Value="0" />
-                <Setter Property="Padding" Value="8,6" />
+                <Setter Property="Padding" Value="6,3" />
                 <Setter Property="HorizontalContentAlignment" Value="Stretch" />
                 <Setter Property="VerticalContentAlignment" Value="Center" />
             </Style>
@@ -542,11 +624,23 @@
                 </Style.Triggers>
             </Style>
 
+            <Style x:Key="LoadingOverlayCard" TargetType="Border">
+                <Setter Property="Background" Value="#D9FFFFFF" />
+                <Setter Property="CornerRadius" Value="18" />
+                <Setter Property="Padding" Value="24" />
+                <Setter Property="HorizontalAlignment" Value="Center" />
+                <Setter Property="VerticalAlignment" Value="Center" />
+                <Setter Property="BorderBrush" Value="#E5E7EB" />
+                <Setter Property="BorderThickness" Value="1" />
+            </Style>
+
             <converters:TransactionTypeToBrushConverter x:Key="TransactionTypeToBrushConverter" />
             <converters:TransactionTypeToLabelConverter x:Key="TransactionTypeToLabelConverter" />
             <converters:TransactionCategoryToLabelConverter x:Key="TransactionCategoryToLabelConverter" />
             <converters:MoneyFormatConverter x:Key="MoneyFormatConverter" />
             <converters:ActivePageMatchConverter x:Key="ActivePageMatchConverter" />
+            <converters:InverseBooleanConverter x:Key="InverseBooleanConverter" />
+            <converters:ZeroCountToVisibilityConverter x:Key="ZeroCountToVisibilityConverter" />
             <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
         </ResourceDictionary>
     </Application.Resources>

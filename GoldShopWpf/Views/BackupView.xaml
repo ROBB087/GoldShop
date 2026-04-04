@@ -1,58 +1,46 @@
 <UserControl x:Class="GoldShopWpf.Views.BackupView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
-             mc:Ignorable="d">
-    <Grid Margin="8">
-        <Border Padding="32"
-                CornerRadius="30"
-                BorderBrush="#E6EAF2"
-                BorderThickness="1"
-                HorizontalAlignment="Stretch"
-                VerticalAlignment="Top">
-            <Border.Background>
-                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                    <GradientStop Color="#F8FAFC" Offset="0" />
-                    <GradientStop Color="#EEF3FA" Offset="1" />
-                </LinearGradientBrush>
-            </Border.Background>
-
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes">
+    <Grid Margin="24">
+        <Border Style="{StaticResource CardContainer}" Padding="28" BorderBrush="#D7DEEC">
             <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
 
-                <StackPanel>
-                    <TextBlock Text="{DynamicResource NavBackup}" FontSize="28" FontWeight="SemiBold" Margin="0,0,0,8" />
-                    <TextBlock Text="Create a clean export of the shop database before major changes or reporting cycles."
-                               FontSize="15"
-                               Foreground="#526077"
-                               Margin="0,0,0,18" />
-                    <Border Background="#FFFFFF"
-                            BorderBrush="#DCE6F5"
-                            BorderThickness="1"
-                            CornerRadius="18"
-                            Padding="16,12"
-                            Width="360">
-                        <TextBlock Text="{DynamicResource BtnBackup}"
-                                   Foreground="{StaticResource MutedTextBrush}" />
+                <StackPanel Grid.Row="0">
+                    <TextBlock Text="{DynamicResource NavBackup}" FontSize="26" FontWeight="SemiBold" Foreground="#0F172A" />
+                    <TextBlock Text="{DynamicResource LblBackupSub}"
+                               FontSize="14"
+                               Foreground="#475467"
+                               Margin="0,6,0,20" />
+                    <Border Padding="16" Background="#F8FAFC" BorderBrush="#E2E8F0" BorderThickness="1" CornerRadius="16">
+                        <StackPanel>
+                            <TextBlock Text="{DynamicResource BtnBackup}" FontWeight="SemiBold" />
+                            <TextBlock Text="{DynamicResource LblBackupAutoSub}"
+                                       Foreground="#667085"
+                                       Margin="0,4,0,0"
+                                       TextWrapping="Wrap" />
+                        </StackPanel>
                     </Border>
                 </StackPanel>
 
-                <Button Grid.Column="1"
-                        Style="{StaticResource PrimaryButton}"
-                        Width="220"
-                        Height="52"
-                        Command="{Binding BackupCommand}"
-                        ToolTip="{DynamicResource BtnBackup}">
-                    <StackPanel Orientation="Horizontal">
-                        <materialDesign:PackIcon Kind="DatabaseArrowUp" Width="18" Height="18" Margin="0,0,6,0" />
-                        <TextBlock Text="{DynamicResource BtnBackup}" />
-                    </StackPanel>
-                </Button>
+                <WrapPanel Grid.Row="1" Margin="0,20,0,0">
+                    <Button Command="{Binding BackupCommand}" Style="{StaticResource PrimaryButton}" MinWidth="170" Margin="0,0,8,8">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="DatabaseArrowUp" Margin="0,0,6,0" />
+                            <TextBlock Text="{DynamicResource BtnBackup}" />
+                        </StackPanel>
+                    </Button>
+                    <Button Command="{Binding RestoreCommand}" Style="{StaticResource GhostButton}" MinWidth="170" Margin="0,0,0,8">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="DatabaseRefreshOutline" Margin="0,0,6,0" />
+                            <TextBlock Text="{DynamicResource BtnRestore}" />
+                        </StackPanel>
+                    </Button>
+                </WrapPanel>
             </Grid>
         </Border>
     </Grid>

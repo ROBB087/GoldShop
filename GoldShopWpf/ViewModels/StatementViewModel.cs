@@ -10,8 +10,10 @@ public class StatementViewModel : ViewModelBase
     private DateTime _fromDate = DateTime.Today.AddMonths(-1);
     private DateTime _toDate = DateTime.Today;
     private string _statementText = string.Empty;
+    private TraderSummary _summary = new();
 
     public ObservableCollection<SupplierListItem> Suppliers { get; } = new();
+    public ObservableCollection<StatementPreviewRow> Rows { get; } = new();
 
     public SupplierListItem? SelectedSupplier
     {
@@ -42,6 +44,13 @@ public class StatementViewModel : ViewModelBase
         get => _statementText;
         set => SetProperty(ref _statementText, value);
     }
+
+    public string SupplierNameDisplay => SelectedSupplier?.Name ?? UiText.L("LblNoSupplier");
+    public string CurrentDateDisplay => DateTime.Now.ToString("yyyy/MM/dd hh:mm tt");
+    public string TotalWeightDisplay => $"{_summary.TotalGold21:0.####} {UiText.L("LblWeightUnit")}";
+    public string TotalGoldDisplay => $"{_summary.TotalGold21:0.####} {UiText.L("LblWeightUnit")}";
+    public string TotalManufacturingDisplay => $"{_summary.TotalManufacturing:0.##}";
+    public string TotalImprovementDisplay => $"{_summary.TotalImprovement:0.##}";
 
     public RelayCommand GenerateCommand { get; }
     public RelayCommand PrintCommand { get; }
@@ -83,11 +92,28 @@ public class StatementViewModel : ViewModelBase
         if (SelectedSupplier == null)
         {
             StatementText = UiText.L("LblNoSupplier");
+            Rows.Clear();
+            _summary = new TraderSummary();
+            RefreshPreview();
             return;
         }
 
         var transactions = AppServices.TransactionService.GetTransactions(SelectedSupplier.Id, FromDate.Date, ToDate.Date);
-        var summary = AppServices.TransactionService.GetSummary(SelectedSupplier.Id, FromDate.Date, ToDate.Date);
+        _summary = AppServices.TransactionService.GetSummary(SelectedSupplier.Id, FromDate.Date, ToDate.Date);
+        Rows.Clear();
+
+        foreach (var transaction in transactions.OrderByDescending(t => t.Date).ThenByDescending(t => t.Id))
+        {
+            Rows.Add(new StatementPreviewRow
+            {
+                Date = transaction.Date,
+                Type = FormatType(transaction),
+                Weight = transaction.Equivalent21,
+                Item = transaction.ItemName ?? string.Empty,
+                Manufacturing = transaction.TotalManufacturing,
+                Improvement = transaction.TotalImprovement
+            });
+        }
 
         var lines = new List<string>
         {
@@ -95,27 +121,25 @@ public class StatementViewModel : ViewModelBase
             $"{UiText.L("LblTrader")}: {SelectedSupplier.Name}",
             $"{UiText.L("ReceiptDateRange")}: {FromDate:yyyy/MM/dd} - {ToDate:yyyy/MM/dd}",
             new string('=', 72),
-            $"{UiText.L("LblDate"),-12} {UiText.L("LblType"),-18} {UiText.L("LblWeight"),12} {UiText.L("LblAmount"),12}",
+            $"{UiText.L("LblDate"),-12} {UiText.L("LblType"),-18} {UiText.L("LblEquivalent21"),12} {UiText.L("LblTotalManufacturing"),12} {UiText.L("LblTotalImprovement"),12}",
             new string('-', 72)
         };
 
         foreach (var transaction in transactions)
         {
             lines.Add(
-                $"{transaction.Date:yyyy/MM/dd,-12} {FormatType(transaction),-18} {FormatNumber(transaction.OriginalWeight, UiText.L("LblWeightUnit")),12} {FormatNumber(transaction.TotalManufacturing + transaction.TotalImprovement, string.Empty),12}");
+                $"{transaction.Date:yyyy/MM/dd,-12} {FormatType(transaction),-18} {FormatNumber(transaction.Equivalent21, UiText.L("LblWeightUnit")),12} {FormatNumber(transaction.TotalManufacturing, string.Empty),12} {FormatNumber(transaction.TotalImprovement, string.Empty),12}");
         }
 
         lines.Add(new string('=', 72));
         lines.Add(UiText.L("ReceiptSummary"));
-        lines.Add($"{UiText.L("LblTotalGold21")}: {FormatNumber(summary.TotalGold21, UiText.L("LblWeightUnit"))}");
-        lines.Add($"{UiText.L("LblTotalManufacturing")}: {FormatNumber(summary.TotalManufacturing, string.Empty)}");
-        lines.Add($"{UiText.L("LblTotalImprovement")}: {FormatNumber(summary.TotalImprovement, string.Empty)}");
-        lines.Add($"{UiText.L("LblManufacturingDiscounts")}: {FormatNumber(summary.ManufacturingDiscounts, string.Empty)}");
-        lines.Add($"{UiText.L("LblImprovementDiscounts")}: {FormatNumber(summary.ImprovementDiscounts, string.Empty)}");
-        lines.Add($"{UiText.L("LblFinalManufacturing")}: {FormatNumber(summary.FinalManufacturing, string.Empty)}");
-        lines.Add($"{UiText.L("LblFinalImprovement")}: {FormatNumber(summary.FinalImprovement, string.Empty)}");
-
+        lines.Add($"{UiText.L("LblTotalGold21")}: {FormatNumber(_summary.TotalGold21, UiText.L("LblWeightUnit"))}");
+        lines.Add($"{UiText.L("LblTotalManufacturing")}: {FormatNumber(_summary.TotalManufacturing, string.Empty)}");
+        lines.Add($"{UiText.L("LblTotalImprovement")}: {FormatNumber(_summary.TotalImprovement, string.Empty)}");
+        lines.Add($"{UiText.L("LblManufacturingDiscounts")}: {FormatNumber(_summary.ManufacturingDiscounts, string.Empty)}");
+        lines.Add($"{UiText.L("LblImprovementDiscounts")}: {FormatNumber(_summary.ImprovementDiscounts, string.Empty)}");
         StatementText = string.Join(Environment.NewLine, lines);
+        RefreshPreview();
     }
 
     private static string FormatNumber(decimal value, string suffix)
@@ -127,7 +151,7 @@ public class StatementViewModel : ViewModelBase
         {
             TransactionCategories.GoldOutbound => UiText.L("LblDebit"),
             TransactionCategories.GoldReceipt => UiText.L("LblCredit"),
-            TransactionCategories.CashPayment => UiText.L("LblTransactionCategory"),
+            TransactionCategories.CashPayment => UiText.L("LblCashPaymentReport"),
             _ => transaction.Type.ToString()
         };
     }
@@ -140,5 +164,15 @@ public class StatementViewModel : ViewModelBase
             FromDate,
             ToDate);
         window.ShowDialog();
+    }
+
+    private void RefreshPreview()
+    {
+        OnPropertyChanged(nameof(SupplierNameDisplay));
+        OnPropertyChanged(nameof(CurrentDateDisplay));
+        OnPropertyChanged(nameof(TotalWeightDisplay));
+        OnPropertyChanged(nameof(TotalGoldDisplay));
+        OnPropertyChanged(nameof(TotalManufacturingDisplay));
+        OnPropertyChanged(nameof(TotalImprovementDisplay));
     }
 }

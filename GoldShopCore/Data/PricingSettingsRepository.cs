@@ -7,8 +7,7 @@ public class PricingSettingsRepository
 {
     public PricingSettings? GetLatest()
     {
-        using var connection = new SqliteConnection(Database.ConnectionString);
-        connection.Open();
+        using var connection = Database.OpenConnection();
 
         using var command = connection.CreateCommand();
         command.CommandText = @"
@@ -32,22 +31,22 @@ LIMIT 1;";
         };
     }
 
-    public void Add(PricingSettings settings)
+    public int Add(PricingSettings settings)
     {
-        using var connection = new SqliteConnection(Database.ConnectionString);
-        connection.Open();
+        using var connection = Database.OpenConnection();
 
         using var command = connection.CreateCommand();
         command.CommandText = @"
 INSERT INTO PricingSettings
     (DefaultManufacturingPerGram, DefaultImprovementPerGram, CreatedAt)
 VALUES
-    ($defaultManufacturingPerGram, $defaultImprovementPerGram, $createdAt);";
+    ($defaultManufacturingPerGram, $defaultImprovementPerGram, $createdAt);
+SELECT last_insert_rowid();";
 
         command.Parameters.AddWithValue("$defaultManufacturingPerGram", (double)settings.DefaultManufacturingPerGram);
         command.Parameters.AddWithValue("$defaultImprovementPerGram", (double)settings.DefaultImprovementPerGram);
         command.Parameters.AddWithValue("$createdAt", settings.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss"));
-        command.ExecuteNonQuery();
+        return (int)(long)command.ExecuteScalar()!;
     }
 
     private static decimal ReadDecimal(SqliteDataReader reader, int ordinal)

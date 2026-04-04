@@ -10,6 +10,7 @@ public class MainViewModel : ViewModelBase
     private string _pageTitle = "Dashboard";
     private string _activePageKey = "Dashboard";
 
+    public System.Collections.ObjectModel.ObservableCollection<ToastMessageViewModel> Toasts => ToastService.Messages;
     public DashboardViewModel Dashboard { get; }
     public SuppliersViewModel Suppliers { get; }
     public SupplierDetailsViewModel SupplierDetails { get; }
@@ -154,7 +155,7 @@ public class MainViewModel : ViewModelBase
         if (dialog.ShowDialog() == true)
         {
             File.Copy(Database.DbFilePath, dialog.FileName, true);
-            System.Windows.MessageBox.Show(UiText.L("MsgBackupCreated"), UiText.L("TitleBackup"), System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+            ToastService.ShowSuccess(UiText.L("MsgBackupCreated"));
         }
     }
 
@@ -177,6 +178,12 @@ public class MainViewModel : ViewModelBase
         }
 
         SupplierDetails.RefreshLocalization();
+        Dashboard.Load();
+        Suppliers.Load();
+        Transactions.RefreshLocalization();
+        WeeklyReport.Load();
+        Notes.Load();
+        PricingSettings.Load();
         Statement.GenerateCommand.Execute(null);
     }
 }

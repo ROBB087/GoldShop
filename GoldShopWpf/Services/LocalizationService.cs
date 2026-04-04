@@ -7,31 +7,34 @@ namespace GoldShopWpf.Services;
 public static class LocalizationService
 {
     private const string ArPath = "Resources/Strings.ar.xaml";
+    private const string ArOverridesPath = "Resources/Strings.ar.overrides.xaml";
     private const string EnPath = "Resources/Strings.en.xaml";
 
-    public static string CurrentLanguage { get; private set; } = "ar";
+    public static string CurrentLanguage { get; private set; } = "en";
 
     public static void SetLanguage(string code)
     {
-        var dict = new ResourceDictionary
-        {
-            Source = new Uri(code == "en" ? EnPath : ArPath, UriKind.Relative)
-        };
-
         var appResources = Application.Current.Resources.MergedDictionaries;
-        var existing = appResources.FirstOrDefault(d =>
-            d.Source != null &&
-            (d.Source.OriginalString.EndsWith(ArPath, System.StringComparison.OrdinalIgnoreCase) ||
-             d.Source.OriginalString.EndsWith(EnPath, System.StringComparison.OrdinalIgnoreCase)));
+        var existing = appResources
+            .Where(d => d.Source != null &&
+                        (d.Source.OriginalString.EndsWith(ArPath, System.StringComparison.OrdinalIgnoreCase) ||
+                         d.Source.OriginalString.EndsWith(ArOverridesPath, System.StringComparison.OrdinalIgnoreCase) ||
+                         d.Source.OriginalString.EndsWith(EnPath, System.StringComparison.OrdinalIgnoreCase)))
+            .ToList();
 
-        if (existing != null)
+        foreach (var dictionary in existing)
         {
-            var index = appResources.IndexOf(existing);
-            appResources[index] = dict;
+            appResources.Remove(dictionary);
+        }
+
+        if (code == "en")
+        {
+            appResources.Add(new ResourceDictionary { Source = new Uri(EnPath, UriKind.Relative) });
         }
         else
         {
-            appResources.Add(dict);
+            appResources.Add(new ResourceDictionary { Source = new Uri(ArPath, UriKind.Relative) });
+            appResources.Add(new ResourceDictionary { Source = new Uri(ArOverridesPath, UriKind.Relative) });
         }
 
         if (code == "en")

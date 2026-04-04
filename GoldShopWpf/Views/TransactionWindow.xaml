@@ -3,17 +3,18 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         Title="{DynamicResource WindowAddTransaction}"
-        Height="820"
-        Width="860"
-        MinWidth="700"
-        MinHeight="640"
-        WindowStartupLocation="CenterOwner"
+        Height="980"
+        Width="760"
+        MinWidth="620"
+        MinHeight="760"
+        WindowStartupLocation="CenterScreen"
         ResizeMode="CanResize"
         FlowDirection="{DynamicResource AppFlowDirection}">
     <Grid Background="{DynamicResource AppBackgroundBrush}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
         <Border Grid.Row="0"
@@ -34,8 +35,8 @@
             </StackPanel>
         </Border>
 
-        <Border Grid.Row="1" Style="{StaticResource CardContainer}" Margin="20">
-            <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <Border Grid.Row="1" Style="{StaticResource CardContainer}" Margin="20,20,20,12">
+            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                 <Grid Margin="4">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -47,10 +48,10 @@
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="220" />
+                        <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
 
@@ -80,51 +81,50 @@
 
                     <Border Grid.Row="8" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,12" Padding="16" Background="#FFF8E1" CornerRadius="16" BorderBrush="#F2DDA6" BorderThickness="1">
                         <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
 
-                            <Border Grid.Row="0" Grid.Column="0" Margin="6" Padding="12,10" Background="#FFFDF6" BorderBrush="#EAD8A4" BorderThickness="1" CornerRadius="12">
-                                <TextBlock x:Name="EquivalentText" FontSize="13" FontWeight="SemiBold" Foreground="#8D6E63" TextAlignment="Center" />
-                            </Border>
-                            <Border Grid.Row="0" Grid.Column="1" Margin="6" Padding="12,10" Background="#FFFDF6" BorderBrush="#EAD8A4" BorderThickness="1" CornerRadius="12">
-                                <TextBlock x:Name="ManufacturingTotalText" FontSize="13" Foreground="#8D6E63" TextAlignment="Center" />
-                            </Border>
-                            <Border Grid.Row="0" Grid.Column="2" Margin="6" Padding="12,10" Background="#FFFDF6" BorderBrush="#EAD8A4" BorderThickness="1" CornerRadius="12">
-                                <TextBlock x:Name="ImprovementTotalText" FontSize="13" Foreground="#8D6E63" TextAlignment="Center" />
-                            </Border>
+                            <WrapPanel Grid.Row="0">
+                                <Border Margin="6" Padding="12,10" Background="#FFFDF6" BorderBrush="#EAD8A4" BorderThickness="1" CornerRadius="12">
+                                    <TextBlock x:Name="EquivalentText" FontSize="13" FontWeight="SemiBold" Foreground="#8D6E63" TextAlignment="Center" />
+                                </Border>
+                                <Border Margin="6" Padding="12,10" Background="#FFFDF6" BorderBrush="#EAD8A4" BorderThickness="1" CornerRadius="12">
+                                    <TextBlock x:Name="ManufacturingTotalText" FontSize="13" Foreground="#8D6E63" TextAlignment="Center" />
+                                </Border>
+                                <Border Margin="6" Padding="12,10" Background="#FFFDF6" BorderBrush="#EAD8A4" BorderThickness="1" CornerRadius="12">
+                                    <TextBlock x:Name="ImprovementTotalText" FontSize="13" Foreground="#8D6E63" TextAlignment="Center" />
+                                </Border>
+                            </WrapPanel>
 
-                            <Border Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3" Margin="6,10,6,0" Padding="12,10" Background="#FFFDF6" BorderBrush="#EAD8A4" BorderThickness="1" CornerRadius="12">
+                            <Border Grid.Row="1" Margin="6,10,6,0" Padding="12,10" Background="#FFFDF6" BorderBrush="#EAD8A4" BorderThickness="1" CornerRadius="12">
                                 <TextBlock x:Name="TraceabilityText" FontSize="12" Foreground="#6D4C41" TextWrapping="Wrap" TextAlignment="Center" />
                             </Border>
                         </Grid>
                     </Border>
 
                     <TextBlock Text="{DynamicResource LblNotes}" Grid.Row="9" Grid.Column="0" Margin="8,12" VerticalAlignment="Top" />
-                    <TextBox x:Name="NotesText" Grid.Row="9" Grid.Column="1" Margin="0,8" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="170" VerticalScrollBarVisibility="Auto" />
-
-                    <StackPanel Orientation="Horizontal" Grid.Row="10" Grid.Column="1" HorizontalAlignment="Right" Margin="0,20,0,0">
-                        <Button x:Name="CancelButton" Width="140" Style="{StaticResource GhostButton}" Margin="12,0,0,0" Click="OnCancel" ToolTip="{DynamicResource TooltipCancel}">
-                            <StackPanel Orientation="Horizontal">
-                                <materialDesign:PackIcon Kind="CloseCircleOutline" Width="18" Height="18" Margin="0,0,6,0" />
-                                <TextBlock Text="{DynamicResource BtnClear}" />
-                            </StackPanel>
-                        </Button>
-                        <Button x:Name="SaveButton" Width="150" Style="{StaticResource PrimaryButton}" Click="OnSave" ToolTip="{DynamicResource TooltipSave}">
-                            <StackPanel Orientation="Horizontal">
-                                <materialDesign:PackIcon Kind="ContentSave" Width="18" Height="18" Margin="0,0,6,0" />
-                                <TextBlock Text="{DynamicResource BtnApply}" />
-                            </StackPanel>
-                        </Button>
-                    </StackPanel>
+                    <TextBox x:Name="NotesText" Grid.Row="9" Grid.Column="1" Margin="0,8" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="220" VerticalScrollBarVisibility="Auto" />
                 </Grid>
             </ScrollViewer>
+        </Border>
+
+        <Border Grid.Row="2" Style="{StaticResource CardContainer}" Margin="20,0,20,20" Padding="14" BorderBrush="#E5EAF1">
+            <WrapPanel HorizontalAlignment="Right" FlowDirection="LeftToRight">
+                <Button x:Name="CancelButton" MinWidth="140" Style="{StaticResource GhostButton}" Margin="12,0,0,8" Click="OnCancel" ToolTip="{DynamicResource TooltipCancel}">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="CloseCircleOutline" Width="18" Height="18" Margin="0,0,6,0" />
+                        <TextBlock Text="{DynamicResource BtnClear}" />
+                    </StackPanel>
+                </Button>
+                <Button x:Name="SaveButton" MinWidth="150" Style="{StaticResource PrimaryButton}" Click="OnSave" ToolTip="{DynamicResource TooltipSave}">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="ContentSave" Width="18" Height="18" Margin="0,0,6,0" />
+                        <TextBlock Text="{DynamicResource BtnApply}" />
+                    </StackPanel>
+                </Button>
+            </WrapPanel>
         </Border>
     </Grid>
 </Window>

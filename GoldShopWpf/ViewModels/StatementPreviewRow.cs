@@ -6,5 +6,6 @@ public class StatementPreviewRow
     public string Type { get; init; } = string.Empty;
     public decimal Weight { get; init; }
     public string Item { get; init; } = string.Empty;
-    public decimal Value { get; init; }
+    public decimal Manufacturing { get; init; }
+    public decimal Improvement { get; init; }
 }

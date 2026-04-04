@@ -3,211 +3,224 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         Title="{DynamicResource WindowStatementPreview}"
-        Height="900"
-        Width="1240"
-        MinWidth="980"
+        Height="920"
+        Width="980"
+        MinWidth="760"
         MinHeight="720"
         WindowStartupLocation="CenterOwner"
         ResizeMode="CanResize"
         FlowDirection="{DynamicResource AppFlowDirection}">
+    <Window.Resources>
+        <Style x:Key="ReceiptGridHeaderStyle" TargetType="DataGridColumnHeader" BasedOn="{StaticResource {x:Type DataGridColumnHeader}}">
+            <Setter Property="Padding" Value="8,6" />
+            <Setter Property="MinHeight" Value="44" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="TextBlock.TextWrapping" Value="Wrap" />
+            <Setter Property="TextBlock.TextAlignment" Value="Center" />
+        </Style>
+    </Window.Resources>
     <Grid Background="{DynamicResource AppBackgroundBrush}">
-        <ScrollViewer VerticalScrollBarVisibility="Auto">
-            <StackPanel Margin="20" x:Name="CaptureSurface">
-                <Border Style="{StaticResource CardContainer}" Padding="28" Margin="0,0,0,18" BorderBrush="#E6EAF2">
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
 
+        <Border Grid.Row="0"
+                Margin="20,20,20,0"
+                Padding="24"
+                CornerRadius="24"
+                Background="#FFF9EC"
+                BorderBrush="#F1E0A9"
+                BorderThickness="1">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel>
+                    <TextBlock Text="{DynamicResource ReceiptTitle}" FontSize="24" FontWeight="SemiBold" />
+                    <TextBlock Text="{DynamicResource SubStatementWindow}" Foreground="{StaticResource MutedTextBrush}" Margin="0,6,0,0" />
+                </StackPanel>
+
+                <WrapPanel Grid.Column="1" VerticalAlignment="Top">
+                    <Button Style="{StaticResource PrimaryButton}" Margin="0,0,10,0" Click="OnExportImage">
                         <StackPanel Orientation="Horizontal">
-                            <Border Width="56" Height="56" CornerRadius="18" Background="#FFF4D6" Padding="8" Margin="0,0,16,0">
-                                <Image x:Name="LogoImage" Stretch="Uniform" />
-                            </Border>
-                            <StackPanel>
-                                <TextBlock Text="{Binding CompanyName}" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource MutedTextBrush}" />
-                                <TextBlock Text="{Binding ReportTitle}" FontSize="30" FontWeight="Bold" />
-                                <TextBlock Text="{Binding SupplierName}" Margin="0,6,0,0" FontSize="16" FontWeight="SemiBold" />
-                            </StackPanel>
+                            <materialDesign:PackIcon Kind="ImageOutline" Margin="0,0,6,0" />
+                            <TextBlock Text="{DynamicResource BtnExportImage}" />
                         </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource GhostButton}" Margin="0,0,10,0" Click="OnExportPdf">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="FilePdfBox" Margin="0,0,6,0" />
+                            <TextBlock Text="{DynamicResource BtnExportPdf}" />
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource GhostButton}" Margin="0,0,10,0" Click="OnShare">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="ShareVariantOutline" Margin="0,0,6,0" />
+                            <TextBlock Text="{DynamicResource BtnShare}" />
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource GhostButton}" Click="OnPrint">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="Printer" Margin="0,0,6,0" />
+                            <TextBlock Text="{DynamicResource BtnPrint}" />
+                        </StackPanel>
+                    </Button>
+                </WrapPanel>
+            </Grid>
+        </Border>
 
-                        <Border Grid.Column="1" Background="#F7F8FC" BorderBrush="#E3E8F0" BorderThickness="1" CornerRadius="18" Padding="18,12">
-                            <StackPanel>
-                                <TextBlock Text="{DynamicResource LblDate}" FontSize="12" Foreground="{StaticResource MutedTextBrush}" />
-                                <TextBlock Text="{Binding CurrentDateDisplay}" FontSize="16" FontWeight="SemiBold" />
-                            </StackPanel>
-                        </Border>
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel Margin="20">
+                <WrapPanel Margin="0,0,0,18">
+                    <StackPanel MinWidth="180" Margin="0,0,16,8">
+                        <TextBlock Text="{DynamicResource LblFrom}" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource MutedTextBrush}" Margin="0,0,0,6" />
+                        <DatePicker SelectedDate="{Binding FromDate}" Margin="0" />
+                    </StackPanel>
+                    <StackPanel MinWidth="180" Margin="0,0,16,8">
+                        <TextBlock Text="{DynamicResource LblTo}" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource MutedTextBrush}" Margin="0,0,0,6" />
+                        <DatePicker SelectedDate="{Binding ToDate}" Margin="0" />
+                    </StackPanel>
+                    <Button Style="{StaticResource GhostButton}" Margin="0,24,0,0" MinWidth="120" Command="{Binding GenerateCommand}">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="Refresh" Margin="0,0,6,0" />
+                            <TextBlock Text="{DynamicResource BtnRefresh}" />
+                        </StackPanel>
+                    </Button>
+                </WrapPanel>
 
-                        <WrapPanel Grid.Row="1" Grid.ColumnSpan="2" Margin="0,24,0,0" Style="{StaticResource UnifiedActionBar}">
-                            <Button Style="{StaticResource PrimaryButton}" Margin="0,0,10,0" Click="OnExportImage">
-                                <StackPanel Orientation="Horizontal">
-                                    <materialDesign:PackIcon Kind="ImageOutline" Margin="0,0,6,0" />
-                                    <TextBlock Text="{DynamicResource BtnExportImage}" />
-                                </StackPanel>
-                            </Button>
-                            <Button Style="{StaticResource GhostButton}" Margin="0,0,10,0" Click="OnExportPdf">
-                                <StackPanel Orientation="Horizontal">
-                                    <materialDesign:PackIcon Kind="FilePdfBox" Margin="0,0,6,0" />
-                                    <TextBlock Text="{DynamicResource BtnExportPdf}" />
-                                </StackPanel>
-                            </Button>
-                            <Button Style="{StaticResource GhostButton}" Margin="0,0,10,0" Click="OnShare">
-                                <StackPanel Orientation="Horizontal">
-                                    <materialDesign:PackIcon Kind="ShareVariantOutline" Margin="0,0,6,0" />
-                                    <TextBlock Text="{DynamicResource BtnShare}" />
-                                </StackPanel>
-                            </Button>
-                            <Button Style="{StaticResource GhostButton}" Click="OnPrint">
-                                <StackPanel Orientation="Horizontal">
-                                    <materialDesign:PackIcon Kind="Printer" Margin="0,0,6,0" />
-                                    <TextBlock Text="{DynamicResource BtnPrint}" />
-                                </StackPanel>
-                            </Button>
-                        </WrapPanel>
-
-                        <WrapPanel Grid.Row="2" Grid.ColumnSpan="2" Margin="0,24,0,0">
-                            <StackPanel Width="220" Margin="0,0,16,0">
-                                <TextBlock Text="{DynamicResource LblFrom}" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource MutedTextBrush}" Margin="0,0,0,6" />
-                                <DatePicker SelectedDate="{Binding FromDate}" Width="220" Margin="0" />
-                            </StackPanel>
-                            <StackPanel Width="220" Margin="0,0,16,0">
-                                <TextBlock Text="{DynamicResource LblTo}" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource MutedTextBrush}" Margin="0,0,0,6" />
-                                <DatePicker SelectedDate="{Binding ToDate}" Width="220" Margin="0" />
-                            </StackPanel>
-                            <Button Style="{StaticResource GhostButton}" Margin="0,24,0,0" MinWidth="120" Command="{Binding GenerateCommand}">
-                                <StackPanel Orientation="Horizontal">
-                                    <materialDesign:PackIcon Kind="Refresh" Margin="0,0,6,0" />
-                                    <TextBlock Text="{DynamicResource BtnRefresh}" />
-                                </StackPanel>
-                            </Button>
-                        </WrapPanel>
-
-                        <Grid Grid.Row="3" Grid.ColumnSpan="2" Margin="0,28,0,0">
+                <Border x:Name="CaptureSurface"
+                        Style="{StaticResource CardContainer}"
+                        MaxWidth="860"
+                        HorizontalAlignment="Center"
+                        BorderBrush="#E7ECF2"
+                        Background="#FFFDFC">
+                    <StackPanel>
+                        <Grid Margin="0,0,0,18">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
 
-                            <materialDesign:Card Grid.Column="0" Margin="0,0,12,0" Padding="20" Background="#F8FBFF">
-                                <StackPanel>
-                                    <TextBlock Text="{DynamicResource LblTotalWeightReport}" Foreground="{StaticResource MutedTextBrush}" FontSize="12" />
-                                    <TextBlock Text="{Binding TotalWeightDisplay}" FontSize="28" FontWeight="Bold" Margin="0,10,0,0" />
-                                </StackPanel>
-                            </materialDesign:Card>
-
-                            <materialDesign:Card Grid.Column="1" Margin="12,0" Padding="20" Background="#FFF9F0">
-                                <StackPanel>
-                                    <TextBlock Text="{DynamicResource LblTotalValueReport}" Foreground="{StaticResource MutedTextBrush}" FontSize="12" />
-                                    <TextBlock Text="{Binding TotalValueDisplay}" FontSize="28" FontWeight="Bold" Margin="0,10,0,0" />
-                                </StackPanel>
-                            </materialDesign:Card>
-
-                            <materialDesign:Card Grid.Column="2" Margin="12,0,0,0" Padding="20" Background="#F5FAF7">
-                                <StackPanel>
-                                    <TextBlock Text="{DynamicResource LblNetResultReport}" Foreground="{StaticResource MutedTextBrush}" FontSize="12" />
-                                    <TextBlock Text="{Binding NetResultDisplay}" FontSize="28" FontWeight="Bold" Margin="0,10,0,0" />
-                                </StackPanel>
-                            </materialDesign:Card>
-                        </Grid>
-                    </Grid>
-                </Border>
-
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="2.2*" />
-                        <ColumnDefinition Width="1.1*" />
-                    </Grid.ColumnDefinitions>
-
-                    <Border Grid.Column="0" Style="{StaticResource CardContainer}" Margin="0,0,18,18" BorderBrush="#E7ECF2">
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="*" />
-                            </Grid.RowDefinitions>
-
-                            <StackPanel Grid.Row="0" Margin="0,0,0,16">
-                                <TextBlock Text="{DynamicResource LblStatementPreview}" FontSize="20" FontWeight="SemiBold" />
-                                <TextBlock Text="{DynamicResource LblModernGridSub}" Foreground="{StaticResource MutedTextBrush}" />
-                            </StackPanel>
-
-                            <DataGrid Grid.Row="1"
-                                      ItemsSource="{Binding Rows}"
-                                      AutoGenerateColumns="False"
-                                      CanUserAddRows="False"
-                                      IsReadOnly="True">
-                                <DataGrid.Columns>
-                                    <DataGridTextColumn Header="{DynamicResource LblDate}" Binding="{Binding Date, StringFormat={}{0:yyyy/MM/dd}}" Width="1.2*" ElementStyle="{StaticResource GridCellTextStyle}" />
-                                    <DataGridTextColumn Header="{DynamicResource LblType}" Binding="{Binding Type}" Width="1.2*" ElementStyle="{StaticResource GridCellTextStyle}" />
-                                    <DataGridTextColumn Header="{DynamicResource LblWeight}" Binding="{Binding Weight, StringFormat={}{0:0.####}}" Width="*" ElementStyle="{StaticResource GridCellTextStyle}" />
-                                    <DataGridTextColumn Header="{DynamicResource LblItem}" Binding="{Binding Item}" Width="1.3*" ElementStyle="{StaticResource GridCellTextStyle}" />
-                                    <DataGridTextColumn Header="{DynamicResource LblValue}" Binding="{Binding Value, StringFormat={}{0:0.##}}" Width="*" ElementStyle="{StaticResource GridCellTextStyle}" />
-                                </DataGrid.Columns>
-                            </DataGrid>
-                        </Grid>
-                    </Border>
-
-                    <StackPanel Grid.Column="1">
-                        <Border Style="{StaticResource CardContainer}" Margin="0,0,0,18" BorderBrush="#E7ECF2">
                             <StackPanel>
-                                <TextBlock Text="{DynamicResource LblChartWeightDistribution}" FontSize="18" FontWeight="SemiBold" />
-                                <TextBlock Text="{DynamicResource LblChartWeightDistributionSub}" Margin="0,4,0,16" Foreground="{StaticResource MutedTextBrush}" />
-                                <ItemsControl ItemsSource="{Binding Rows}">
-                                    <ItemsControl.ItemsPanel>
-                                        <ItemsPanelTemplate>
-                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom" />
-                                        </ItemsPanelTemplate>
-                                    </ItemsControl.ItemsPanel>
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate>
-                                            <StackPanel Width="58" Margin="5,0" VerticalAlignment="Bottom">
-                                                <Border Background="#D4AF37"
-                                                        Height="{Binding Weight}"
-                                                        MinHeight="4"
-                                                        MaxHeight="220"
-                                                        CornerRadius="10,10,4,4" />
-                                                <TextBlock Text="{Binding Type}" FontSize="10" TextAlignment="Center" Margin="0,8,0,0" />
-                                            </StackPanel>
-                                        </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
-                                </ItemsControl>
+                                <TextBlock Text="{Binding ReportTitle}" FontSize="28" FontWeight="Bold" />
+                                <TextBlock Text="{Binding SupplierName}" Margin="0,6,0,0" FontSize="16" FontWeight="SemiBold" />
                             </StackPanel>
+
+                            <Border Grid.Column="1"
+                                    Background="#F8FAFC"
+                                    BorderBrush="#E2E8F0"
+                                    BorderThickness="1"
+                                    CornerRadius="18"
+                                    Padding="16,12">
+                                <StackPanel>
+                                    <TextBlock Text="{DynamicResource LblDate}" FontSize="12" Foreground="{StaticResource MutedTextBrush}" />
+                                    <TextBlock Text="{Binding CurrentDateDisplay}" FontSize="15" FontWeight="SemiBold" />
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+
+                        <Border Background="#FFF7E2"
+                                BorderBrush="#F0DFA7"
+                                BorderThickness="1"
+                                CornerRadius="18"
+                                Padding="16,12"
+                                Margin="0,0,0,18">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="{DynamicResource ReceiptDateRange}" FontWeight="SemiBold" Foreground="#8A6C00" />
+                                <TextBlock Grid.Column="1"
+                                           Text="{Binding FromDate, StringFormat={}{0:yyyy/MM/dd}}"
+                                           FontWeight="SemiBold"
+                                           Foreground="#8A6C00" />
+                                <TextBlock Grid.Column="1"
+                                           Margin="120,0,0,0"
+                                           Text="{Binding ToDate, StringFormat={}{0:yyyy/MM/dd}}"
+                                           Foreground="#8A6C00" />
+                            </Grid>
                         </Border>
 
-                        <Border Style="{StaticResource CardContainer}" BorderBrush="#E7ECF2" Background="#FFFCF5">
-                            <StackPanel>
-                                <TextBlock Text="{DynamicResource LblReportTotals}" FontSize="18" FontWeight="SemiBold" />
-                                <TextBlock Text="{DynamicResource LblReportTotalsSub}" Margin="0,4,0,18" Foreground="{StaticResource MutedTextBrush}" />
+                        <WrapPanel Margin="0,0,0,18">
+                            <Border Background="#F8FBFF" BorderBrush="#DCEBFF" BorderThickness="1" CornerRadius="16" Padding="16,12" Margin="0,0,12,12">
+                                <StackPanel MinWidth="150">
+                                    <TextBlock Text="{DynamicResource LblTotalGoldReport}" FontSize="12" Foreground="{StaticResource MutedTextBrush}" />
+                                    <TextBlock Text="{Binding TotalWeightDisplay}" FontSize="22" FontWeight="Bold" Margin="0,8,0,0" />
+                                </StackPanel>
+                            </Border>
+                            <Border Background="#FFF9F0" BorderBrush="#F3DFC3" BorderThickness="1" CornerRadius="16" Padding="16,12" Margin="0,0,12,12">
+                                <StackPanel MinWidth="150">
+                                    <TextBlock Text="{DynamicResource LblTotalManufacturingReport}" FontSize="12" Foreground="{StaticResource MutedTextBrush}" />
+                                    <TextBlock Text="{Binding TotalManufacturingDisplay}" FontSize="22" FontWeight="Bold" Margin="0,8,0,0" />
+                                </StackPanel>
+                            </Border>
+                            <Border Background="#F5FAF7" BorderBrush="#D7EAD9" BorderThickness="1" CornerRadius="16" Padding="16,12" Margin="0,0,0,12">
+                                <StackPanel MinWidth="150">
+                                    <TextBlock Text="{DynamicResource LblTotalImprovement}" FontSize="12" Foreground="{StaticResource MutedTextBrush}" />
+                                    <TextBlock Text="{Binding TotalImprovementDisplay}" FontSize="22" FontWeight="Bold" Margin="0,8,0,0" />
+                                </StackPanel>
+                            </Border>
+                        </WrapPanel>
 
-                                <Grid Margin="0,0,0,12">
-                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                        <TextBlock Text="{DynamicResource ReceiptTransactionTable}" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,12" />
+                        <DataGrid ItemsSource="{Binding Rows}"
+                                  AutoGenerateColumns="False"
+                                  CanUserAddRows="False"
+                                  IsReadOnly="True"
+                                  ColumnHeaderStyle="{StaticResource ReceiptGridHeaderStyle}"
+                                  Margin="0,0,0,18">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="{DynamicResource LblDate}" Binding="{Binding Date, StringFormat={}{0:yyyy/MM/dd}}" Width="1.15*" MinWidth="108" ElementStyle="{StaticResource GridCellTextStyle}" />
+                                <DataGridTextColumn Header="{DynamicResource LblType}" Binding="{Binding Type}" Width="1.35*" MinWidth="118" ElementStyle="{StaticResource GridCellTextStyle}" />
+                                <DataGridTextColumn Header="{DynamicResource LblItem}" Binding="{Binding Item}" Width="1.45*" MinWidth="130" ElementStyle="{StaticResource GridCellTextStyle}" />
+                                <DataGridTextColumn Header="{DynamicResource LblEquivalent21}" Binding="{Binding Weight, StringFormat={}{0:0.####}}" Width="1.1*" MinWidth="118" ElementStyle="{StaticResource GridCellTextStyle}" />
+                                <DataGridTextColumn Header="{DynamicResource LblTotalManufacturing}" Binding="{Binding Manufacturing, StringFormat={}{0:0.##}}" Width="1.2*" MinWidth="132" ElementStyle="{StaticResource GridCellTextStyle}" />
+                                <DataGridTextColumn Header="{DynamicResource LblTotalImprovement}" Binding="{Binding Improvement, StringFormat={}{0:0.##}}" Width="1.2*" MinWidth="128" ElementStyle="{StaticResource GridCellTextStyle}" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+
+                        <Border Background="#FFFCF5"
+                                BorderBrush="#E9DFC9"
+                                BorderThickness="1"
+                                CornerRadius="20"
+                                Padding="18">
+                            <StackPanel>
+                                <TextBlock Text="{DynamicResource ReceiptSummary}" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,14" />
+
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
                                     <TextBlock Text="{DynamicResource LblTotalGoldReport}" Foreground="{StaticResource MutedTextBrush}" />
-                                    <TextBlock Grid.Column="1" Text="{Binding TotalGoldDisplay}" FontSize="18" FontWeight="SemiBold" />
+                                    <TextBlock Grid.Column="1" Text="{Binding TotalGoldDisplay}" FontWeight="SemiBold" />
                                 </Grid>
 
-                                <Grid Margin="0,0,0,12">
-                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
-                                    <TextBlock Text="{DynamicResource LblTotalManufacturingReport}" Foreground="{StaticResource MutedTextBrush}" />
-                                    <TextBlock Grid.Column="1" Text="{Binding TotalManufacturingDisplay}" FontSize="18" FontWeight="SemiBold" />
-                                </Grid>
+                                <Grid Margin="0,0,0,10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                <TextBlock Text="{DynamicResource LblTotalManufacturingReport}" Foreground="{StaticResource MutedTextBrush}" />
+                                <TextBlock Grid.Column="1" Text="{Binding TotalManufacturingDisplay}" FontWeight="SemiBold" />
+                            </Grid>
 
-                                <Border Background="#FFF4D7" BorderBrush="#EDD89A" BorderThickness="1" CornerRadius="16" Padding="16">
-                                    <Grid>
-                                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
-                                        <TextBlock Text="{DynamicResource LblNetTotalReport}" FontWeight="SemiBold" />
-                                        <TextBlock Grid.Column="1" Text="{Binding NetTotalDisplay}" FontSize="20" FontWeight="Bold" />
-                                    </Grid>
-                                </Border>
-                            </StackPanel>
-                        </Border>
-                    </StackPanel>
-                </Grid>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="{DynamicResource LblTotalImprovement}" Foreground="{StaticResource MutedTextBrush}" />
+                                <TextBlock Grid.Column="1" Text="{Binding TotalImprovementDisplay}" FontWeight="SemiBold" />
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+                </Border>
             </StackPanel>
         </ScrollViewer>
     </Grid>

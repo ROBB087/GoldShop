@@ -8,8 +8,7 @@ public class ClientNoteRepository
     public List<ClientNote> GetAll()
     {
         var notes = new List<ClientNote>();
-        using var connection = new SqliteConnection(Database.ConnectionString);
-        connection.Open();
+        using var connection = Database.OpenConnection();
 
         using var command = connection.CreateCommand();
         command.CommandText = @"
@@ -34,8 +33,7 @@ ORDER BY CreatedAt DESC, Id DESC;";
 
     public int Add(ClientNote note)
     {
-        using var connection = new SqliteConnection(Database.ConnectionString);
-        connection.Open();
+        using var connection = Database.OpenConnection();
 
         using var command = connection.CreateCommand();
         command.CommandText = @"
@@ -50,8 +48,7 @@ SELECT last_insert_rowid();";
 
     public void Update(ClientNote note)
     {
-        using var connection = new SqliteConnection(Database.ConnectionString);
-        connection.Open();
+        using var connection = Database.OpenConnection();
 
         using var command = connection.CreateCommand();
         command.CommandText = @"
@@ -66,8 +63,7 @@ WHERE Id = $id;";
 
     public void Delete(int id)
     {
-        using var connection = new SqliteConnection(Database.ConnectionString);
-        connection.Open();
+        using var connection = Database.OpenConnection();
 
         using var command = connection.CreateCommand();
         command.CommandText = "DELETE FROM ClientNotes WHERE Id = $id;";

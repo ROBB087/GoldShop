@@ -209,7 +209,7 @@ public partial class StatementWindow : Window
         {
             TransactionCategories.GoldOutbound => LocalizationService.CurrentLanguage == "ar" ? "صرف ذهب" : "Gold Out",
             TransactionCategories.GoldReceipt => LocalizationService.CurrentLanguage == "ar" ? "استلام ذهب" : "Gold Receipt",
-            TransactionCategories.CashPayment => LocalizationService.CurrentLanguage == "ar" ? "سداد نقدي" : "Cash Payment",
+            TransactionCategories.CashPayment => LocalizationService.CurrentLanguage == "ar" ? "استلام نقدية" : "Cash Payment",
             _ => transaction.Type.ToString()
         };
     }

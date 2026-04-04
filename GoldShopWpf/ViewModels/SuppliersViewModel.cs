@@ -185,6 +185,7 @@ public class SuppliersViewModel : ViewModelBase
         {
             AppServices.SupplierService.AddSupplier(dialog.SupplierName, dialog.SupplierPhone, dialog.WorkerName, dialog.WorkerPhone, dialog.SupplierNotes);
             Load();
+            ToastService.ShowSuccess(UiText.L("MsgSupplierSaved"));
         }
     }
 
@@ -207,6 +208,7 @@ public class SuppliersViewModel : ViewModelBase
         {
             AppServices.SupplierService.UpdateSupplier(supplier.Id, dialog.SupplierName, dialog.SupplierPhone, dialog.WorkerName, dialog.WorkerPhone, dialog.SupplierNotes);
             Load();
+            ToastService.ShowSuccess(UiText.L("MsgSupplierSaved"));
         }
     }
 
@@ -233,6 +235,7 @@ public class SuppliersViewModel : ViewModelBase
             }
 
             Load();
+            ToastService.ShowSuccess(UiText.L("MsgSupplierDeleted"));
         }
     }
 

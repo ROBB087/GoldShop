@@ -13,7 +13,6 @@ public class ModernStatementPreviewViewModel : ViewModelBase
     private TraderSummary _summary = new();
 
     public string SupplierName { get; }
-    public string CompanyName => UiText.L("LblCompanyName");
     public string ReportTitle => UiText.L("ReceiptTitle");
     public string CurrentDateDisplay => DateTime.Now.ToString("yyyy/MM/dd hh:mm tt");
 
@@ -31,12 +30,10 @@ public class ModernStatementPreviewViewModel : ViewModelBase
 
     public ObservableCollection<StatementPreviewRow> Rows { get; } = new();
 
-    public string TotalWeightDisplay => $"{Rows.Sum(row => row.Weight):0.####} {UiText.L("LblWeightUnit")}";
-    public string TotalValueDisplay => $"{Rows.Sum(row => row.Value):0.##}";
-    public string NetResultDisplay => $"{_summary.TotalGold21:0.####} {UiText.L("LblWeightUnit")}";
+    public string TotalWeightDisplay => $"{_summary.TotalGold21:0.####} {UiText.L("LblWeightUnit")}";
     public string TotalGoldDisplay => $"{_summary.TotalGold21:0.####} {UiText.L("LblWeightUnit")}";
     public string TotalManufacturingDisplay => $"{_summary.TotalManufacturing:0.##}";
-    public string NetTotalDisplay => $"{(_summary.FinalManufacturing + _summary.FinalImprovement):0.##}";
+    public string TotalImprovementDisplay => $"{_summary.TotalImprovement:0.##}";
 
     public RelayCommand GenerateCommand { get; }
 
@@ -69,19 +66,18 @@ public class ModernStatementPreviewViewModel : ViewModelBase
             {
                 Date = transaction.Date,
                 Type = FormatType(transaction),
-                Weight = transaction.OriginalWeight,
+                Weight = transaction.Equivalent21,
                 Item = transaction.ItemName ?? string.Empty,
-                Value = transaction.TotalManufacturing + transaction.TotalImprovement
+                Manufacturing = transaction.TotalManufacturing,
+                Improvement = transaction.TotalImprovement
             });
         }
 
         OnPropertyChanged(nameof(CurrentDateDisplay));
         OnPropertyChanged(nameof(TotalWeightDisplay));
-        OnPropertyChanged(nameof(TotalValueDisplay));
-        OnPropertyChanged(nameof(NetResultDisplay));
         OnPropertyChanged(nameof(TotalGoldDisplay));
         OnPropertyChanged(nameof(TotalManufacturingDisplay));
-        OnPropertyChanged(nameof(NetTotalDisplay));
+        OnPropertyChanged(nameof(TotalImprovementDisplay));
     }
 
     public IReadOnlyList<SupplierTransaction> GetTransactions()

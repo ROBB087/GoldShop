@@ -16,7 +16,7 @@ public class TransactionCategoryToLabelConverter : IValueConverter
         {
             TransactionCategories.GoldOutbound => isArabic ? "صرف ذهب" : "Gold Out",
             TransactionCategories.GoldReceipt => isArabic ? "استلام ذهب" : "Gold Receipt",
-            TransactionCategories.CashPayment => isArabic ? "سداد نقدي" : "Cash Payment",
+            TransactionCategories.CashPayment => isArabic ? "استلام نقدية" : "Cash Payment",
             _ => string.Empty
         };
     }

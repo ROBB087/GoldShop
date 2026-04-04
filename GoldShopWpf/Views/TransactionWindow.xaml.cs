@@ -269,7 +269,7 @@ public partial class TransactionWindow : Window
         [
             new CategoryOption(isArabic ? "صرف ذهب" : "Gold Out", TransactionCategories.GoldOutbound),
             new CategoryOption(isArabic ? "استلام ذهب" : "Gold Receipt", TransactionCategories.GoldReceipt),
-            new CategoryOption(isArabic ? "سداد نقدي" : "Cash Payment", TransactionCategories.CashPayment)
+            new CategoryOption(isArabic ? "استلام نقدية" : "Cash Payment", TransactionCategories.CashPayment)
         ];
     }
 }

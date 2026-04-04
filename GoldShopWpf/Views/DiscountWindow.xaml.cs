@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Windows;
 using GoldShopCore.Models;
 using GoldShopWpf.Services;
+using GoldShopWpf.ViewModels;
 
 namespace GoldShopWpf.Views;
 
@@ -16,12 +17,23 @@ public partial class DiscountWindow : Window
     public DiscountWindow()
     {
         InitializeComponent();
+        Title = UiText.L("WindowAddDiscount");
+        HeaderTitleText.Text = Title;
         TypeCombo.ItemsSource = new[]
         {
             new DiscountOption(UiText.L("LblTotalManufacturing"), DiscountType.Manufacturing),
             new DiscountOption(UiText.L("LblTotalImprovement"), DiscountType.Improvement)
         };
         TypeCombo.SelectedIndex = 0;
+    }
+
+    public DiscountWindow(DiscountListItem discount) : this()
+    {
+        Title = UiText.L("WindowEditDiscount", UiText.L("WindowAddDiscount"));
+        HeaderTitleText.Text = Title;
+        TypeCombo.SelectedValue = discount.Type;
+        AmountText.Text = discount.Amount.ToString("0.####", CultureInfo.CurrentCulture);
+        NotesText.Text = discount.Notes;
     }
 
     private void OnSave(object sender, RoutedEventArgs e)

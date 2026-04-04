@@ -123,7 +123,7 @@
   <sys:String x:Key="WindowEditNote">تعديل الملاحظة</sys:String>
   <sys:String x:Key="SubSupplierWindow">إضافة أو تعديل بيانات التاجر ووسائل التواصل والملاحظات.</sys:String>
   <sys:String x:Key="SubDiscountWindow">تسجيل خصم للمصنعية أو التحسين للتاجر المحدد.</sys:String>
-  <sys:String x:Key="SubTransactionWindow">تسجيل حركة ذهب أو سداد نقدي مع التحقق من صحة البيانات.</sys:String>
+  <sys:String x:Key="SubTransactionWindow">تسجيل حركة ذهب أو استلام نقدية مع التحقق من صحة البيانات.</sys:String>
   <sys:String x:Key="SubStatementWindow">معاينة كشف التاجر القابل للطباعة قبل الإرسال أو الطباعة.</sys:String>
   <sys:String x:Key="MsgFromBeforeTo">تاريخ البداية يجب أن يكون قبل تاريخ النهاية.</sys:String>
   <sys:String x:Key="MsgBackupCreated">تم إنشاء النسخة الاحتياطية بنجاح.</sys:String>
@@ -170,8 +170,10 @@
   <sys:String x:Key="LblGoldPosition">موقف الذهب</sys:String>
   <sys:String x:Key="LblCurrentCharges">الرسوم الحالية</sys:String>
   <sys:String x:Key="LblAppliedDiscounts">الخصومات المطبقة</sys:String>
-  <sys:String x:Key="LblWeeklyReportSub">حلل المصنعية والتحسين والأرصدة النهائية لجميع التجار.</sys:String>
-  <sys:String x:Key="LblWeeklyPerformanceTable">جدول الأداء الأسبوعي</sys:String>
+  <sys:String x:Key="LblWeeklyReportSub">راجع أرصدة التجار والمصنعية والتحسين في صفحة بسيطة وواضحة.</sys:String>
+  <sys:String x:Key="LblWeeklyRangeValue">الأسبوع: من {0} إلى {1}</sys:String>
+  <sys:String x:Key="LblWeeklyRangeNote">ملاحظة: يتم احتساب هذا التقرير أسبوعياً من السبت إلى الجمعة.</sys:String>
+  <sys:String x:Key="LblWeeklyPerformanceTable">جدول تقرير التجار</sys:String>
   <sys:String x:Key="LblTopGoldSub">أعلى التجار حسب رصيد الذهب خلال الفترة المحددة.</sys:String>
   <sys:String x:Key="LblStatementSub">أنشئ كشف تاجر احترافي قابل للطباعة لأي فترة زمنية.</sys:String>
   <sys:String x:Key="LblStatementPreview">معاينة الكشف</sys:String>
@@ -202,10 +204,10 @@
   <sys:String x:Key="MsgNoteSaved">تم حفظ الملاحظة بنجاح.</sys:String>
   <sys:String x:Key="MsgNoteUpdated">تم تعديل الملاحظة بنجاح.</sys:String>
   <sys:String x:Key="MsgNotesDeleted">تم حذف {0} من الملاحظات بنجاح.</sys:String>
-  <sys:String x:Key="NavPricingSettings">Pricing Settings</sys:String>
-  <sys:String x:Key="TooltipPricingSettings">Manage pricing defaults</sys:String>
-  <sys:String x:Key="LblPricingSettingsSub">Set default manufacturing and improvement values that are copied into new transactions.</sys:String>
-  <sys:String x:Key="MsgPricingSettingsSaved">Pricing settings saved successfully.</sys:String>
+  <sys:String x:Key="NavPricingSettings">إعدادات التسعير</sys:String>
+  <sys:String x:Key="TooltipPricingSettings">إدارة القيم الافتراضية للتسعير</sys:String>
+  <sys:String x:Key="LblPricingSettingsSub">حدد قيم المصنعية والتحسين الافتراضية التي تُنسخ إلى الحركات الجديدة.</sys:String>
+  <sys:String x:Key="MsgPricingSettingsSaved">تم حفظ إعدادات التسعير بنجاح.</sys:String>
   <sys:String x:Key="MsgDefaultManufacturingNonNegative">Default manufacturing value must be zero or greater.</sys:String>
   <sys:String x:Key="MsgDefaultRefiningNonNegative">Default refining value must be zero or greater.</sys:String>
   <sys:String x:Key="LblItem">Ø§Ù„ØµÙ†Ù</sys:String>

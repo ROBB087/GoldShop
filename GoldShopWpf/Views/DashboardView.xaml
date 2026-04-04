@@ -10,12 +10,42 @@
 
         <Style x:Key="DashboardMetricCard" TargetType="Border">
             <Setter Property="Background" Value="#FFFFFF" />
-            <Setter Property="Padding" Value="22" />
-            <Setter Property="CornerRadius" Value="22" />
+            <Setter Property="Padding" Value="16,14" />
+            <Setter Property="CornerRadius" Value="16" />
             <Setter Property="Margin" Value="8" />
-            <Setter Property="BorderBrush" Value="#E9EDF5" />
+            <Setter Property="BorderBrush" Value="#D9E2F0" />
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="Effect" Value="{StaticResource DashboardShadow}" />
+            <Setter Property="MinHeight" Value="154" />
+            <Setter Property="RenderTransformOrigin" Value="0.5,0.5" />
+            <Setter Property="RenderTransform">
+                <Setter.Value>
+                    <TransformGroup>
+                        <ScaleTransform ScaleX="1" ScaleY="1" />
+                        <TranslateTransform Y="0" />
+                    </TransformGroup>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <EventTrigger RoutedEvent="MouseEnter">
+                    <BeginStoryboard>
+                        <Storyboard>
+                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[0].(ScaleTransform.ScaleX)" To="1.02" Duration="0:0:0.18" />
+                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[0].(ScaleTransform.ScaleY)" To="1.02" Duration="0:0:0.18" />
+                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[1].(TranslateTransform.Y)" To="-2" Duration="0:0:0.18" />
+                        </Storyboard>
+                    </BeginStoryboard>
+                </EventTrigger>
+                <EventTrigger RoutedEvent="MouseLeave">
+                    <BeginStoryboard>
+                        <Storyboard>
+                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[0].(ScaleTransform.ScaleX)" To="1" Duration="0:0:0.18" />
+                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[0].(ScaleTransform.ScaleY)" To="1" Duration="0:0:0.18" />
+                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[1].(TranslateTransform.Y)" To="0" Duration="0:0:0.18" />
+                        </Storyboard>
+                    </BeginStoryboard>
+                </EventTrigger>
+            </Style.Triggers>
         </Style>
     </UserControl.Resources>
 
@@ -117,81 +147,85 @@
             <UniformGrid Columns="4" Margin="0,0,0,18">
                 <Border Style="{StaticResource DashboardMetricCard}">
                     <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <StackPanel>
-                            <TextBlock Text="{DynamicResource LblTotalGold21}" FontSize="13" FontWeight="SemiBold" Foreground="#667085" />
-                            <TextBlock Text="{DynamicResource LblDashboardGoldSub}" FontSize="11" Foreground="{StaticResource MutedTextBrush}" Margin="0,4,0,0" />
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <Border Width="42" Height="42" CornerRadius="14" Background="#EEF4FF" BorderBrush="#D6E4FF" BorderThickness="1" HorizontalAlignment="Center">
+                            <materialDesign:PackIcon Kind="Gold" Width="20" Height="20" Foreground="#2457C5" VerticalAlignment="Center" HorizontalAlignment="Center" />
+                        </Border>
+                        <StackPanel Grid.Row="1" Margin="0,10,0,0">
+                            <TextBlock Text="{DynamicResource LblTotalGold21}" FontSize="13" FontWeight="SemiBold" Foreground="#667085" HorizontalAlignment="Center" />
+                            <TextBlock Text="{DynamicResource LblDashboardGoldSub}" FontSize="11" Foreground="{StaticResource MutedTextBrush}" Margin="0,4,0,0" HorizontalAlignment="Center" TextAlignment="Center" />
                             <TextBlock Text="{Binding TotalGold21, Converter={StaticResource MoneyFormatConverter}, ConverterParameter='g'}"
-                                       FontSize="30"
+                                       FontSize="28"
                                        FontWeight="Bold"
-                                       Margin="0,10,0,0" />
+                                       Margin="0,10,0,0"
+                                       HorizontalAlignment="Center" />
                         </StackPanel>
-                        <Border Grid.Column="1" Width="48" Height="48" CornerRadius="14" Background="#FFF3CC">
-                            <materialDesign:PackIcon Kind="Gold" Width="22" Height="22" Foreground="#9B7600" VerticalAlignment="Center" HorizontalAlignment="Center" />
-                        </Border>
                     </Grid>
                 </Border>
 
                 <Border Style="{StaticResource DashboardMetricCard}">
                     <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <StackPanel>
-                            <TextBlock Text="{DynamicResource LblFinalManufacturing}" FontSize="13" FontWeight="SemiBold" Foreground="#667085" />
-                            <TextBlock Text="{DynamicResource LblDashboardManufacturingSub}" FontSize="11" Foreground="{StaticResource MutedTextBrush}" Margin="0,4,0,0" />
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <Border Width="42" Height="42" CornerRadius="14" Background="#FDF2FA" BorderBrush="#F4D5EA" BorderThickness="1" HorizontalAlignment="Center">
+                            <materialDesign:PackIcon Kind="Factory" Width="20" Height="20" Foreground="#C11574" VerticalAlignment="Center" HorizontalAlignment="Center" />
+                        </Border>
+                        <StackPanel Grid.Row="1" Margin="0,10,0,0">
+                            <TextBlock Text="{DynamicResource LblFinalManufacturing}" FontSize="13" FontWeight="SemiBold" Foreground="#667085" HorizontalAlignment="Center" />
+                            <TextBlock Text="{DynamicResource LblDashboardManufacturingSub}" FontSize="11" Foreground="{StaticResource MutedTextBrush}" Margin="0,4,0,0" HorizontalAlignment="Center" TextAlignment="Center" />
                             <TextBlock Text="{Binding FinalManufacturing, Converter={StaticResource MoneyFormatConverter}, ConverterParameter='EGP'}"
-                                       FontSize="30"
+                                       FontSize="28"
                                        FontWeight="Bold"
-                                       Margin="0,10,0,0" />
+                                       Margin="0,10,0,0"
+                                       HorizontalAlignment="Center" />
                         </StackPanel>
-                        <Border Grid.Column="1" Width="48" Height="48" CornerRadius="14" Background="#EEF4FF">
-                            <materialDesign:PackIcon Kind="DiamondStone" Width="22" Height="22" Foreground="#2457C5" VerticalAlignment="Center" HorizontalAlignment="Center" />
-                        </Border>
                     </Grid>
                 </Border>
 
                 <Border Style="{StaticResource DashboardMetricCard}">
                     <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <StackPanel>
-                            <TextBlock Text="{DynamicResource LblFinalImprovement}" FontSize="13" FontWeight="SemiBold" Foreground="#667085" />
-                            <TextBlock Text="{DynamicResource LblDashboardImprovementSub}" FontSize="11" Foreground="{StaticResource MutedTextBrush}" Margin="0,4,0,0" />
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <Border Width="42" Height="42" CornerRadius="14" Background="#ECFDF3" BorderBrush="#ABEFC6" BorderThickness="1" HorizontalAlignment="Center">
+                            <materialDesign:PackIcon Kind="TrendingUp" Width="20" Height="20" Foreground="#067647" VerticalAlignment="Center" HorizontalAlignment="Center" />
+                        </Border>
+                        <StackPanel Grid.Row="1" Margin="0,10,0,0">
+                            <TextBlock Text="{DynamicResource LblFinalImprovement}" FontSize="13" FontWeight="SemiBold" Foreground="#667085" HorizontalAlignment="Center" />
+                            <TextBlock Text="{DynamicResource LblDashboardImprovementSub}" FontSize="11" Foreground="{StaticResource MutedTextBrush}" Margin="0,4,0,0" HorizontalAlignment="Center" TextAlignment="Center" />
                             <TextBlock Text="{Binding FinalImprovement, Converter={StaticResource MoneyFormatConverter}, ConverterParameter='EGP'}"
-                                       FontSize="30"
+                                       FontSize="28"
                                        FontWeight="Bold"
-                                       Margin="0,10,0,0" />
+                                       Margin="0,10,0,0"
+                                       HorizontalAlignment="Center" />
                         </StackPanel>
-                        <Border Grid.Column="1" Width="48" Height="48" CornerRadius="14" Background="#E9F8EE">
-                            <materialDesign:PackIcon Kind="TrendingUp" Width="22" Height="22" Foreground="#217A45" VerticalAlignment="Center" HorizontalAlignment="Center" />
-                        </Border>
                     </Grid>
                 </Border>
 
                 <Border Style="{StaticResource DashboardMetricCard}">
                     <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <StackPanel>
-                            <TextBlock Text="{DynamicResource LblTraders}" FontSize="13" FontWeight="SemiBold" Foreground="#667085" />
-                            <TextBlock Text="{DynamicResource LblDashboardTradersSub}" FontSize="11" Foreground="{StaticResource MutedTextBrush}" Margin="0,4,0,0" />
-                            <TextBlock Text="{Binding SupplierCount}"
-                                       FontSize="30"
-                                       FontWeight="Bold"
-                                       Margin="0,10,0,0" />
-                        </StackPanel>
-                        <Border Grid.Column="1" Width="48" Height="48" CornerRadius="14" Background="#F3EEFF">
-                            <materialDesign:PackIcon Kind="AccountGroup" Width="22" Height="22" Foreground="#6B46C1" VerticalAlignment="Center" HorizontalAlignment="Center" />
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <Border Width="42" Height="42" CornerRadius="14" Background="#EEF4FF" BorderBrush="#D6E4FF" BorderThickness="1" HorizontalAlignment="Center">
+                            <materialDesign:PackIcon Kind="AccountGroup" Width="20" Height="20" Foreground="#2457C5" VerticalAlignment="Center" HorizontalAlignment="Center" />
                         </Border>
+                        <StackPanel Grid.Row="1" Margin="0,10,0,0">
+                            <TextBlock Text="{DynamicResource LblTraders}" FontSize="13" FontWeight="SemiBold" Foreground="#667085" HorizontalAlignment="Center" />
+                            <TextBlock Text="{DynamicResource LblDashboardTradersSub}" FontSize="11" Foreground="{StaticResource MutedTextBrush}" Margin="0,4,0,0" HorizontalAlignment="Center" TextAlignment="Center" />
+                            <TextBlock Text="{Binding SupplierCount}"
+                                       FontSize="28"
+                                       FontWeight="Bold"
+                                       Margin="0,10,0,0"
+                                       HorizontalAlignment="Center" />
+                        </StackPanel>
                     </Grid>
                 </Border>
             </UniformGrid>

@@ -1,5 +1,5 @@
-using GoldShopCore.Models;
 using GoldShopCore.Data;
+using GoldShopCore.Models;
 
 namespace GoldShopCore.Services;
 
@@ -16,31 +16,41 @@ public class ReportService
 {
     private readonly SupplierRepository _supplierRepository;
     private readonly TransactionRepository _transactionRepository;
+    private readonly DiscountRepository _discountRepository;
 
-    public ReportService(SupplierRepository supplierRepository, TransactionRepository transactionRepository)
+    public ReportService(
+        SupplierRepository supplierRepository,
+        TransactionRepository transactionRepository,
+        DiscountRepository discountRepository)
     {
         _supplierRepository = supplierRepository;
         _transactionRepository = transactionRepository;
+        _discountRepository = discountRepository;
     }
 
     public List<SupplierWeeklyReport> GetWeeklyReport(DateTime from, DateTime to)
     {
-        var suppliers = _supplierRepository.GetAll();
-        var reports = new List<SupplierWeeklyReport>();
+        var suppliers = _supplierRepository.GetAll().ToDictionary(s => s.Id);
+        var transactionSummaries = _transactionRepository.GetSupplierSummaries(from, to)
+            .ToDictionary(r => r.SupplierId);
+        var discountSummaries = _discountRepository.GetSupplierDiscountSummaries(from, to)
+            .ToDictionary(r => r.SupplierId);
 
-        foreach (var supplier in suppliers)
-        {
-            var totals = _transactionRepository.GetSummary(supplier.Id, from, to);
-            reports.Add(new SupplierWeeklyReport(
-                supplier.Id,
-                supplier.Name,
-                totals.TotalGold21,
-                totals.TotalManufacturing,
-                totals.TotalImprovement,
-                totals.ManufacturingDiscounts,
-                totals.ImprovementDiscounts));
-        }
+        return suppliers.Values
+            .Select(supplier =>
+            {
+                transactionSummaries.TryGetValue(supplier.Id, out var tx);
+                discountSummaries.TryGetValue(supplier.Id, out var discount);
 
-        return reports;
+                return new SupplierWeeklyReport(
+                    supplier.Id,
+                    supplier.Name,
+                    tx?.TotalGold21 ?? 0m,
+                    tx?.TotalManufacturing ?? 0m,
+                    tx?.TotalImprovement ?? 0m,
+                    discount?.ManufacturingDiscounts ?? 0m,
+                    discount?.ImprovementDiscounts ?? 0m);
+            })
+            .ToList();
     }
 }

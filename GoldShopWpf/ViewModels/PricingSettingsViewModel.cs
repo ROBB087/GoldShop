@@ -39,13 +39,13 @@ public class PricingSettingsViewModel : ViewModelBase
     {
         if (!TryParse(DefaultManufacturingPerGram, out var manufacturing))
         {
-            System.Windows.MessageBox.Show(UiText.L("MsgManufacturingInvalid"), UiText.L("TitleValidation"), System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+            ToastService.ShowWarning(UiText.L("MsgManufacturingInvalid"));
             return;
         }
 
         if (!TryParse(DefaultImprovementPerGram, out var improvement))
         {
-            System.Windows.MessageBox.Show(UiText.L("MsgImprovementInvalid"), UiText.L("TitleValidation"), System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+            ToastService.ShowWarning(UiText.L("MsgImprovementInvalid"));
             return;
         }
 
@@ -53,11 +53,11 @@ public class PricingSettingsViewModel : ViewModelBase
         {
             AppServices.PricingSettingsService.Save(manufacturing, improvement);
             Load();
-            System.Windows.MessageBox.Show(UiText.L("MsgPricingSettingsSaved"), UiText.L("NavPricingSettings"), System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+            ToastService.ShowSuccess(UiText.L("MsgPricingSettingsSaved"));
         }
         catch (ArgumentException ex)
         {
-            System.Windows.MessageBox.Show(UiText.LocalizeException(ex.Message), UiText.L("TitleValidation"), System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+            ToastService.ShowWarning(UiText.LocalizeException(ex.Message));
         }
     }
 

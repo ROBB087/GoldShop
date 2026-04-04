@@ -36,15 +36,26 @@
                                Foreground="#53647F"
                                Margin="0,0,0,18" />
                     <WrapPanel>
-                        <StackPanel Width="220" Margin="0,0,16,0">
+                        <StackPanel MinWidth="180" Margin="0,0,16,8">
                             <TextBlock Text="{DynamicResource LblFrom}" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource MutedTextBrush}" Margin="0,0,0,6" />
-                            <DatePicker SelectedDate="{Binding FromDate}" Width="220" Margin="0" />
+                            <DatePicker SelectedDate="{Binding FromDate}" Margin="0" />
                         </StackPanel>
-                        <StackPanel Width="220" Margin="0,0,16,0">
+                        <StackPanel MinWidth="180" Margin="0,0,16,8">
                             <TextBlock Text="{DynamicResource LblTo}" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource MutedTextBrush}" Margin="0,0,0,6" />
-                            <DatePicker SelectedDate="{Binding ToDate}" Width="220" Margin="0" />
+                            <DatePicker SelectedDate="{Binding ToDate}" Margin="0" />
                         </StackPanel>
                     </WrapPanel>
+                    <Border Margin="0,10,0,0"
+                            Padding="14,10"
+                            Background="#FFF7E2"
+                            BorderBrush="#F0DFA7"
+                            BorderThickness="1"
+                            CornerRadius="16">
+                        <StackPanel>
+                            <TextBlock Text="{Binding WeekRangeDisplay}" FontWeight="SemiBold" Foreground="#8A6C00" />
+                            <TextBlock Text="{Binding WeekRuleNote}" FontSize="12" Foreground="#7A5D00" Margin="0,4,0,0" />
+                        </StackPanel>
+                    </Border>
                 </StackPanel>
 
                 <WrapPanel Grid.Column="1" VerticalAlignment="Top">
@@ -65,12 +76,12 @@
         </Border>
 
         <Grid Grid.Row="1">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="2*" />
-                <ColumnDefinition Width="*" />
-            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
 
-            <Border Style="{StaticResource CardContainer}" Grid.Column="0" Margin="0,0,12,0" BorderBrush="#E7ECF2">
+            <Border Style="{StaticResource CardContainer}" Grid.Row="0" Margin="0,0,0,18" BorderBrush="#E7ECF2">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -79,27 +90,28 @@
                     <TextBlock Grid.Row="0" Text="{DynamicResource LblWeeklyPerformanceTable}" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,14" />
                     <DataGrid Grid.Row="1" ItemsSource="{Binding Reports}" AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="{DynamicResource LblTrader}" Binding="{Binding SupplierName}" Width="2*" MinWidth="180" ElementStyle="{StaticResource GridCellTextStyle}" />
-                            <DataGridTextColumn Header="{DynamicResource LblTotalGold21}" Binding="{Binding TotalGold21, Converter={StaticResource MoneyFormatConverter}, ConverterParameter='g'}" Width="*" MinWidth="150" ElementStyle="{StaticResource GridCellTextStyle}" />
-                            <DataGridTextColumn Header="{DynamicResource LblTotalManufacturing}" Binding="{Binding TotalManufacturing, Converter={StaticResource MoneyFormatConverter}}" Width="*" MinWidth="170" ElementStyle="{StaticResource GridCellTextStyle}" />
-                            <DataGridTextColumn Header="{DynamicResource LblTotalImprovement}" Binding="{Binding TotalImprovement, Converter={StaticResource MoneyFormatConverter}}" Width="*" MinWidth="170" ElementStyle="{StaticResource GridCellTextStyle}" />
-                            <DataGridTextColumn Header="{DynamicResource LblFinalManufacturing}" Binding="{Binding FinalManufacturing, Converter={StaticResource MoneyFormatConverter}}" Width="*" MinWidth="170" ElementStyle="{StaticResource GridCellTextStyle}" />
-                            <DataGridTextColumn Header="{DynamicResource LblFinalImprovement}" Binding="{Binding FinalImprovement, Converter={StaticResource MoneyFormatConverter}}" Width="*" MinWidth="170" ElementStyle="{StaticResource GridCellTextStyle}" />
+                            <DataGridTextColumn Header="{DynamicResource LblTrader}" Binding="{Binding SupplierName}" Width="2*" MinWidth="140" ElementStyle="{StaticResource GridCellTextStyle}" />
+                            <DataGridTextColumn Header="{DynamicResource LblTotalGold21}" Binding="{Binding TotalGold21, Converter={StaticResource MoneyFormatConverter}, ConverterParameter='g'}" Width="*" MinWidth="110" ElementStyle="{StaticResource GridCellTextStyle}" />
+                            <DataGridTextColumn Header="{DynamicResource LblTotalManufacturing}" Binding="{Binding TotalManufacturing, Converter={StaticResource MoneyFormatConverter}}" Width="*" MinWidth="120" ElementStyle="{StaticResource GridCellTextStyle}" />
+                            <DataGridTextColumn Header="{DynamicResource LblTotalImprovement}" Binding="{Binding TotalImprovement, Converter={StaticResource MoneyFormatConverter}}" Width="*" MinWidth="120" ElementStyle="{StaticResource GridCellTextStyle}" />
+                            <DataGridTextColumn Header="{DynamicResource LblFinalManufacturing}" Binding="{Binding FinalManufacturing, Converter={StaticResource MoneyFormatConverter}}" Width="*" MinWidth="120" ElementStyle="{StaticResource GridCellTextStyle}" />
+                            <DataGridTextColumn Header="{DynamicResource LblFinalImprovement}" Binding="{Binding FinalImprovement, Converter={StaticResource MoneyFormatConverter}}" Width="*" MinWidth="120" ElementStyle="{StaticResource GridCellTextStyle}" />
                         </DataGrid.Columns>
                     </DataGrid>
                 </Grid>
             </Border>
 
-            <Border Style="{StaticResource CardContainer}" Grid.Column="1" Margin="12,0,0,0" BorderBrush="#E7ECF2">
+            <Border Style="{StaticResource CardContainer}" Grid.Row="1" Margin="0" BorderBrush="#E7ECF2">
                 <StackPanel>
                     <TextBlock Text="{DynamicResource LblTopGold}" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,6" />
                     <TextBlock Text="{DynamicResource LblTopGoldSub}"
                                Foreground="{StaticResource MutedTextBrush}"
                                Margin="0,0,0,18" />
+                    <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Disabled">
                     <ItemsControl ItemsSource="{Binding TopBalanceBars}">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
-                                <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom" />
+                                <WrapPanel Orientation="Horizontal" />
                             </ItemsPanelTemplate>
                         </ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
@@ -111,6 +123,7 @@
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
+                    </ScrollViewer>
                 </StackPanel>
             </Border>
         </Grid>

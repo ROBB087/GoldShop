@@ -9,16 +9,22 @@ namespace GoldShopWpf.ViewModels;
 public class TransactionsViewModel : ViewModelBase
 {
     private const int AllTradersId = 0;
+    private const int PageSize = 200;
     private static readonly TimeSpan DefaultLookback = TimeSpan.FromDays(30);
+
     private DateTime? _fromDate = DateTime.Today.AddDays(-30);
     private DateTime? _toDate = DateTime.Today;
     private string _searchText = string.Empty;
     private SupplierListItem? _selectedSupplier;
     private TransactionListItem? _selectedTransaction;
+    private int _currentPage = 1;
+    private int _totalPages = 1;
+    private int _totalRecords;
+    private bool _isRefreshingSuppliers;
 
     public ObservableCollection<SupplierListItem> Suppliers { get; } = new();
-    public ObservableCollection<TransactionListItem> Transactions { get; } = new();
     public ObservableCollection<TransactionListItem> FilteredTransactions { get; } = new();
+    public bool HasTransactions => FilteredTransactions.Count > 0;
     public bool? AreAllVisibleSelected
     {
         get
@@ -28,7 +34,7 @@ public class TransactionsViewModel : ViewModelBase
                 return false;
             }
 
-            var selectedCount = FilteredTransactions.Count(transaction => transaction.IsSelected);
+            var selectedCount = FilteredTransactions.Count(item => item.IsSelected);
             if (selectedCount == 0)
             {
                 return false;
@@ -51,10 +57,12 @@ public class TransactionsViewModel : ViewModelBase
             RefreshSelectionState();
         }
     }
-
-    public int CheckedCount => FilteredTransactions.Count(transaction => transaction.IsSelected);
-    public string SelectedCountLabel => UiText.Format("LblSelectedCount", CheckedCount);
+    public int CheckedCount => FilteredTransactions.Count(item => item.IsSelected);
+    public int EffectiveSelectedCount => CheckedCount > 0 ? CheckedCount : SelectedTransaction == null ? 0 : 1;
+    public string SelectedCountLabel => UiText.Format("LblSelectedCount", EffectiveSelectedCount);
+    public string RowsCountLabel => UiText.Format("LblRows", FilteredTransactions.Count);
     public bool HasCheckedTransactions => CheckedCount > 0;
+    public bool HasSelection => CheckedCount > 0 || SelectedTransaction != null;
 
     public DateTime? FromDate
     {
@@ -75,7 +83,7 @@ public class TransactionsViewModel : ViewModelBase
         {
             if (SetProperty(ref _searchText, value))
             {
-                ApplyFilter();
+                Load();
             }
         }
     }
@@ -87,7 +95,13 @@ public class TransactionsViewModel : ViewModelBase
         {
             if (SetProperty(ref _selectedSupplier, value))
             {
-                ApplyFilter();
+                if (_isRefreshingSuppliers)
+                {
+                    return;
+                }
+
+                _currentPage = 1;
+                Load();
             }
         }
     }
@@ -99,58 +113,195 @@ public class TransactionsViewModel : ViewModelBase
         {
             if (SetProperty(ref _selectedTransaction, value))
             {
-                RefreshSelectionState();
+                EditCommand.RaiseCanExecuteChanged();
+                DeleteCommand.RaiseCanExecuteChanged();
             }
         }
     }
 
+    public int CurrentPage
+    {
+        get => _currentPage;
+        private set
+        {
+            if (SetProperty(ref _currentPage, value))
+            {
+                OnPropertyChanged(nameof(PageSummary));
+                PreviousPageCommand.RaiseCanExecuteChanged();
+                NextPageCommand.RaiseCanExecuteChanged();
+            }
+        }
+    }
+
+    public int TotalPages
+    {
+        get => _totalPages;
+        private set
+        {
+            if (SetProperty(ref _totalPages, value))
+            {
+                OnPropertyChanged(nameof(PageSummary));
+                PreviousPageCommand.RaiseCanExecuteChanged();
+                NextPageCommand.RaiseCanExecuteChanged();
+            }
+        }
+    }
+
+    public int TotalRecords
+    {
+        get => _totalRecords;
+        private set
+        {
+            if (SetProperty(ref _totalRecords, value))
+            {
+                OnPropertyChanged(nameof(PageSummary));
+            }
+        }
+    }
+
+    public string PageSummary => UiText.Format("LblPageSummary", CurrentPage, TotalPages, TotalRecords);
+    public bool HasPreviousPage => CurrentPage > 1;
+    public bool HasNextPage => CurrentPage < TotalPages;
+
     public RelayCommand RefreshCommand { get; }
     public RelayCommand AddCommand { get; }
+    public RelayCommand AddTraderCommand { get; }
     public RelayCommand ResetFiltersCommand { get; }
     public RelayCommand EditCommand { get; }
     public RelayCommand DeleteCommand { get; }
     public RelayCommand ViewRowCommand { get; }
     public RelayCommand EditRowCommand { get; }
     public RelayCommand DeleteRowCommand { get; }
+    public RelayCommand PreviousPageCommand { get; }
+    public RelayCommand NextPageCommand { get; }
+    public RelayCommand ClearSelectionCommand { get; }
 
     public TransactionsViewModel()
     {
-        Transactions.CollectionChanged += OnTransactionsCollectionChanged;
-        RefreshCommand = new RelayCommand(_ => Load());
+        FilteredTransactions.CollectionChanged += OnTransactionsCollectionChanged;
+        RefreshCommand = new RelayCommand(async _ => await LoadAsync());
         AddCommand = new RelayCommand(_ => AddTransaction());
+        AddTraderCommand = new RelayCommand(_ => AddTrader());
         ResetFiltersCommand = new RelayCommand(_ => ResetFilters());
-        EditCommand = new RelayCommand(_ => EditTransaction(), _ => GetBulkEditableTransaction() != null);
-        DeleteCommand = new RelayCommand(_ => DeleteTransactions(), _ => GetCheckedTransactions().Count > 0);
+        EditCommand = new RelayCommand(_ => EditTransaction(null), _ => GetEditableTransaction(null) != null);
+        DeleteCommand = new RelayCommand(_ => DeleteTransactions(null), _ => GetDeleteTargets(null).Count > 0);
         ViewRowCommand = new RelayCommand(row => ViewTransaction(row as TransactionListItem), row => row is TransactionListItem);
-        EditRowCommand = new RelayCommand(row => EditTransaction(row as TransactionListItem), row => row is TransactionListItem);
-        DeleteRowCommand = new RelayCommand(row => DeleteTransactions(row as TransactionListItem), row => row is TransactionListItem);
-
+        EditRowCommand = new RelayCommand(row => EditTransaction(row), row => GetEditableTransaction(row) != null);
+        DeleteRowCommand = new RelayCommand(row => DeleteTransactions(row), row => GetDeleteTargets(row).Count > 0);
+        PreviousPageCommand = new RelayCommand(_ => ChangePage(-1), _ => HasPreviousPage);
+        NextPageCommand = new RelayCommand(_ => ChangePage(1), _ => HasNextPage);
+        ClearSelectionCommand = new RelayCommand(_ => ClearSelection(), _ => HasSelection);
+        LoadSuppliers();
         Load();
     }
 
     public void Load()
     {
+        LoadSuppliers();
+        _ = LoadAsync();
+    }
+
+    public void RefreshLocalization()
+    {
+        LoadSuppliers();
+        _ = LoadAsync();
+    }
+
+    public async Task LoadAsync()
+    {
         if (FromDate.HasValue && ToDate.HasValue && FromDate > ToDate)
         {
-            System.Windows.MessageBox.Show(UiText.L("MsgFromBeforeTo"), UiText.L("TitleValidation"), System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+            ToastService.ShowWarning(UiText.L("MsgFromBeforeTo"));
             return;
         }
 
-        var selectedSupplierId = SelectedSupplier?.Id;
-        Suppliers.Clear();
-        Transactions.Clear();
-        FilteredTransactions.Clear();
-        SelectedTransaction = null;
-
-        var supplierService = AppServices.SupplierService;
-        var suppliers = supplierService.GetSuppliers();
-        Suppliers.Add(new SupplierListItem
+        await RunBusyAsync(UiText.L("MsgLoadingTransactions"), async () =>
         {
-            Id = AllTradersId,
-            Name = UiText.L("LblAllSuppliers")
-        });
+            var supplierId = SelectedSupplier?.Id > 0 ? SelectedSupplier.Id : (int?)null;
+            var requestedPage = CurrentPage;
 
-        foreach (var supplier in suppliers)
+            var pageData = await Task.Run(() =>
+            {
+                var suppliers = AppServices.SupplierService.GetSuppliers();
+                var supplierLookup = suppliers.ToDictionary(s => s.Id, s => s.Name);
+                var page = AppServices.TransactionService.GetTransactionsPage(supplierId, FromDate, ToDate, requestedPage, PageSize);
+                return (supplierLookup, page);
+            });
+
+            var effectiveTotalPages = Math.Max(pageData.page.TotalPages, 1);
+            var page = pageData.page;
+            if (requestedPage > effectiveTotalPages)
+            {
+                CurrentPage = effectiveTotalPages;
+                page = await Task.Run(() => AppServices.TransactionService.GetTransactionsPage(supplierId, FromDate, ToDate, CurrentPage, PageSize));
+            }
+
+            TotalRecords = page.TotalCount;
+            TotalPages = Math.Max(page.TotalPages, 1);
+
+            FilteredTransactions.Clear();
+            var query = SearchText.Trim().ToLowerInvariant();
+
+            foreach (var transaction in page.Items)
+            {
+                var item = new TransactionListItem
+                {
+                    Id = transaction.Id,
+                    SupplierId = transaction.SupplierId,
+                    SupplierName = pageData.supplierLookup.TryGetValue(transaction.SupplierId, out var name) ? name : string.Empty,
+                    Date = transaction.Date,
+                    Type = transaction.Type,
+                    Category = transaction.Category,
+                    OriginalWeight = transaction.OriginalWeight,
+                    ItemName = transaction.ItemName ?? string.Empty,
+                    OriginalKarat = transaction.OriginalKarat,
+                    Equivalent21 = transaction.Equivalent21,
+                    ManufacturingPerGram = transaction.ManufacturingPerGram,
+                    ImprovementPerGram = transaction.ImprovementPerGram,
+                    TotalManufacturing = transaction.TotalManufacturing,
+                    TotalImprovement = transaction.TotalImprovement,
+                    Traceability = transaction.Description ?? string.Empty,
+                    Notes = transaction.Notes ?? string.Empty,
+                    CreatedAt = transaction.CreatedAt,
+                    UpdatedAt = transaction.UpdatedAt
+                };
+
+                if (!string.IsNullOrWhiteSpace(query) &&
+                    !item.SupplierName.ToLowerInvariant().Contains(query) &&
+                    !item.ItemName.ToLowerInvariant().Contains(query) &&
+                    !item.Traceability.ToLowerInvariant().Contains(query) &&
+                    !item.Notes.ToLowerInvariant().Contains(query))
+                {
+                    continue;
+                }
+
+                FilteredTransactions.Add(item);
+            }
+
+            SelectedTransaction = null;
+            OnPropertyChanged(nameof(HasTransactions));
+            OnPropertyChanged(nameof(RowsCountLabel));
+            RefreshSelectionState();
+        }, UiText.L("MsgGenericError"));
+    }
+
+    public void SetVisibleSelection(bool isSelected)
+    {
+        foreach (var transaction in FilteredTransactions)
+        {
+            transaction.IsSelected = isSelected;
+        }
+
+        RefreshSelectionState();
+    }
+
+    private void LoadSuppliers()
+    {
+        _isRefreshingSuppliers = true;
+        var selectedId = SelectedSupplier?.Id ?? AllTradersId;
+        Suppliers.Clear();
+        Suppliers.Add(new SupplierListItem { Id = AllTradersId, Name = UiText.L("LblAllSuppliers") });
+        foreach (var supplier in AppServices.SupplierService.GetSuppliers())
         {
             Suppliers.Add(new SupplierListItem
             {
@@ -162,86 +313,82 @@ public class TransactionsViewModel : ViewModelBase
             });
         }
 
-        var supplierLookup = suppliers.ToDictionary(s => s.Id, s => s.Name);
-        var transactions = AppServices.TransactionService.GetTransactions(FromDate, ToDate);
-        foreach (var transaction in transactions)
-        {
-            Transactions.Add(new TransactionListItem
-            {
-                Id = transaction.Id,
-                SupplierId = transaction.SupplierId,
-                SupplierName = supplierLookup.TryGetValue(transaction.SupplierId, out var name) ? name : string.Empty,
-                Date = transaction.Date,
-                Type = transaction.Type,
-                Category = transaction.Category,
-                OriginalWeight = transaction.OriginalWeight,
-                ItemName = transaction.ItemName ?? string.Empty,
-                OriginalKarat = transaction.OriginalKarat,
-                Equivalent21 = transaction.Equivalent21,
-                ManufacturingPerGram = transaction.ManufacturingPerGram,
-                ImprovementPerGram = transaction.ImprovementPerGram,
-                TotalManufacturing = transaction.TotalManufacturing,
-                TotalImprovement = transaction.TotalImprovement,
-                Traceability = transaction.Description ?? string.Empty,
-                Notes = transaction.Notes ?? string.Empty,
-                CreatedAt = transaction.CreatedAt,
-                UpdatedAt = transaction.UpdatedAt
-            });
-        }
-
-        SelectedSupplier = Suppliers.FirstOrDefault(s => s.Id == selectedSupplierId)
-            ?? Suppliers.FirstOrDefault();
-
-        ApplyFilter();
+        _selectedSupplier = Suppliers.FirstOrDefault(s => s.Id == selectedId) ?? Suppliers.FirstOrDefault();
+        OnPropertyChanged(nameof(SelectedSupplier));
+        _isRefreshingSuppliers = false;
     }
 
-    private void ApplyFilter()
-    {
-        foreach (var transaction in Transactions.Where(transaction => transaction.IsSelected))
-        {
-            transaction.IsSelected = false;
-        }
-
-        FilteredTransactions.Clear();
-        var query = SearchText.Trim().ToLowerInvariant();
-
-        foreach (var transaction in Transactions)
-        {
-            if (SelectedSupplier != null &&
-                SelectedSupplier.Id != AllTradersId &&
-                transaction.SupplierId != SelectedSupplier.Id)
-            {
-                continue;
-            }
-
-            if (!string.IsNullOrWhiteSpace(query) &&
-                !transaction.SupplierName.ToLowerInvariant().Contains(query) &&
-                !transaction.ItemName.ToLowerInvariant().Contains(query) &&
-                !transaction.Traceability.ToLowerInvariant().Contains(query) &&
-                !transaction.Notes.ToLowerInvariant().Contains(query))
-            {
-                continue;
-            }
-
-            FilteredTransactions.Add(transaction);
-        }
-
-        RefreshSelectionState();
-    }
-
-    private void AddTransaction()
+    private async void AddTransaction()
     {
         var selectedSupplierId = SelectedSupplier?.Id > 0 ? SelectedSupplier.Id : (int?)null;
         var defaults = AppServices.PricingSettingsService.GetLatest();
         var dialog = new Views.TransactionWindow(
             selectedSupplierId,
-            GetPopupSuppliers(),
+            Suppliers.Where(s => s.Id != AllTradersId).ToList(),
             defaults.DefaultManufacturingPerGram,
             defaults.DefaultImprovementPerGram);
-        if (dialog.ShowDialog() == true)
+
+        if (dialog.ShowDialog() != true)
         {
-            SaveTransaction(dialog, null);
+            return;
         }
+
+        var supplierId = dialog.SupplierId;
+        var transactionDate = dialog.TransactionDate;
+        var transactionCategory = dialog.TransactionCategory;
+        var originalWeight = dialog.OriginalWeight;
+        var itemName = dialog.ItemName;
+        var originalKarat = dialog.OriginalKarat;
+        var manufacturingPerGram = dialog.ManufacturingPerGram;
+        var improvementPerGram = dialog.ImprovementPerGram;
+        var notes = dialog.Notes;
+
+        try
+        {
+            await RunBusyAsync(UiText.L("MsgSavingTransaction"), async () =>
+            {
+                await Task.Run(() => AppServices.TransactionService.AddTransaction(
+                    supplierId,
+                    transactionDate,
+                    transactionCategory,
+                    originalWeight,
+                    itemName,
+                    originalKarat,
+                    manufacturingPerGram,
+                    improvementPerGram,
+                    notes));
+            }, string.Empty, rethrow: true);
+
+            ToastService.ShowSuccess(UiText.L("MsgTransactionSaved"));
+            await LoadAsync();
+        }
+        catch (ArgumentException ex)
+        {
+            ToastService.ShowWarning(UiText.LocalizeException(ex.Message));
+        }
+        catch (InvalidOperationException ex)
+        {
+            ToastService.ShowWarning(UiText.LocalizeException(ex.Message));
+        }
+    }
+
+    private void AddTrader()
+    {
+        var dialog = new Views.SupplierWindow();
+        if (dialog.ShowDialog() != true)
+        {
+            return;
+        }
+
+        AppServices.SupplierService.AddSupplier(
+            dialog.SupplierName,
+            dialog.SupplierPhone,
+            dialog.WorkerName,
+            dialog.WorkerPhone,
+            dialog.SupplierNotes);
+
+        LoadSuppliers();
+        ToastService.ShowSuccess(UiText.L("MsgSupplierSaved"));
     }
 
     private void ViewTransaction(TransactionListItem? transaction)
@@ -251,91 +398,104 @@ public class TransactionsViewModel : ViewModelBase
             return;
         }
 
-        var dialog = new Views.TransactionWindow(transaction, GetPopupSuppliers(), isReadOnly: true);
+        var dialog = new Views.TransactionWindow(transaction, Suppliers.Where(s => s.Id != AllTradersId).ToList(), isReadOnly: true);
         dialog.ShowDialog();
     }
 
-    private void EditTransaction(TransactionListItem? transaction = null)
+    private async void EditTransaction(object? parameter)
     {
-        var editableTransaction = transaction ?? GetBulkEditableTransaction();
-        if (editableTransaction == null)
+        var transaction = GetEditableTransaction(parameter);
+        if (transaction == null)
         {
             return;
         }
 
-        var dialog = new Views.TransactionWindow(editableTransaction, GetPopupSuppliers());
-        if (dialog.ShowDialog() == true)
+        var dialog = new Views.TransactionWindow(transaction, Suppliers.Where(s => s.Id != AllTradersId).ToList());
+        if (dialog.ShowDialog() != true)
         {
-            SaveTransaction(dialog, editableTransaction.Id);
+            return;
         }
-    }
 
-    private List<SupplierListItem> GetPopupSuppliers()
-        => Suppliers.Where(s => s.Id != AllTradersId).ToList();
+        var supplierId = dialog.SupplierId;
+        var transactionDate = dialog.TransactionDate;
+        var transactionCategory = dialog.TransactionCategory;
+        var originalWeight = dialog.OriginalWeight;
+        var itemName = dialog.ItemName;
+        var originalKarat = dialog.OriginalKarat;
+        var manufacturingPerGram = dialog.ManufacturingPerGram;
+        var improvementPerGram = dialog.ImprovementPerGram;
+        var notes = dialog.Notes;
 
-    private void SaveTransaction(Views.TransactionWindow dialog, int? transactionId)
-    {
         try
         {
-            if (transactionId.HasValue)
+            await RunBusyAsync(UiText.L("MsgSavingTransaction"), async () =>
             {
-                AppServices.TransactionService.UpdateTransaction(
-                    transactionId.Value,
-                    dialog.SupplierId,
-                    dialog.TransactionDate,
-                    dialog.TransactionCategory,
-                    dialog.OriginalWeight,
-                    dialog.ItemName,
-                    dialog.OriginalKarat,
-                    dialog.ManufacturingPerGram,
-                    dialog.ImprovementPerGram,
-                    dialog.Notes);
-            }
-            else
-            {
-                AppServices.TransactionService.AddTransaction(
-                    dialog.SupplierId,
-                    dialog.TransactionDate,
-                    dialog.TransactionCategory,
-                    dialog.OriginalWeight,
-                    dialog.ItemName,
-                    dialog.OriginalKarat,
-                    dialog.ManufacturingPerGram,
-                    dialog.ImprovementPerGram,
-                    dialog.Notes);
-            }
+                await Task.Run(() => AppServices.TransactionService.UpdateTransaction(
+                    transaction.Id,
+                    supplierId,
+                    transactionDate,
+                    transactionCategory,
+                    originalWeight,
+                    itemName,
+                    originalKarat,
+                    manufacturingPerGram,
+                    improvementPerGram,
+                    notes));
+            }, string.Empty, rethrow: true);
 
-            Load();
+            ToastService.ShowSuccess(UiText.L("MsgTransactionUpdated", UiText.L("MsgTransactionSaved")));
+            await LoadAsync();
         }
-        catch (ArgumentException ex)
+        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
         {
-            System.Windows.MessageBox.Show(UiText.LocalizeException(ex.Message), UiText.L("TitleValidation"), System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+            ToastService.ShowWarning(UiText.LocalizeException(ex.Message));
         }
     }
 
-    private void DeleteTransactions(TransactionListItem? specificTransaction = null)
+    private async void DeleteTransactions(object? parameter)
     {
-        var deleteTargets = specificTransaction == null ? GetCheckedTransactions() : [specificTransaction];
+        var deleteTargets = GetDeleteTargets(parameter);
         if (deleteTargets.Count == 0)
         {
             return;
         }
 
-        var message = GetDeleteConfirmationMessage(deleteTargets.Count, FilteredTransactions.Count);
+        var message = deleteTargets.Count == 1
+            ? UiText.L("MsgDeleteTransactionConfirmShort")
+            : UiText.Format("MsgDeleteSelectedRecordsConfirm", deleteTargets.Count);
+
         var result = System.Windows.MessageBox.Show(
-            message,
+            $"{message}{Environment.NewLine}{Environment.NewLine}{UiText.L("MsgFinancialTotalsWarning")}",
             UiText.L("TitleConfirmDelete"),
             System.Windows.MessageBoxButton.YesNo,
             System.Windows.MessageBoxImage.Warning);
 
-        if (result == System.Windows.MessageBoxResult.Yes)
+        if (result != System.Windows.MessageBoxResult.Yes)
         {
-            foreach (var transaction in deleteTargets)
-            {
-                AppServices.TransactionService.DeleteTransaction(transaction.Id);
-            }
+            return;
+        }
 
-            Load();
+        try
+        {
+            await RunBusyAsync(UiText.L("MsgDeletingTransaction", "Deleting transaction..."), async () =>
+            {
+                await Task.Run(() =>
+                {
+                    foreach (var target in deleteTargets)
+                    {
+                        AppServices.TransactionService.DeleteTransaction(target.Id);
+                    }
+                });
+            }, string.Empty, rethrow: true);
+
+            ToastService.ShowSuccess(deleteTargets.Count == 1
+                ? UiText.L("MsgTransactionDeleted", "Transaction deleted successfully.")
+                : UiText.Format("MsgTransactionsDeleted", deleteTargets.Count));
+            await LoadAsync();
+        }
+        catch (InvalidOperationException ex)
+        {
+            ToastService.ShowWarning(UiText.LocalizeException(ex.Message));
         }
     }
 
@@ -345,7 +505,25 @@ public class TransactionsViewModel : ViewModelBase
         ToDate = DateTime.Today;
         SearchText = string.Empty;
         SelectedSupplier = Suppliers.FirstOrDefault();
-        ApplyFilter();
+        CurrentPage = 1;
+        _ = LoadAsync();
+    }
+
+    private void ChangePage(int delta)
+    {
+        CurrentPage = Math.Clamp(CurrentPage + delta, 1, TotalPages);
+        Load();
+    }
+
+    private void ClearSelection()
+    {
+        foreach (var transaction in FilteredTransactions)
+        {
+            transaction.IsSelected = false;
+        }
+
+        SelectedTransaction = null;
+        RefreshSelectionState();
     }
 
     private void OnTransactionsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
@@ -375,41 +553,56 @@ public class TransactionsViewModel : ViewModelBase
         }
     }
 
-    private List<TransactionListItem> GetCheckedTransactions()
+    private TransactionListItem? GetEditableTransaction(object? parameter)
     {
-        return FilteredTransactions.Where(transaction => transaction.IsSelected).ToList();
-    }
+        if (parameter is TransactionListItem transaction)
+        {
+            return transaction;
+        }
 
-    private TransactionListItem? GetBulkEditableTransaction()
-    {
-        var checkedTransactions = GetCheckedTransactions();
+        var checkedTransactions = FilteredTransactions.Where(item => item.IsSelected).ToList();
         if (checkedTransactions.Count == 1)
         {
             return checkedTransactions[0];
         }
 
-        return null;
+        if (checkedTransactions.Count > 1)
+        {
+            return null;
+        }
+
+        return SelectedTransaction;
+    }
+
+    private List<TransactionListItem> GetDeleteTargets(object? parameter)
+    {
+        if (parameter is TransactionListItem transaction)
+        {
+            return [transaction];
+        }
+
+        var checkedTransactions = FilteredTransactions.Where(item => item.IsSelected).ToList();
+        if (checkedTransactions.Count > 0)
+        {
+            return checkedTransactions;
+        }
+
+        return SelectedTransaction == null ? [] : [SelectedTransaction];
     }
 
     private void RefreshSelectionState()
     {
         OnPropertyChanged(nameof(AreAllVisibleSelected));
         OnPropertyChanged(nameof(CheckedCount));
+        OnPropertyChanged(nameof(EffectiveSelectedCount));
         OnPropertyChanged(nameof(SelectedCountLabel));
         OnPropertyChanged(nameof(HasCheckedTransactions));
+        OnPropertyChanged(nameof(HasSelection));
         EditCommand.RaiseCanExecuteChanged();
         DeleteCommand.RaiseCanExecuteChanged();
+        EditRowCommand.RaiseCanExecuteChanged();
+        DeleteRowCommand.RaiseCanExecuteChanged();
+        ClearSelectionCommand.RaiseCanExecuteChanged();
     }
 
-    private static string GetDeleteConfirmationMessage(int targetCount, int visibleCount)
-    {
-        if (targetCount > 0 && visibleCount > 0 && targetCount == visibleCount)
-        {
-            return UiText.L("MsgDeleteAllRecordsConfirm");
-        }
-
-        return targetCount == 1
-            ? UiText.L("MsgDeleteSingleRecordConfirm")
-            : UiText.Format("MsgDeleteSelectedRecordsConfirm", targetCount);
-    }
 }

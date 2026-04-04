@@ -3,46 +3,81 @@ using Microsoft.Data.Sqlite;
 
 namespace GoldShopCore.Data;
 
+public sealed record SupplierSummaryRow(
+    int SupplierId,
+    decimal TotalGold21,
+    decimal TotalManufacturing,
+    decimal TotalImprovement);
+
+public sealed record DailyTransactionTotals(
+    DateTime Date,
+    decimal TotalGold21,
+    decimal TotalCharges);
+
 public class TransactionRepository
 {
     public List<SupplierTransaction> GetAll(DateTime? from, DateTime? to)
     {
-        using var connection = new SqliteConnection(Database.ConnectionString);
-        connection.Open();
-        return GetTransactions(connection, null, from, to);
+        using var connection = Database.OpenConnection();
+        return GetTransactions(connection, null, from, to, null, null).Items.ToList();
     }
 
     public List<SupplierTransaction> GetBySupplier(int supplierId, DateTime? from, DateTime? to)
     {
-        using var connection = new SqliteConnection(Database.ConnectionString);
-        connection.Open();
-        return GetTransactions(connection, supplierId, from, to);
+        using var connection = Database.OpenConnection();
+        return GetTransactions(connection, supplierId, from, to, null, null).Items.ToList();
     }
 
-    public void Add(SupplierTransaction transaction)
+    public PagedResult<SupplierTransaction> GetPaged(int? supplierId, DateTime? from, DateTime? to, int pageNumber, int pageSize)
     {
-        using var connection = new SqliteConnection(Database.ConnectionString);
-        connection.Open();
+        using var connection = Database.OpenConnection();
+        return GetTransactions(connection, supplierId, from, to, pageNumber, pageSize);
+    }
 
+    public SupplierTransaction? GetById(int id)
+    {
+        using var connection = Database.OpenConnection();
         using var command = connection.CreateCommand();
+        command.CommandText = @"
+SELECT Id, SupplierId, TxnDate, Type, Category, ItemName, Description, OriginalWeight, OriginalKarat, Equivalent21,
+       ManufacturingPerGram, ImprovementPerGram, TotalManufacturing, TotalImprovement, Notes, IsDeleted, DeletedAt, CreatedAt, UpdatedAt
+FROM SupplierTransactions
+WHERE Id = $id;";
+        command.Parameters.AddWithValue("$id", id);
+        using var reader = command.ExecuteReader();
+        return reader.Read() ? MapTransaction(reader) : null;
+    }
+
+    public int Add(SupplierTransaction transaction)
+    {
+        using var connection = Database.OpenConnection();
+        using var sqliteTransaction = connection.BeginTransaction();
+        var id = Add(connection, sqliteTransaction, transaction);
+        sqliteTransaction.Commit();
+        return id;
+    }
+
+    public int Add(SqliteConnection connection, SqliteTransaction transaction, SupplierTransaction transactionModel)
+    {
+        using var command = connection.CreateCommand();
+        command.Transaction = transaction;
         command.CommandText = @"
 INSERT INTO SupplierTransactions
     (SupplierId, TxnDate, Type, ItemName, Description, Amount, Weight, Purity, OriginalWeight, OriginalKarat, Equivalent21,
-     ManufacturingPerGram, ImprovementPerGram, TotalManufacturing, TotalImprovement, Category, Notes, CreatedAt, UpdatedAt)
+     ManufacturingPerGram, ImprovementPerGram, TotalManufacturing, TotalImprovement, Category, Notes, IsDeleted, DeletedAt, CreatedAt, UpdatedAt)
 VALUES
-    ($supplierId, $date, $type, $itemName, $description, $equivalent21, $originalWeight, $purity, $originalWeight, $originalKarat, $equivalent21,
-     $manufacturingPerGram, $improvementPerGram, $totalManufacturing, $totalImprovement, $category, $notes, $createdAt, $updatedAt);";
+    ($supplierId, $date, $type, $itemName, $description, $amount, $weight, $purity, $originalWeight, $originalKarat, $equivalent21,
+     $manufacturingPerGram, $improvementPerGram, $totalManufacturing, $totalImprovement, $category, $notes, $isDeleted, $deletedAt, $createdAt, $updatedAt);
+SELECT last_insert_rowid();";
 
-        BindTransaction(command, transaction);
-        command.ExecuteNonQuery();
+        BindTransaction(command, transactionModel);
+        return (int)(long)command.ExecuteScalar()!;
     }
 
-    public void Update(SupplierTransaction transaction)
+    public void Update(SqliteConnection connection, SqliteTransaction transaction, SupplierTransaction transactionModel)
     {
-        using var connection = new SqliteConnection(Database.ConnectionString);
-        connection.Open();
-
         using var command = connection.CreateCommand();
+        command.Transaction = transaction;
         command.CommandText = @"
 UPDATE SupplierTransactions
 SET SupplierId = $supplierId,
@@ -50,8 +85,8 @@ SET SupplierId = $supplierId,
     Type = $type,
     ItemName = $itemName,
     Description = $description,
-    Amount = $equivalent21,
-    Weight = $originalWeight,
+    Amount = $amount,
+    Weight = $weight,
     Purity = $purity,
     OriginalWeight = $originalWeight,
     OriginalKarat = $originalKarat,
@@ -62,30 +97,51 @@ SET SupplierId = $supplierId,
     TotalImprovement = $totalImprovement,
     Category = $category,
     Notes = $notes,
+    IsDeleted = $isDeleted,
+    DeletedAt = $deletedAt,
     UpdatedAt = $updatedAt
 WHERE Id = $id;";
 
-        command.Parameters.AddWithValue("$id", transaction.Id);
-        BindTransaction(command, transaction);
+        BindTransaction(command, transactionModel);
+        command.Parameters.AddWithValue("$id", transactionModel.Id);
         command.ExecuteNonQuery();
     }
 
-    public void Delete(int id)
+    public void SoftDelete(SqliteConnection connection, SqliteTransaction transaction, int id, DateTime deletedAt)
     {
-        using var connection = new SqliteConnection(Database.ConnectionString);
-        connection.Open();
-
         using var command = connection.CreateCommand();
-        command.CommandText = "DELETE FROM SupplierTransactions WHERE Id = $id;";
+        command.Transaction = transaction;
+        command.CommandText = @"
+UPDATE SupplierTransactions
+SET IsDeleted = 1,
+    DeletedAt = $deletedAt,
+    UpdatedAt = $updatedAt
+WHERE Id = $id;";
         command.Parameters.AddWithValue("$id", id);
+        command.Parameters.AddWithValue("$deletedAt", deletedAt.ToString("yyyy-MM-dd HH:mm:ss"));
+        command.Parameters.AddWithValue("$updatedAt", deletedAt.ToString("yyyy-MM-dd HH:mm:ss"));
         command.ExecuteNonQuery();
     }
 
     public TraderSummary GetSummary(int supplierId, DateTime? from, DateTime? to)
     {
-        using var connection = new SqliteConnection(Database.ConnectionString);
-        connection.Open();
+        if (!from.HasValue && !to.HasValue)
+        {
+            var snapshot = new TraderSummaryRepository().GetByTrader(supplierId);
+            if (snapshot != null)
+            {
+                return new TraderSummary
+                {
+                    TotalGold21 = snapshot.TotalEquivalent21,
+                    TotalManufacturing = snapshot.TotalManufacturing,
+                    TotalImprovement = snapshot.TotalImprovement,
+                    ManufacturingDiscounts = snapshot.ManufacturingDiscounts,
+                    ImprovementDiscounts = snapshot.ImprovementDiscounts
+                };
+            }
+        }
 
+        using var connection = Database.OpenConnection();
         using var command = connection.CreateCommand();
         var where = BuildDateFilter(command, supplierId, from, to);
         command.CommandText = $@"
@@ -105,17 +161,25 @@ FROM SupplierTransactions
             summary.TotalImprovement = ReadDecimal(reader, 2);
         }
 
-        var discounts = new DiscountRepository().GetDiscountTotals(supplierId, from, to);
-        summary.ManufacturingDiscounts = discounts.manufacturingDiscounts;
-        summary.ImprovementDiscounts = discounts.improvementDiscounts;
         return summary;
     }
 
     public TraderSummary GetSummaryAll(DateTime? from, DateTime? to)
     {
-        using var connection = new SqliteConnection(Database.ConnectionString);
-        connection.Open();
+        if (!from.HasValue && !to.HasValue)
+        {
+            var snapshots = new TraderSummaryRepository().GetAll().Values;
+            return new TraderSummary
+            {
+                TotalGold21 = snapshots.Sum(x => x.TotalEquivalent21),
+                TotalManufacturing = snapshots.Sum(x => x.TotalManufacturing),
+                TotalImprovement = snapshots.Sum(x => x.TotalImprovement),
+                ManufacturingDiscounts = snapshots.Sum(x => x.ManufacturingDiscounts),
+                ImprovementDiscounts = snapshots.Sum(x => x.ImprovementDiscounts)
+            };
+        }
 
+        using var connection = Database.OpenConnection();
         using var command = connection.CreateCommand();
         var where = BuildDateFilter(command, null, from, to);
         command.CommandText = $@"
@@ -135,22 +199,47 @@ FROM SupplierTransactions
             summary.TotalImprovement = ReadDecimal(reader, 2);
         }
 
-        var discounts = new DiscountRepository().GetDiscountTotalsAll(from, to);
-        summary.ManufacturingDiscounts = discounts.manufacturingDiscounts;
-        summary.ImprovementDiscounts = discounts.improvementDiscounts;
         return summary;
+    }
+
+    public List<SupplierSummaryRow> GetSupplierSummaries(DateTime? from, DateTime? to)
+    {
+        using var connection = Database.OpenConnection();
+        using var command = connection.CreateCommand();
+        var where = BuildDateFilter(command, null, from, to);
+        command.CommandText = $@"
+SELECT
+    SupplierId,
+    COALESCE(SUM({GetSignedEquivalent21Sql()}), 0),
+    COALESCE(SUM(TotalManufacturing), 0),
+    COALESCE(SUM(TotalImprovement), 0)
+FROM SupplierTransactions
+{where}
+GROUP BY SupplierId;";
+
+        using var reader = command.ExecuteReader();
+        var rows = new List<SupplierSummaryRow>();
+        while (reader.Read())
+        {
+            rows.Add(new SupplierSummaryRow(
+                reader.GetInt32(0),
+                ReadDecimal(reader, 1),
+                ReadDecimal(reader, 2),
+                ReadDecimal(reader, 3)));
+        }
+
+        return rows;
     }
 
     public Dictionary<int, decimal> GetTotalGold21BySupplier()
     {
         var result = new Dictionary<int, decimal>();
-        using var connection = new SqliteConnection(Database.ConnectionString);
-        connection.Open();
-
+        using var connection = Database.OpenConnection();
         using var command = connection.CreateCommand();
         command.CommandText = $@"
 SELECT SupplierId, COALESCE(SUM({GetSignedEquivalent21Sql()}), 0)
 FROM SupplierTransactions
+WHERE IsDeleted = 0
 GROUP BY SupplierId;";
 
         using var reader = command.ExecuteReader();
@@ -162,38 +251,17 @@ GROUP BY SupplierId;";
         return result;
     }
 
-    public Dictionary<int, decimal> GetNetGold21BySupplier()
-    {
-        var result = new Dictionary<int, decimal>();
-        using var connection = new SqliteConnection(Database.ConnectionString);
-        connection.Open();
-
-        using var command = connection.CreateCommand();
-        command.CommandText = $@"
-SELECT SupplierId,
-       COALESCE(SUM({GetSignedEquivalent21Sql()}), 0)
-FROM SupplierTransactions
-GROUP BY SupplierId;";
-
-        using var reader = command.ExecuteReader();
-        while (reader.Read())
-        {
-            result[reader.GetInt32(0)] = ReadDecimal(reader, 1);
-        }
-
-        return result;
-    }
+    public Dictionary<int, decimal> GetNetGold21BySupplier() => GetTotalGold21BySupplier();
 
     public Dictionary<int, DateTime> GetLastTransactionDates()
     {
         var result = new Dictionary<int, DateTime>();
-        using var connection = new SqliteConnection(Database.ConnectionString);
-        connection.Open();
-
+        using var connection = Database.OpenConnection();
         using var command = connection.CreateCommand();
         command.CommandText = @"
-SELECT SupplierId, MAX(UpdatedAt) AS LastDate
+SELECT SupplierId, MAX(TxnDate) AS LastDate
 FROM SupplierTransactions
+WHERE IsDeleted = 0
 GROUP BY SupplierId;";
 
         using var reader = command.ExecuteReader();
@@ -208,49 +276,87 @@ GROUP BY SupplierId;";
         return result;
     }
 
-    private static List<SupplierTransaction> GetTransactions(SqliteConnection connection, int? supplierId, DateTime? from, DateTime? to)
+    public List<DailyTransactionTotals> GetDailyTotals(DateTime from, DateTime to)
     {
-        var transactions = new List<SupplierTransaction>();
+        using var connection = Database.OpenConnection();
+        using var command = connection.CreateCommand();
+        command.Parameters.AddWithValue("$from", from.ToString("yyyy-MM-dd"));
+        command.Parameters.AddWithValue("$to", to.ToString("yyyy-MM-dd"));
+        command.CommandText = $@"
+SELECT
+    TxnDate,
+    COALESCE(SUM({GetSignedEquivalent21Sql()}), 0),
+    COALESCE(SUM(TotalManufacturing + TotalImprovement), 0)
+FROM SupplierTransactions
+WHERE IsDeleted = 0 AND TxnDate >= $from AND TxnDate <= $to
+GROUP BY TxnDate
+ORDER BY TxnDate;";
+
+        using var reader = command.ExecuteReader();
+        var rows = new List<DailyTransactionTotals>();
+        while (reader.Read())
+        {
+            rows.Add(new DailyTransactionTotals(
+                DateTime.Parse(reader.GetString(0)),
+                ReadDecimal(reader, 1),
+                ReadDecimal(reader, 2)));
+        }
+
+        return rows;
+    }
+
+    private static PagedResult<SupplierTransaction> GetTransactions(
+        SqliteConnection connection,
+        int? supplierId,
+        DateTime? from,
+        DateTime? to,
+        int? pageNumber,
+        int? pageSize)
+    {
+        using var countCommand = connection.CreateCommand();
+        var countWhere = BuildDateFilter(countCommand, supplierId, from, to);
+        countCommand.CommandText = $"SELECT COUNT(1) FROM SupplierTransactions {countWhere};";
+        var totalCount = Convert.ToInt32(countCommand.ExecuteScalar());
+
+        var items = new List<SupplierTransaction>();
         using var command = connection.CreateCommand();
         var where = BuildDateFilter(command, supplierId, from, to);
+        var pagingSql = string.Empty;
+
+        if (pageNumber.HasValue && pageSize.HasValue)
+        {
+            var safePageNumber = Math.Max(pageNumber.Value, 1);
+            var safePageSize = Math.Max(pageSize.Value, 1);
+            command.Parameters.AddWithValue("$limit", safePageSize);
+            command.Parameters.AddWithValue("$offset", (safePageNumber - 1) * safePageSize);
+            pagingSql = " LIMIT $limit OFFSET $offset";
+        }
+
         command.CommandText = $@"
 SELECT Id, SupplierId, TxnDate, Type, Category, ItemName, Description, OriginalWeight, OriginalKarat, Equivalent21,
-       ManufacturingPerGram, ImprovementPerGram, TotalManufacturing, TotalImprovement, Notes, CreatedAt, UpdatedAt
+       ManufacturingPerGram, ImprovementPerGram, TotalManufacturing, TotalImprovement, Notes, IsDeleted, DeletedAt, CreatedAt, UpdatedAt
 FROM SupplierTransactions
 {where}
-ORDER BY TxnDate DESC, Id DESC;";
+ORDER BY TxnDate DESC, Id DESC{pagingSql};";
 
         using var reader = command.ExecuteReader();
         while (reader.Read())
         {
-            transactions.Add(new SupplierTransaction
-            {
-                Id = reader.GetInt32(0),
-                SupplierId = reader.GetInt32(1),
-                Date = DateTime.Parse(reader.GetString(2)),
-                Type = ParseType(reader.GetString(3)),
-                Category = TransactionCategories.Normalize(reader.IsDBNull(4) ? null : reader.GetString(4), ParseType(reader.GetString(3))),
-                ItemName = reader.IsDBNull(5) ? null : reader.GetString(5),
-                Description = reader.IsDBNull(6) ? null : reader.GetString(6),
-                OriginalWeight = ReadDecimal(reader, 7),
-                OriginalKarat = reader.GetInt32(8),
-                Equivalent21 = ReadDecimal(reader, 9),
-                ManufacturingPerGram = ReadDecimal(reader, 10),
-                ImprovementPerGram = ReadDecimal(reader, 11),
-                TotalManufacturing = ReadDecimal(reader, 12),
-                TotalImprovement = ReadDecimal(reader, 13),
-                Notes = reader.IsDBNull(14) ? null : reader.GetString(14),
-                CreatedAt = DateTime.Parse(reader.GetString(15)),
-                UpdatedAt = DateTime.Parse(reader.GetString(16))
-            });
+            items.Add(MapTransaction(reader));
         }
 
-        return transactions;
+        return new PagedResult<SupplierTransaction>
+        {
+            Items = items,
+            TotalCount = totalCount,
+            PageNumber = pageNumber ?? 1,
+            PageSize = pageSize ?? Math.Max(totalCount, 1)
+        };
     }
 
     private static string BuildDateFilter(SqliteCommand command, int? supplierId, DateTime? from, DateTime? to)
     {
-        var where = "WHERE 1 = 1";
+        var where = "WHERE IsDeleted = 0";
         if (supplierId.HasValue)
         {
             where += " AND SupplierId = $supplierId";
@@ -274,12 +380,14 @@ ORDER BY TxnDate DESC, Id DESC;";
     {
         command.Parameters.AddWithValue("$supplierId", transaction.SupplierId);
         command.Parameters.AddWithValue("$date", transaction.Date.ToString("yyyy-MM-dd"));
-        command.Parameters.AddWithValue("$type", transaction.Type.ToString());
+        command.Parameters.AddWithValue("$type", (int)transaction.Type);
         command.Parameters.AddWithValue("$itemName", (object?)transaction.ItemName ?? DBNull.Value);
         command.Parameters.AddWithValue("$description", (object?)transaction.Description ?? DBNull.Value);
+        command.Parameters.AddWithValue("$amount", (double)transaction.Equivalent21);
+        command.Parameters.AddWithValue("$weight", (double)transaction.OriginalWeight);
+        command.Parameters.AddWithValue("$purity", transaction.OriginalKarat.ToString());
         command.Parameters.AddWithValue("$originalWeight", (double)transaction.OriginalWeight);
         command.Parameters.AddWithValue("$originalKarat", transaction.OriginalKarat);
-        command.Parameters.AddWithValue("$purity", transaction.OriginalKarat.ToString());
         command.Parameters.AddWithValue("$equivalent21", (double)transaction.Equivalent21);
         command.Parameters.AddWithValue("$manufacturingPerGram", (double)transaction.ManufacturingPerGram);
         command.Parameters.AddWithValue("$improvementPerGram", (double)transaction.ImprovementPerGram);
@@ -287,50 +395,50 @@ ORDER BY TxnDate DESC, Id DESC;";
         command.Parameters.AddWithValue("$totalImprovement", (double)transaction.TotalImprovement);
         command.Parameters.AddWithValue("$category", transaction.Category);
         command.Parameters.AddWithValue("$notes", (object?)transaction.Notes ?? DBNull.Value);
+        command.Parameters.AddWithValue("$isDeleted", transaction.IsDeleted ? 1 : 0);
+        command.Parameters.AddWithValue("$deletedAt", transaction.DeletedAt?.ToString("yyyy-MM-dd HH:mm:ss") ?? (object)DBNull.Value);
         command.Parameters.AddWithValue("$createdAt", transaction.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss"));
         command.Parameters.AddWithValue("$updatedAt", transaction.UpdatedAt.ToString("yyyy-MM-dd HH:mm:ss"));
     }
 
     private static decimal ReadDecimal(SqliteDataReader reader, int ordinal)
     {
-        return reader.IsDBNull(ordinal) ? 0m : (decimal)reader.GetDouble(ordinal);
+        return reader.IsDBNull(ordinal) ? 0m : Convert.ToDecimal(reader.GetDouble(ordinal));
     }
 
     private static string GetSignedEquivalent21Sql()
     {
-        const string equivalent21Sql = @"
+        return @"
 CASE
-    WHEN COALESCE(Equivalent21, 0) <> 0 THEN Equivalent21
-    ELSE (
-        COALESCE(OriginalWeight, Weight, Amount, 0) *
-        COALESCE(NULLIF(OriginalKarat, 0), CAST(NULLIF(TRIM(Purity), '') AS INTEGER), 21) / 21.0
-    )
-END";
-
-        return $@"
-CASE
-    WHEN Type IN ('Out', 'GoldGiven', 'PaymentIssued', 'Gold') THEN ({equivalent21Sql})
-    WHEN Type IN ('In', 'GoldReceived', 'PaymentReceived', 'Payment') THEN -({equivalent21Sql})
+    WHEN Type = 1 THEN Equivalent21
+    WHEN Type = 2 THEN -Equivalent21
     ELSE 0
 END";
     }
 
-    private static TransactionType ParseType(string value)
+    private static SupplierTransaction MapTransaction(SqliteDataReader reader)
     {
-        if (Enum.TryParse<TransactionType>(value, out var parsed))
+        return new SupplierTransaction
         {
-            return parsed;
-        }
-
-        return value switch
-        {
-            "GoldGiven" => TransactionType.Out,
-            "PaymentIssued" => TransactionType.Out,
-            "GoldReceived" => TransactionType.In,
-            "PaymentReceived" => TransactionType.In,
-            "Gold" => TransactionType.Out,
-            "Payment" => TransactionType.In,
-            _ => TransactionType.Out
+            Id = reader.GetInt32(0),
+            SupplierId = reader.GetInt32(1),
+            Date = DateTime.Parse(reader.GetString(2)),
+            Type = (TransactionType)reader.GetInt32(3),
+            Category = TransactionCategories.Normalize(reader.GetString(4), (TransactionType)reader.GetInt32(3)),
+            ItemName = reader.IsDBNull(5) ? null : reader.GetString(5),
+            Description = reader.IsDBNull(6) ? null : reader.GetString(6),
+            OriginalWeight = ReadDecimal(reader, 7),
+            OriginalKarat = reader.GetInt32(8),
+            Equivalent21 = ReadDecimal(reader, 9),
+            ManufacturingPerGram = ReadDecimal(reader, 10),
+            ImprovementPerGram = ReadDecimal(reader, 11),
+            TotalManufacturing = ReadDecimal(reader, 12),
+            TotalImprovement = ReadDecimal(reader, 13),
+            Notes = reader.IsDBNull(14) ? null : reader.GetString(14),
+            IsDeleted = !reader.IsDBNull(15) && reader.GetInt32(15) == 1,
+            DeletedAt = reader.IsDBNull(16) ? null : DateTime.Parse(reader.GetString(16)),
+            CreatedAt = DateTime.Parse(reader.GetString(17)),
+            UpdatedAt = DateTime.Parse(reader.GetString(18))
         };
     }
 }

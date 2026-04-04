@@ -6,20 +6,39 @@ namespace GoldShopWpf.ViewModels;
 
 public class WeeklyReportViewModel : ViewModelBase
 {
-    private DateTime _fromDate = DateTime.Today.AddDays(-7);
-    private DateTime _toDate = DateTime.Today;
+    private DateTime _fromDate;
+    private DateTime _toDate;
     private string _currentDateDisplay = DateTime.Now.ToString("yyyy/MM/dd hh:mm tt");
+    private bool _isUpdatingWeekRange;
 
     public DateTime FromDate
     {
         get => _fromDate;
-        set => SetProperty(ref _fromDate, value);
+        set
+        {
+            if (_isUpdatingWeekRange)
+            {
+                SetProperty(ref _fromDate, value);
+                return;
+            }
+
+            UpdateWeekRange(value);
+        }
     }
 
     public DateTime ToDate
     {
         get => _toDate;
-        set => SetProperty(ref _toDate, value);
+        set
+        {
+            if (_isUpdatingWeekRange)
+            {
+                SetProperty(ref _toDate, value);
+                return;
+            }
+
+            UpdateWeekRange(value);
+        }
     }
 
     public ObservableCollection<WeeklyReportRow> Reports { get; } = new();
@@ -34,6 +53,8 @@ public class WeeklyReportViewModel : ViewModelBase
         get => _currentDateDisplay;
         private set => SetProperty(ref _currentDateDisplay, value);
     }
+    public string WeekRangeDisplay => UiText.Format("LblWeeklyRangeValue", FromDate.ToString("yyyy/MM/dd"), ToDate.ToString("yyyy/MM/dd"));
+    public string WeekRuleNote => UiText.L("LblWeeklyRangeNote");
 
     public decimal TotalWeight => ReportRows.Sum(row => row.Weight);
     public decimal TotalValue => ReportRows.Sum(row => row.Value);
@@ -56,6 +77,7 @@ public class WeeklyReportViewModel : ViewModelBase
 
     public WeeklyReportViewModel()
     {
+        UpdateWeekRange(DateTime.Today);
         RefreshCommand = new RelayCommand(_ => Load());
         ExportImageCommand = new RelayCommand(parameter => ExportImage(parameter as FrameworkElement), _ => ReportRows.Count > 0);
         ExportPdfCommand = new RelayCommand(_ => ExportPdf(), _ => ReportRows.Count > 0);
@@ -108,7 +130,7 @@ public class WeeklyReportViewModel : ViewModelBase
             {
                 Date = transaction.Date,
                 Type = type,
-                Weight = transaction.OriginalWeight,
+                Weight = transaction.Equivalent21,
                 Item = transaction.ItemName ?? string.Empty,
                 Value = transaction.TotalManufacturing + transaction.TotalImprovement,
                 SupplierName = suppliers.TryGetValue(transaction.SupplierId, out var supplierName) ? supplierName : string.Empty
@@ -156,6 +178,33 @@ public class WeeklyReportViewModel : ViewModelBase
         OnPropertyChanged(nameof(TotalGoldDisplay));
         OnPropertyChanged(nameof(TotalManufacturingDisplay));
         OnPropertyChanged(nameof(NetTotalDisplay));
+        OnPropertyChanged(nameof(WeekRangeDisplay));
+        OnPropertyChanged(nameof(WeekRuleNote));
+    }
+
+    private void UpdateWeekRange(DateTime selectedDate)
+    {
+        var weekStart = GetWeekStart(selectedDate);
+        var weekEnd = weekStart.AddDays(6);
+
+        _isUpdatingWeekRange = true;
+        try
+        {
+            SetProperty(ref _fromDate, weekStart, nameof(FromDate));
+            SetProperty(ref _toDate, weekEnd, nameof(ToDate));
+        }
+        finally
+        {
+            _isUpdatingWeekRange = false;
+        }
+
+        OnPropertyChanged(nameof(WeekRangeDisplay));
+    }
+
+    private static DateTime GetWeekStart(DateTime date)
+    {
+        var diff = ((int)date.DayOfWeek - (int)DayOfWeek.Saturday + 7) % 7;
+        return date.Date.AddDays(-diff);
     }
 
     private void ExportImage(FrameworkElement? element)

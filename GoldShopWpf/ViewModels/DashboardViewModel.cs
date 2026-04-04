@@ -1,8 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Media;
-using GoldShopCore.Models;
-using GoldShopCore.Services;
 using GoldShopWpf.Services;
 
 namespace GoldShopWpf.ViewModels;
@@ -138,7 +136,7 @@ public class DashboardViewModel : ViewModelBase
         BuildGoldPaymentChart(transactionService);
     }
 
-    private void BuildSupplierBalanceChart(List<Supplier> suppliers, Dictionary<int, decimal> totals)
+    private void BuildSupplierBalanceChart(List<GoldShopCore.Models.Supplier> suppliers, Dictionary<int, decimal> totals)
     {
         SupplierBalanceBars.Clear();
 
@@ -159,24 +157,15 @@ public class DashboardViewModel : ViewModelBase
         }
     }
 
-    private void BuildGoldPaymentChart(TransactionService transactionService)
+    private void BuildGoldPaymentChart(GoldShopCore.Services.TransactionService transactionService)
     {
         var from = DateTime.Today.AddDays(-30);
         var to = DateTime.Today;
-        var transactions = transactionService.GetTransactions(from, to);
-
-        var dateGroups = transactions
-            .GroupBy(t => t.Date.Date)
-            .ToDictionary(g => g.Key, g => new
-            {
-                Gold = g.Sum(x => x.Equivalent21),
-                Payment = g.Sum(x => x.TotalManufacturing + x.TotalImprovement)
-            });
-
+        var dailyTotals = transactionService.GetDailyTotals(from, to).ToDictionary(row => row.Date.Date);
         var dates = Enumerable.Range(0, (to - from).Days + 1).Select(offset => from.AddDays(offset)).ToList();
 
-        var goldValues = dates.Select(d => dateGroups.TryGetValue(d, out var v) ? (double)v.Gold : 0d).ToList();
-        var paymentValues = dates.Select(d => dateGroups.TryGetValue(d, out var v) ? (double)v.Payment : 0d).ToList();
+        var goldValues = dates.Select(d => dailyTotals.TryGetValue(d, out var v) ? (double)v.TotalGold21 : 0d).ToList();
+        var paymentValues = dates.Select(d => dailyTotals.TryGetValue(d, out var v) ? (double)v.TotalCharges : 0d).ToList();
         var max = new[] { goldValues.Max(), paymentValues.Max(), 1d }.Max();
         var chartHeight = 180d;
         var chartWidth = 520d;
@@ -193,15 +182,7 @@ public class DashboardViewModel : ViewModelBase
 
             GoldLinePoints.Add(new Point(x, goldY));
             PaymentLinePoints.Add(new Point(x, payY));
-
-            if (i % 5 == 0 || i == dates.Count - 1)
-            {
-                GoldPaymentLabels.Add(dates[i].ToString("MM-dd"));
-            }
-            else
-            {
-                GoldPaymentLabels.Add(string.Empty);
-            }
+            GoldPaymentLabels.Add(i % 5 == 0 || i == dates.Count - 1 ? dates[i].ToString("MM-dd") : string.Empty);
         }
     }
 }

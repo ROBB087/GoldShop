@@ -23,13 +23,7 @@ public partial class ModernStatementWindow : Window
         InitializeComponent();
         _viewModel = new ModernStatementPreviewViewModel(supplierId, supplierName, fromDate, toDate);
         DataContext = _viewModel;
-        LoadLogo();
         RefreshPrintDocument();
-    }
-
-    private void LoadLogo()
-    {
-        LogoImage.Source = new BitmapImage(new Uri("pack://application:,,,/Resources/logo.png", UriKind.Absolute));
     }
 
     private void RefreshPrintDocument()
@@ -74,22 +68,29 @@ public partial class ModernStatementWindow : Window
         });
 
         var table = new Table { CellSpacing = 0 };
-        foreach (var width in new[] { 90d, 130d, 90d, 120d, 100d })
+        foreach (var width in new[] { 90d, 130d, 120d, 120d, 100d, 100d })
         {
             table.Columns.Add(new TableColumn { Width = new GridLength(width) });
         }
 
         table.RowGroups.Add(new TableRowGroup());
-        table.RowGroups[0].Rows.Add(CreateHeaderRow(UiText.L("LblDate"), UiText.L("LblType"), UiText.L("LblWeight"), UiText.L("LblItem"), UiText.L("LblValue")));
+        table.RowGroups[0].Rows.Add(CreateHeaderRow(
+            UiText.L("LblDate"),
+            UiText.L("LblType"),
+            UiText.L("LblEquivalent21"),
+            UiText.L("LblItem"),
+            UiText.L("LblTotalManufacturing"),
+            UiText.L("LblTotalImprovement")));
 
         foreach (var transaction in transactions)
         {
             table.RowGroups[0].Rows.Add(CreateRow(
                 transaction.Date.ToString("yyyy/MM/dd"),
                 FormatType(transaction),
-                $"{transaction.OriginalWeight:0.####}",
+                $"{transaction.Equivalent21:0.####}",
                 string.IsNullOrWhiteSpace(transaction.ItemName) ? "-" : transaction.ItemName,
-                $"{transaction.TotalManufacturing + transaction.TotalImprovement:0.##}"));
+                $"{transaction.TotalManufacturing:0.##}",
+                $"{transaction.TotalImprovement:0.##}"));
         }
 
         doc.Blocks.Add(table);
@@ -101,7 +102,7 @@ public partial class ModernStatementWindow : Window
         totals.RowGroups[0].Rows.Add(CreateHeaderRow(UiText.L("LblDescription"), UiText.L("LblAmount")));
         totals.RowGroups[0].Rows.Add(CreateRow(UiText.L("LblTotalGoldReport"), _viewModel.TotalGoldDisplay));
         totals.RowGroups[0].Rows.Add(CreateRow(UiText.L("LblTotalManufacturingReport"), _viewModel.TotalManufacturingDisplay));
-        totals.RowGroups[0].Rows.Add(CreateRow(UiText.L("LblNetTotalReport"), _viewModel.NetTotalDisplay));
+        totals.RowGroups[0].Rows.Add(CreateRow(UiText.L("LblTotalImprovement"), _viewModel.TotalImprovementDisplay));
         doc.Blocks.Add(new Paragraph(new Run(UiText.L("LblReportTotals"))) { FontSize = 18, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 20, 0, 10) });
         doc.Blocks.Add(totals);
 
@@ -186,7 +187,6 @@ public partial class ModernStatementWindow : Window
 
                 page.Header().Column(column =>
                 {
-                    column.Item().Text(_viewModel.CompanyName).SemiBold();
                     column.Item().Text(_viewModel.ReportTitle).FontSize(22).Bold().FontColor(Colors.Amber.Darken2);
                     column.Item().Text(_viewModel.SupplierName);
                 });
@@ -205,15 +205,17 @@ public partial class ModernStatementWindow : Window
                             columns.RelativeColumn();
                             columns.RelativeColumn();
                             columns.RelativeColumn();
+                            columns.RelativeColumn();
                         });
 
                         table.Header(header =>
                         {
                             header.Cell().Padding(8).Background("#F5F6FA").Text(UiText.L("LblDate")).SemiBold();
                             header.Cell().Padding(8).Background("#F5F6FA").Text(UiText.L("LblType")).SemiBold();
-                            header.Cell().Padding(8).Background("#F5F6FA").Text(UiText.L("LblWeight")).SemiBold();
+                            header.Cell().Padding(8).Background("#F5F6FA").Text(UiText.L("LblEquivalent21")).SemiBold();
                             header.Cell().Padding(8).Background("#F5F6FA").Text(UiText.L("LblItem")).SemiBold();
-                            header.Cell().Padding(8).Background("#F5F6FA").Text(UiText.L("LblValue")).SemiBold();
+                            header.Cell().Padding(8).Background("#F5F6FA").Text(UiText.L("LblTotalManufacturing")).SemiBold();
+                            header.Cell().Padding(8).Background("#F5F6FA").Text(UiText.L("LblTotalImprovement")).SemiBold();
                         });
 
                         foreach (var row in _viewModel.Rows)
@@ -222,8 +224,28 @@ public partial class ModernStatementWindow : Window
                             table.Cell().Padding(8).Text(row.Type);
                             table.Cell().Padding(8).Text(row.Weight.ToString("0.####"));
                             table.Cell().Padding(8).Text(string.IsNullOrWhiteSpace(row.Item) ? "-" : row.Item);
-                            table.Cell().Padding(8).Text(row.Value.ToString("0.##"));
+                            table.Cell().Padding(8).Text(row.Manufacturing.ToString("0.##"));
+                            table.Cell().Padding(8).Text(row.Improvement.ToString("0.##"));
                         }
+                    });
+
+                    column.Item().PaddingTop(12).Table(table =>
+                    {
+                        table.ColumnsDefinition(columns =>
+                        {
+                            columns.RelativeColumn(2);
+                            columns.RelativeColumn();
+                        });
+
+                        table.Cell().Padding(8).Background("#F5F6FA").Text(UiText.L("LblDescription")).SemiBold();
+                        table.Cell().Padding(8).Background("#F5F6FA").Text(UiText.L("LblAmount")).SemiBold();
+
+                        table.Cell().Padding(8).Text(UiText.L("LblTotalGoldReport"));
+                        table.Cell().Padding(8).Text(_viewModel.TotalGoldDisplay);
+                        table.Cell().Padding(8).Text(UiText.L("LblTotalManufacturingReport"));
+                        table.Cell().Padding(8).Text(_viewModel.TotalManufacturingDisplay);
+                        table.Cell().Padding(8).Text(UiText.L("LblTotalImprovement"));
+                        table.Cell().Padding(8).Text(_viewModel.TotalImprovementDisplay);
                     });
                 });
             });

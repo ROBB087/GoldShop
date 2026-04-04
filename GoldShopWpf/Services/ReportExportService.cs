@@ -85,8 +85,28 @@ public static class ReportExportService
             height = Math.Max(1, (int)Math.Ceiling(element.DesiredSize.Height));
         }
 
+        var drawingVisual = new DrawingVisual();
+        using (var drawingContext = drawingVisual.RenderOpen())
+        {
+            if (element.FlowDirection == FlowDirection.RightToLeft)
+            {
+                // RenderTargetBitmap can mirror RTL visuals; flip once here to preserve the on-screen layout.
+                drawingContext.PushTransform(new ScaleTransform(-1, 1, width / 2d, height / 2d));
+            }
+
+            drawingContext.DrawRectangle(
+                new VisualBrush(element)
+                {
+                    Stretch = Stretch.None,
+                    AlignmentX = AlignmentX.Left,
+                    AlignmentY = AlignmentY.Top
+                },
+                null,
+                new Rect(0, 0, width, height));
+        }
+
         var renderTarget = new RenderTargetBitmap(width, height, 96, 96, PixelFormats.Pbgra32);
-        renderTarget.Render(element);
+        renderTarget.Render(drawingVisual);
 
         var encoder = new PngBitmapEncoder();
         encoder.Frames.Add(BitmapFrame.Create(renderTarget));

@@ -6,10 +6,12 @@ namespace GoldShopCore.Services;
 public class ClientNoteService
 {
     private readonly ClientNoteRepository _clientNoteRepository;
+    private readonly AuditService _auditService;
 
-    public ClientNoteService(ClientNoteRepository clientNoteRepository)
+    public ClientNoteService(ClientNoteRepository clientNoteRepository, AuditService auditService)
     {
         _clientNoteRepository = clientNoteRepository;
+        _auditService = auditService;
     }
 
     public List<ClientNote> GetNotes() => _clientNoteRepository.GetAll();
@@ -23,11 +25,15 @@ public class ClientNoteService
             CreatedAt = DateTime.Now
         };
 
-        return _clientNoteRepository.Add(note);
+        var id = _clientNoteRepository.Add(note);
+        note.Id = id;
+        _auditService.Log("ClientNote", id, "Create", null, note);
+        return id;
     }
 
     public void UpdateNote(int id, string clientName, string content, DateTime createdAt)
     {
+        var existing = _clientNoteRepository.GetAll().FirstOrDefault(note => note.Id == id);
         var note = new ClientNote
         {
             Id = id,
@@ -37,10 +43,16 @@ public class ClientNoteService
         };
 
         _clientNoteRepository.Update(note);
+        _auditService.Log("ClientNote", id, "Update", existing, note);
     }
 
     public void DeleteNote(int id)
     {
+        var existing = _clientNoteRepository.GetAll().FirstOrDefault(note => note.Id == id);
         _clientNoteRepository.Delete(id);
+        if (existing != null)
+        {
+            _auditService.Log("ClientNote", id, "Delete", existing, null);
+        }
     }
 }

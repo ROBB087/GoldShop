@@ -60,7 +60,7 @@
                 </Button>
 
                 <Grid Grid.Row="1" Grid.ColumnSpan="2">
-                    <Border Width="380"
+                    <Border MaxWidth="420"
                             Background="#FFFFFF"
                             BorderBrush="#D8E5FF"
                             BorderThickness="1"
@@ -78,8 +78,7 @@
                         </Border.Style>
                         <StackPanel Orientation="Horizontal">
                             <materialDesign:PackIcon Kind="Magnify" Width="20" Height="20" VerticalAlignment="Center" Margin="0,0,8,0" />
-                            <TextBox Width="308"
-                                     Margin="0"
+                            <TextBox Margin="0"
                                      Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
                                      ToolTip="{DynamicResource LblSearch}"
                                      materialDesign:HintAssist.Hint="{DynamicResource LblSearch}" />
@@ -118,7 +117,7 @@
                         </TextBlock>
                     </StackPanel>
 
-                    <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                    <WrapPanel Grid.Column="1" HorizontalAlignment="Right">
                         <Button Command="{Binding RefreshCommand}" Style="{StaticResource GhostButton}" Margin="0,0,10,0">
                             <StackPanel Orientation="Horizontal">
                                 <materialDesign:PackIcon Kind="Refresh" Width="18" Height="18" Margin="0,0,6,0" />
@@ -137,7 +136,7 @@
                                 <TextBlock Text="{DynamicResource BtnDeleteMultiple}" />
                             </StackPanel>
                         </Button>
-                    </StackPanel>
+                    </WrapPanel>
                 </Grid>
 
                 <Grid Grid.Row="1">
@@ -178,10 +177,10 @@
                             <DataGridTextColumn Header="{DynamicResource LblClientName}"
                                                 Binding="{Binding ClientName}"
                                                 SortMemberPath="ClientName"
-                                                Width="220"
-                                                MinWidth="180"
+                                                Width="1.2*"
+                                                MinWidth="140"
                                                 ElementStyle="{StaticResource GridCellTextStyle}" />
-                            <DataGridTemplateColumn Header="{DynamicResource LblNoteContent}" SortMemberPath="Content" Width="*" MinWidth="420">
+                            <DataGridTemplateColumn Header="{DynamicResource LblNoteContent}" SortMemberPath="Content" Width="2*" MinWidth="220">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <TextBlock Text="{Binding Content}"
@@ -193,8 +192,8 @@
                             <DataGridTextColumn Header="{DynamicResource LblCreatedAt}"
                                                 Binding="{Binding CreatedAt, StringFormat={}{0:yyyy/MM/dd hh:mm tt}}"
                                                 SortMemberPath="CreatedAt"
-                                                Width="210"
-                                                MinWidth="210"
+                                                Width="1.1*"
+                                                MinWidth="150"
                                                 ElementStyle="{StaticResource GridCellTextStyle}" />
                         </DataGrid.Columns>
                     </DataGrid>

@@ -73,6 +73,10 @@ public partial class App : Application
         if (picker.Template.FindName("PART_TextBox", picker) is DatePickerTextBox textBox)
         {
             textBox.Text = picker.SelectedDate?.ToString("yyyy/MM/dd") ?? string.Empty;
+            textBox.FlowDirection = picker.FlowDirection;
+            textBox.TextAlignment = picker.FlowDirection == FlowDirection.RightToLeft
+                ? TextAlignment.Right
+                : TextAlignment.Left;
         }
     }
 }
