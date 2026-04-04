@@ -197,6 +197,17 @@
                     </Grid.ColumnDefinitions>
                     <TextBlock Text="{Binding PageTitle}" FontSize="20" FontWeight="SemiBold" />
                     <WrapPanel Orientation="Horizontal" Grid.Column="1" HorizontalAlignment="Right">
+                        <Border Background="#FFF7E2"
+                                BorderBrush="#F0DFA7"
+                                BorderThickness="1"
+                                CornerRadius="14"
+                                Padding="12,8"
+                                Margin="0,0,8,0"
+                                VerticalAlignment="Center">
+                            <TextBlock Text="{Binding LicensedToDisplay}"
+                                       FontWeight="SemiBold"
+                                       Foreground="#7A5A00" />
+                        </Border>
                         <Button Content="{DynamicResource BtnBackup}" Style="{StaticResource GhostButton}" Margin="0,0,8,0" Command="{Binding BackupCommand}" ToolTip="{DynamicResource BtnBackup}" />
                         <Button Content="{DynamicResource BtnToggleLang}" Style="{StaticResource GhostButton}" Command="{Binding ToggleLanguageCommand}" ToolTip="{DynamicResource TooltipToggleLanguage}" />
                     </WrapPanel>

@@ -4,8 +4,7 @@
              xmlns:sys="clr-namespace:System;assembly=mscorlib"
              xmlns:behaviors="clr-namespace:GoldShopWpf.Behaviors"
              xmlns:converters="clr-namespace:GoldShopWpf.Converters"
-             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
-             StartupUri="MainWindow.xaml">
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes">
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>

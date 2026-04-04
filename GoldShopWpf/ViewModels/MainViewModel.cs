@@ -11,6 +11,7 @@ public class MainViewModel : ViewModelBase
     private string _activePageKey = "Dashboard";
 
     public System.Collections.ObjectModel.ObservableCollection<ToastMessageViewModel> Toasts => ToastService.Messages;
+    public string LicensedToDisplay => $"Licensed to: {LicenseService.LicensedTo}";
     public DashboardViewModel Dashboard { get; }
     public SuppliersViewModel Suppliers { get; }
     public SupplierDetailsViewModel SupplierDetails { get; }

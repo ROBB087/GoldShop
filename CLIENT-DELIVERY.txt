@@ -1,0 +1,18 @@
+GoldShop Client Delivery
+========================
+
+Files to give the client:
+- GoldShopWpf.exe
+- all files in this same folder
+
+Client activation steps:
+1. Open GoldShopWpf.exe
+2. Copy the Machine ID shown in the activation window
+3. Send the Machine ID to the software owner
+4. Paste the activation key received from the owner
+5. Press activate
+
+Important:
+- The activation key is valid only for this device
+- If the client changes device, a new activation key is required
+- Do not delete license files after activation

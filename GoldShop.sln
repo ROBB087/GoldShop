@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GoldShopWpf", "GoldShopWpf\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GoldShopStressTool", "GoldShopStressTool\GoldShopStressTool.csproj", "{182358B7-F507-472D-8D61-E569A32427E2}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GoldShopLicenseTool", "GoldShopLicenseTool\GoldShopLicenseTool.csproj", "{911E769B-16F3-48BA-8F3D-0596A05D0E7B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -55,6 +57,18 @@ Global
 		{182358B7-F507-472D-8D61-E569A32427E2}.Release|x64.Build.0 = Release|Any CPU
 		{182358B7-F507-472D-8D61-E569A32427E2}.Release|x86.ActiveCfg = Release|Any CPU
 		{182358B7-F507-472D-8D61-E569A32427E2}.Release|x86.Build.0 = Release|Any CPU
+		{911E769B-16F3-48BA-8F3D-0596A05D0E7B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{911E769B-16F3-48BA-8F3D-0596A05D0E7B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{911E769B-16F3-48BA-8F3D-0596A05D0E7B}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{911E769B-16F3-48BA-8F3D-0596A05D0E7B}.Debug|x64.Build.0 = Debug|Any CPU
+		{911E769B-16F3-48BA-8F3D-0596A05D0E7B}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{911E769B-16F3-48BA-8F3D-0596A05D0E7B}.Debug|x86.Build.0 = Debug|Any CPU
+		{911E769B-16F3-48BA-8F3D-0596A05D0E7B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{911E769B-16F3-48BA-8F3D-0596A05D0E7B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{911E769B-16F3-48BA-8F3D-0596A05D0E7B}.Release|x64.ActiveCfg = Release|Any CPU
+		{911E769B-16F3-48BA-8F3D-0596A05D0E7B}.Release|x64.Build.0 = Release|Any CPU
+		{911E769B-16F3-48BA-8F3D-0596A05D0E7B}.Release|x86.ActiveCfg = Release|Any CPU
+		{911E769B-16F3-48BA-8F3D-0596A05D0E7B}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

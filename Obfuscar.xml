@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<Obfuscator>
+  <Var name="InPath" value="GoldShopCore\bin\Release\net8.0" />
+  <Var name="OutPath" value="publish\obfuscated-core" />
+
+  <!--
+    WPF/XAML assemblies are intentionally excluded here to avoid breaking view bindings.
+    This still protects the business/data layer, which contains the heavier logic.
+  -->
+  <Var name="KeepPublicApi" value="false" />
+  <Var name="HidePrivateApi" value="true" />
+  <Var name="ReuseNames" value="false" />
+
+  <Module file="$(InPath)\GoldShopCore.dll" />
+</Obfuscator>

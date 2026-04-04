@@ -15,8 +15,19 @@ public partial class App : Application
         TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
 
         base.OnStartup(e);
-        AppServices.Initialize();
         LocalizationService.SetLanguage("ar");
+
+        if (!LicenseService.EnsureActivated())
+        {
+            Shutdown();
+            return;
+        }
+
+        AppServices.Initialize();
+
+        var mainWindow = new MainWindow();
+        MainWindow = mainWindow;
+        mainWindow.Show();
     }
 
     private void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
