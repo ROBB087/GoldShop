@@ -41,15 +41,6 @@ WHERE Id = $id;";
         return reader.Read() ? MapDiscount(reader) : null;
     }
 
-    public int Add(DiscountRecord discount)
-    {
-        using var connection = Database.OpenConnection();
-        using var sqliteTransaction = connection.BeginTransaction();
-        var id = Add(connection, sqliteTransaction, discount);
-        sqliteTransaction.Commit();
-        return id;
-    }
-
     public int Add(SqliteConnection connection, SqliteTransaction transaction, DiscountRecord discount)
     {
         using var command = connection.CreateCommand();

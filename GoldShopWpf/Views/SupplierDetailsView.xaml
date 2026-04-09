@@ -320,7 +320,6 @@
                                             </DataTemplate>
                                         </DataGridTemplateColumn.CellTemplate>
                                     </DataGridTemplateColumn>
-                                    <DataGridTextColumn Header="{DynamicResource LblDate}" Binding="{Binding Date, StringFormat={}{0:yyyy/MM/dd}}" Width="1.1*" MinWidth="110" ElementStyle="{StaticResource GridCellTextStyle}" />
                                     <DataGridTextColumn Header="{DynamicResource LblTrader}" Binding="{Binding SupplierName}" Width="1.7*" MinWidth="140" ElementStyle="{StaticResource GridCellTextStyle}" />
                                     <DataGridTemplateColumn Header="{DynamicResource LblType}" Width="1.5*" MinWidth="120">
                                         <DataGridTemplateColumn.CellTemplate>
@@ -343,10 +342,13 @@
                                         </DataGridTemplateColumn.CellTemplate>
                                     </DataGridTemplateColumn>
                                     <DataGridTextColumn Header="{DynamicResource LblWeight}" Binding="{Binding OriginalWeight, Converter={StaticResource MoneyFormatConverter}, ConverterParameter='g'}" Width="1.1*" MinWidth="95" ElementStyle="{StaticResource GridCellTextStyle}" />
-                                    <DataGridTextColumn Header="{DynamicResource LblEquivalent21}" Binding="{Binding Equivalent21, Converter={StaticResource MoneyFormatConverter}, ConverterParameter='g'}" Width="1.2*" MinWidth="110" ElementStyle="{StaticResource GridCellTextStyle}" />
                                     <DataGridTextColumn Header="{DynamicResource LblKarat}" Binding="{Binding OriginalKarat}" Width="0.8*" MinWidth="70" ElementStyle="{StaticResource GridCellTextStyle}" />
+                                    <DataGridTextColumn Header="{DynamicResource LblEquivalent21}" Binding="{Binding Equivalent21, Converter={StaticResource MoneyFormatConverter}, ConverterParameter='g'}" Width="1.2*" MinWidth="110" ElementStyle="{StaticResource GridCellTextStyle}" />
+                                    <DataGridTextColumn Header="{DynamicResource LblItem}" Binding="{Binding ItemName}" Width="1.2*" MinWidth="110" ElementStyle="{StaticResource GridCellTextStyle}" />
                                     <DataGridTextColumn Header="{DynamicResource LblTotalManufacturing}" Binding="{Binding TotalManufacturing, Converter={StaticResource MoneyFormatConverter}}" Width="1.3*" MinWidth="120" ElementStyle="{StaticResource GridCellTextStyle}" />
                                     <DataGridTextColumn Header="{DynamicResource LblTotalImprovement}" Binding="{Binding TotalImprovement, Converter={StaticResource MoneyFormatConverter}}" Width="1.3*" MinWidth="120" ElementStyle="{StaticResource GridCellTextStyle}" />
+                                    <DataGridTextColumn Header="{DynamicResource LblNotes}" Binding="{Binding Notes}" Width="1.5*" MinWidth="150" ElementStyle="{StaticResource GridCellTextStyle}" />
+                                    <DataGridTextColumn Header="{DynamicResource LblDate}" Binding="{Binding Date, StringFormat={}{0:yyyy/MM/dd}}" Width="1.1*" MinWidth="110" ElementStyle="{StaticResource GridCellTextStyle}" />
                                     <DataGridTemplateColumn Header="..." Width="104">
                                         <DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate>
@@ -472,11 +474,13 @@
                                                         <Setter TargetName="DiscountTypeBadge" Property="Background" Value="#FDF2FA" />
                                                         <Setter TargetName="DiscountTypeBadge" Property="BorderBrush" Value="#F4D5EA" />
                                                         <Setter TargetName="DiscountTypeText" Property="Foreground" Value="#C11574" />
+                                                        <Setter TargetName="DiscountTypeText" Property="Text" Value="مصنعية" />
                                                     </DataTrigger>
                                                     <DataTrigger Binding="{Binding Type}" Value="Improvement">
                                                         <Setter TargetName="DiscountTypeBadge" Property="Background" Value="#ECFDF3" />
                                                         <Setter TargetName="DiscountTypeBadge" Property="BorderBrush" Value="#ABEFC6" />
                                                         <Setter TargetName="DiscountTypeText" Property="Foreground" Value="#067647" />
+                                                        <Setter TargetName="DiscountTypeText" Property="Text" Value="تحسين" />
                                                     </DataTrigger>
                                                 </DataTemplate.Triggers>
                                             </DataTemplate>

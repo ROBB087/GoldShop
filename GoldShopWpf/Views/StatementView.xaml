@@ -56,10 +56,10 @@
                     </StackPanel>
 
                     <WrapPanel Grid.Column="1" VerticalAlignment="Top">
-                        <Button Style="{StaticResource PrimaryButton}" Margin="0,0,10,0" Command="{Binding GenerateCommand}" ToolTip="{DynamicResource BtnApply}" MinWidth="136">
+                        <Button Style="{StaticResource PrimaryButton}" Margin="0,0,10,0" Command="{Binding GenerateCommand}" ToolTip="{DynamicResource BtnUpdateDates}" MinWidth="136">
                             <StackPanel Orientation="Horizontal">
                                 <materialDesign:PackIcon Kind="Refresh" Width="18" Height="18" Margin="0,0,6,0" />
-                                <TextBlock Text="{DynamicResource BtnApply}" />
+                                <TextBlock Text="{DynamicResource BtnUpdateDates}" />
                             </StackPanel>
                         </Button>
                         <Button Style="{StaticResource GhostButton}" Command="{Binding PrintCommand}" ToolTip="{DynamicResource BtnPrint}" MinWidth="118">
@@ -124,27 +124,6 @@
                                        Foreground="#8A6C00" />
                         </Grid>
                     </Border>
-
-                    <WrapPanel Margin="0,0,0,18">
-                        <Border Background="#F8FBFF" BorderBrush="#DCEBFF" BorderThickness="1" CornerRadius="16" Padding="16,12" Margin="0,0,12,12">
-                            <StackPanel MinWidth="150">
-                                <TextBlock Text="{DynamicResource LblTotalGoldReport}" FontSize="12" Foreground="{StaticResource MutedTextBrush}" />
-                                <TextBlock Text="{Binding TotalWeightDisplay}" FontSize="22" FontWeight="Bold" Margin="0,8,0,0" />
-                            </StackPanel>
-                        </Border>
-                        <Border Background="#FFF9F0" BorderBrush="#F3DFC3" BorderThickness="1" CornerRadius="16" Padding="16,12" Margin="0,0,12,12">
-                            <StackPanel MinWidth="150">
-                                <TextBlock Text="{DynamicResource LblTotalManufacturingReport}" FontSize="12" Foreground="{StaticResource MutedTextBrush}" />
-                                <TextBlock Text="{Binding TotalManufacturingDisplay}" FontSize="22" FontWeight="Bold" Margin="0,8,0,0" />
-                            </StackPanel>
-                        </Border>
-                        <Border Background="#F5FAF7" BorderBrush="#D7EAD9" BorderThickness="1" CornerRadius="16" Padding="16,12" Margin="0,0,0,12">
-                            <StackPanel MinWidth="150">
-                                <TextBlock Text="{DynamicResource LblTotalImprovement}" FontSize="12" Foreground="{StaticResource MutedTextBrush}" />
-                                <TextBlock Text="{Binding TotalImprovementDisplay}" FontSize="22" FontWeight="Bold" Margin="0,8,0,0" />
-                            </StackPanel>
-                        </Border>
-                    </WrapPanel>
 
                     <TextBlock Text="{DynamicResource ReceiptTransactionTable}" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,12" />
                     <DataGrid ItemsSource="{Binding Rows}"

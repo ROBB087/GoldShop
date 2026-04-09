@@ -58,7 +58,7 @@ public partial class TransactionWindow : Window
             : UiText.L(transaction == null ? "WindowAddTransaction" : "WindowEditTransaction");
         HeaderTitleText.Text = Title;
 
-        SupplierCombo.ItemsSource = suppliers.ToList();
+        SupplierCombo.ItemsSource = suppliers;
         SupplierCombo.SelectedValue = supplierId ?? 0;
         if (SupplierCombo.SelectedIndex < 0 && SupplierCombo.Items.Count > 0)
         {

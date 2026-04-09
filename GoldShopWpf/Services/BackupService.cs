@@ -31,6 +31,9 @@ public class BackupService
         File.Copy(Database.DbFilePath, destinationPath, true);
     }
 
+    public string BuildManualBackupFileName()
+        => $"goldshop-backup-{DateTime.Now:yyyyMMdd}.db";
+
     public void RestoreBackup(string sourcePath)
     {
         var restoreBackupPath = Path.Combine(_backupDirectory, $"goldshop-pre-restore-{DateTime.Now:yyyyMMdd-HHmmss}.db");

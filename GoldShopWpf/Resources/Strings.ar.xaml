@@ -21,6 +21,7 @@
   <sys:String x:Key="BtnAddNote">إضافة ملاحظة</sys:String>
   <sys:String x:Key="BtnPrint">طباعة</sys:String>
   <sys:String x:Key="BtnApply">حفظ</sys:String>
+  <sys:String x:Key="BtnUpdateDates">تحديث التاريخ</sys:String>
   <sys:String x:Key="BtnClear">إلغاء</sys:String>
   <sys:String x:Key="BtnReset">إعادة تعيين</sys:String>
   <sys:String x:Key="BtnBackup">نسخ قاعدة البيانات</sys:String>
@@ -127,6 +128,7 @@
   <sys:String x:Key="SubStatementWindow">معاينة كشف التاجر القابل للطباعة قبل الإرسال أو الطباعة.</sys:String>
   <sys:String x:Key="MsgFromBeforeTo">تاريخ البداية يجب أن يكون قبل تاريخ النهاية.</sys:String>
   <sys:String x:Key="MsgBackupCreated">تم إنشاء النسخة الاحتياطية بنجاح.</sys:String>
+  <sys:String x:Key="MsgWhatsAppManualShare">تم فتح WhatsApp برسالة جاهزة. أرفق صورة الكشف يدوياً لأن Click to Chat لا يرسل ملفات محلية مباشرة.</sys:String>
   <sys:String x:Key="MsgDeleteTraderConfirm">هل تريد حذف التاجر {0}؟ سيتم حذف جميع الحركات والخصومات المرتبطة به.</sys:String>
   <sys:String x:Key="MsgDeleteTransactionConfirm">هل تريد حذف الحركة المحددة؟</sys:String>
   <sys:String x:Key="MsgDeleteTransactionConfirmShort">هل تريد حذف هذه الحركة؟</sys:String>

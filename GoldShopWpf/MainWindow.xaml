@@ -8,7 +8,7 @@
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         mc:Ignorable="d"
         FlowDirection="{DynamicResource AppFlowDirection}"
-        Title="{DynamicResource LblAppTitle}" Height="820" Width="1366" MinWidth="1180" MinHeight="760" WindowStartupLocation="CenterScreen">
+        Title="{DynamicResource LblAppTitle}" Height="820" Width="1366" MinWidth="1180" MinHeight="760" WindowStartupLocation="CenterScreen" WindowState="Maximized">
     <Window.DataContext>
         <vm:MainViewModel />
     </Window.DataContext>
@@ -25,9 +25,6 @@
         </DataTemplate>
         <DataTemplate DataType="{x:Type vm:TransactionsViewModel}">
             <views:TransactionsView />
-        </DataTemplate>
-        <DataTemplate DataType="{x:Type vm:WeeklyReportViewModel}">
-            <views:WeeklyReportView />
         </DataTemplate>
         <DataTemplate DataType="{x:Type vm:StatementViewModel}">
             <views:StatementView />
@@ -135,16 +132,6 @@
                         </StackPanel>
                     </Grid>
                 </Button>
-                <Button Style="{StaticResource SidebarButton}" Command="{Binding ShowWeeklyReportCommand}" ToolTip="{DynamicResource TooltipWeeklyReport}">
-                    <Grid>
-                        <Grid.ColumnDefinitions><ColumnDefinition Width="4" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
-                        <Border Grid.Column="0" Background="{StaticResource GoldBrush}" CornerRadius="999"><Border.Style><Style TargetType="Border"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding ActivePageKey, Converter={StaticResource ActivePageMatchConverter}, ConverterParameter=WeeklyReport}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></Border.Style></Border>
-                        <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="12,0,0,0">
-                            <materialDesign:PackIcon Kind="ChartLine" Width="18" Height="18" Margin="0,0,10,0"><materialDesign:PackIcon.Style><Style TargetType="materialDesign:PackIcon" BasedOn="{StaticResource {x:Type materialDesign:PackIcon}}"><Setter Property="Foreground" Value="{StaticResource SidebarIconBrush}" /><Style.Triggers><DataTrigger Binding="{Binding ActivePageKey, Converter={StaticResource ActivePageMatchConverter}, ConverterParameter=WeeklyReport}" Value="True"><Setter Property="Foreground" Value="{StaticResource GoldBrush}" /></DataTrigger></Style.Triggers></Style></materialDesign:PackIcon.Style></materialDesign:PackIcon>
-                            <TextBlock Text="{DynamicResource NavWeeklyReport}" TextWrapping="NoWrap"><TextBlock.Style><Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}"><Setter Property="Foreground" Value="{DynamicResource SidebarTextBrush}" /><Style.Triggers><DataTrigger Binding="{Binding ActivePageKey, Converter={StaticResource ActivePageMatchConverter}, ConverterParameter=WeeklyReport}" Value="True"><Setter Property="Foreground" Value="{StaticResource GoldBrush}" /></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock>
-                        </StackPanel>
-                    </Grid>
-                </Button>
                 <Button Style="{StaticResource SidebarButton}" Command="{Binding ShowStatementCommand}" ToolTip="{DynamicResource TooltipStatement}">
                     <Grid>
                         <Grid.ColumnDefinitions><ColumnDefinition Width="4" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
@@ -197,17 +184,6 @@
                     </Grid.ColumnDefinitions>
                     <TextBlock Text="{Binding PageTitle}" FontSize="20" FontWeight="SemiBold" />
                     <WrapPanel Orientation="Horizontal" Grid.Column="1" HorizontalAlignment="Right">
-                        <Border Background="#FFF7E2"
-                                BorderBrush="#F0DFA7"
-                                BorderThickness="1"
-                                CornerRadius="14"
-                                Padding="12,8"
-                                Margin="0,0,8,0"
-                                VerticalAlignment="Center">
-                            <TextBlock Text="{Binding LicensedToDisplay}"
-                                       FontWeight="SemiBold"
-                                       Foreground="#7A5A00" />
-                        </Border>
                         <Button Content="{DynamicResource BtnBackup}" Style="{StaticResource GhostButton}" Margin="0,0,8,0" Command="{Binding BackupCommand}" ToolTip="{DynamicResource BtnBackup}" />
                         <Button Content="{DynamicResource BtnToggleLang}" Style="{StaticResource GhostButton}" Command="{Binding ToggleLanguageCommand}" ToolTip="{DynamicResource TooltipToggleLanguage}" />
                     </WrapPanel>

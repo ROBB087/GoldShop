@@ -60,12 +60,13 @@
                 </Button>
 
                 <Grid Grid.Row="1" Grid.ColumnSpan="2">
-                    <Border MaxWidth="420"
+                    <Border MaxWidth="520"
+                            MinWidth="320"
                             Background="#FFFFFF"
                             BorderBrush="#D8E5FF"
                             BorderThickness="1"
                             CornerRadius="18"
-                            Padding="14,10">
+                            Padding="16,12">
                         <Border.Style>
                             <Style TargetType="Border">
                                 <Setter Property="HorizontalAlignment" Value="Right" />
@@ -76,23 +77,36 @@
                                 </Style.Triggers>
                             </Style>
                         </Border.Style>
-                        <StackPanel Orientation="Horizontal">
-                            <materialDesign:PackIcon Kind="Magnify" Width="20" Height="20" VerticalAlignment="Center" Margin="0,0,8,0" />
-                            <TextBox Margin="0"
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBox Grid.Column="0"
+                                     Margin="0"
+                                     MinHeight="44"
                                      Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
                                      ToolTip="{DynamicResource LblSearch}"
                                      materialDesign:HintAssist.Hint="{DynamicResource LblSearch}" />
-                        </StackPanel>
+                            <materialDesign:PackIcon Grid.Column="1"
+                                                     Kind="Magnify"
+                                                     Width="22"
+                                                     Height="22"
+                                                     VerticalAlignment="Center"
+                                                     HorizontalAlignment="Center"
+                                                     Margin="12,0,0,0" />
+                        </Grid>
                     </Border>
                 </Grid>
             </Grid>
         </Border>
 
         <Border Grid.Row="1" Style="{StaticResource CardContainer}" BorderBrush="#E7ECF2">
-            <Grid>
+            <Grid IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBooleanConverter}}">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
                 <Grid Grid.Row="0" Margin="0,0,0,16">
@@ -103,18 +117,9 @@
 
                     <StackPanel>
                         <TextBlock Text="{DynamicResource LblNotesRegister}" FontSize="18" FontWeight="SemiBold" />
-                        <TextBlock Foreground="{StaticResource MutedTextBrush}" Margin="0,6,0,0">
-                            <TextBlock.Style>
-                                <Style TargetType="TextBlock">
-                                    <Setter Property="Text" Value="{Binding Notes.Count, StringFormat={}{0} records}" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=UserControl}, Path=FlowDirection}" Value="RightToLeft">
-                                            <Setter Property="Text" Value="{Binding Notes.Count, StringFormat=عدد الملاحظات: {0}}" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </TextBlock.Style>
-                        </TextBlock>
+                        <TextBlock Text="{Binding TotalRecords, StringFormat=عدد الملاحظات: {0}}"
+                                   Foreground="{StaticResource MutedTextBrush}"
+                                   Margin="0,6,0,0" />
                     </StackPanel>
 
                     <WrapPanel Grid.Column="1" HorizontalAlignment="Right">
@@ -140,7 +145,7 @@
                 </Grid>
 
                 <Grid Grid.Row="1">
-                    <DataGrid ItemsSource="{Binding NotesView}"
+                    <DataGrid ItemsSource="{Binding Notes}"
                               SelectedItem="{Binding SelectedNote, Mode=TwoWay}"
                               AutoGenerateColumns="False"
                               CanUserAddRows="False"
@@ -153,7 +158,9 @@
                               SelectionUnit="FullRow"
                               FrozenColumnCount="1"
                               KeyboardNavigation.TabNavigation="Continue"
-                              ScrollViewer.IsDeferredScrollingEnabled="True">
+                              ScrollViewer.IsDeferredScrollingEnabled="True"
+                              ScrollViewer.VerticalScrollBarVisibility="Auto"
+                              ScrollViewer.HorizontalScrollBarVisibility="Auto">
                         <DataGrid.Columns>
                             <DataGridTemplateColumn Width="68" MinWidth="68" SortMemberPath="IsSelected">
                                 <DataGridTemplateColumn.HeaderTemplate>
@@ -222,6 +229,34 @@
                         </StackPanel>
                     </Border>
                 </Grid>
+
+                <Border Grid.Row="2" Background="#F8FAFC" BorderBrush="#E2E8F0" BorderThickness="1,1,1,0" Padding="10,8">
+                    <WrapPanel>
+                        <Border Padding="12,8" Background="#FFFFFF" BorderBrush="#D0D5DD" BorderThickness="1" CornerRadius="12" Margin="0,0,12,8">
+                            <TextBlock Text="{Binding RowsCountLabel}" FontWeight="SemiBold" Foreground="#344054" />
+                        </Border>
+                        <Border Padding="12,8" Background="#FFFFFF" BorderBrush="#D0D5DD" BorderThickness="1" CornerRadius="12" Margin="0,0,8,8">
+                            <TextBlock Text="{Binding PageSummary}" FontWeight="SemiBold" Foreground="#344054" />
+                        </Border>
+                        <WrapPanel>
+                            <Button Command="{Binding PreviousPageCommand}" Style="{StaticResource CompactToolbarButton}" MinWidth="74" Margin="0,0,8,8">
+                                <TextBlock Text="{DynamicResource BtnPreviousPage}" />
+                            </Button>
+                            <Button Command="{Binding NextPageCommand}" Style="{StaticResource CompactToolbarButton}" MinWidth="74" Margin="0,0,0,8">
+                                <TextBlock Text="{DynamicResource BtnNextPage}" />
+                            </Button>
+                        </WrapPanel>
+                    </WrapPanel>
+                </Border>
+
+                <Border Grid.RowSpan="3" Visibility="{Binding IsBusyVisible, Converter={StaticResource BooleanToVisibilityConverter}}" Background="#B3FFFFFF">
+                    <Border Style="{StaticResource LoadingOverlayCard}">
+                        <StackPanel>
+                            <ProgressBar IsIndeterminate="True" Width="180" Height="6" Margin="0,0,0,14" />
+                            <TextBlock Text="{Binding BusyMessage}" FontWeight="SemiBold" HorizontalAlignment="Center" />
+                        </StackPanel>
+                    </Border>
+                </Border>
             </Grid>
         </Border>
     </Grid>

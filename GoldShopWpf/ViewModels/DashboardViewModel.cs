@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Media;
+using GoldShopCore.Models;
 using GoldShopWpf.Services;
 
 namespace GoldShopWpf.ViewModels;
@@ -15,6 +16,7 @@ public class DashboardViewModel : ViewModelBase
     private decimal _improvementDiscounts;
     private decimal _totalManufacturingThisWeek;
     private decimal _totalImprovementThisWeek;
+    private int _recentTransactionsDisplayLimit = 5;
 
     public decimal TotalGold21
     {
@@ -90,11 +92,42 @@ public class DashboardViewModel : ViewModelBase
 
     public decimal FinalManufacturing => TotalManufacturing - ManufacturingDiscounts;
     public decimal FinalImprovement => TotalImprovement - ImprovementDiscounts;
+    public string TraderCountLabel => LocalizationService.CurrentLanguage == "ar"
+        ? $"التجار النشطون: {SupplierCount}"
+        : $"Active Traders: {SupplierCount}";
+    public string RecentTransactionsTitle => LocalizationService.CurrentLanguage == "ar"
+        ? "آخر الحركات"
+        : "Recent Transactions";
+    public string RecentTransactionsSub => LocalizationService.CurrentLanguage == "ar"
+        ? $"آخر {RecentTransactionsDisplayLimit} حركة مسجلة لقراءة سريعة من لوحة التحكم."
+        : $"The latest {RecentTransactionsDisplayLimit} recorded movements for a quick dashboard check.";
+    public string EmptyRecentTransactionsTitle => LocalizationService.CurrentLanguage == "ar"
+        ? "لا توجد حركات بعد"
+        : "No transactions yet";
+    public string EmptyRecentTransactionsSub => LocalizationService.CurrentLanguage == "ar"
+        ? "أضف أول حركة وسيظهر أحدث النشاط هنا مباشرة."
+        : "Add the first transaction and the latest activity will appear here.";
 
     public ObservableCollection<BarItem> SupplierBalanceBars { get; } = new();
     public PointCollection GoldLinePoints { get; } = new();
     public PointCollection PaymentLinePoints { get; } = new();
     public ObservableCollection<string> GoldPaymentLabels { get; } = new();
+    public ObservableCollection<DashboardRecentTransactionItem> RecentTransactions { get; } = new();
+    public ObservableCollection<DashboardRecentTransactionItem> VisibleRecentTransactions { get; } = new();
+    public bool HasRecentTransactions => VisibleRecentTransactions.Count > 0;
+
+    public int RecentTransactionsDisplayLimit
+    {
+        get => _recentTransactionsDisplayLimit;
+        set
+        {
+            if (SetProperty(ref _recentTransactionsDisplayLimit, value))
+            {
+                UpdateVisibleRecentTransactions();
+                OnPropertyChanged(nameof(RecentTransactionsSub));
+            }
+        }
+    }
 
     public RelayCommand RefreshCommand { get; }
     public RelayCommand AddSupplierCommand { get; }
@@ -134,6 +167,8 @@ public class DashboardViewModel : ViewModelBase
 
         BuildSupplierBalanceChart(suppliers, goldBySupplier);
         BuildGoldPaymentChart(transactionService);
+        BuildRecentTransactions(suppliers, transactionService);
+        RefreshLocalizedLabels();
     }
 
     private void BuildSupplierBalanceChart(List<GoldShopCore.Models.Supplier> suppliers, Dictionary<int, decimal> totals)
@@ -184,5 +219,64 @@ public class DashboardViewModel : ViewModelBase
             PaymentLinePoints.Add(new Point(x, payY));
             GoldPaymentLabels.Add(i % 5 == 0 || i == dates.Count - 1 ? dates[i].ToString("MM-dd") : string.Empty);
         }
+    }
+
+    private void BuildRecentTransactions(List<GoldShopCore.Models.Supplier> suppliers, GoldShopCore.Services.TransactionService transactionService)
+    {
+        var isArabic = LocalizationService.CurrentLanguage == "ar";
+        var traderNames = suppliers.ToDictionary(item => item.Id, item => item.Name);
+        var recentTransactions = transactionService.GetTransactionsPage(null, null, null, 1, 10).Items;
+
+        RecentTransactions.Clear();
+        foreach (var transaction in recentTransactions)
+        {
+            var isCashPayment = transaction.Category == TransactionCategories.CashPayment;
+            var metricDisplay = isCashPayment
+                ? isArabic
+                    ? $"{Math.Abs(transaction.TotalManufacturing + transaction.TotalImprovement):0.##} ج.م"
+                    : $"{Math.Abs(transaction.TotalManufacturing + transaction.TotalImprovement):0.##} EGP"
+                : $"{transaction.Equivalent21:0.####} g";
+
+            var detailsLine = isCashPayment
+                ? isArabic ? "سداد مصنعية وتحسين" : "Manufacturing and refining settlement"
+                : $"{transaction.OriginalWeight:0.####} g • {transaction.OriginalKarat}K";
+
+            RecentTransactions.Add(new DashboardRecentTransactionItem
+            {
+                TraderName = traderNames.TryGetValue(transaction.SupplierId, out var traderName)
+                    ? traderName
+                    : isArabic ? "تاجر غير معروف" : "Unknown trader",
+                Category = transaction.Category,
+                Type = transaction.Type,
+                ItemName = string.IsNullOrWhiteSpace(transaction.ItemName)
+                    ? isArabic ? "بدون صنف" : "No item"
+                    : transaction.ItemName!,
+                DetailsLine = detailsLine,
+                MetricDisplay = metricDisplay,
+                DateDisplay = transaction.Date.ToString("yyyy/MM/dd")
+            });
+        }
+
+        UpdateVisibleRecentTransactions();
+    }
+
+    private void UpdateVisibleRecentTransactions()
+    {
+        VisibleRecentTransactions.Clear();
+        foreach (var transaction in RecentTransactions.Take(RecentTransactionsDisplayLimit))
+        {
+            VisibleRecentTransactions.Add(transaction);
+        }
+
+        OnPropertyChanged(nameof(HasRecentTransactions));
+    }
+
+    private void RefreshLocalizedLabels()
+    {
+        OnPropertyChanged(nameof(TraderCountLabel));
+        OnPropertyChanged(nameof(RecentTransactionsTitle));
+        OnPropertyChanged(nameof(RecentTransactionsSub));
+        OnPropertyChanged(nameof(EmptyRecentTransactionsTitle));
+        OnPropertyChanged(nameof(EmptyRecentTransactionsSub));
     }
 }

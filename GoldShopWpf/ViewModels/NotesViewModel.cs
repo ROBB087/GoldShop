@@ -2,7 +2,6 @@ using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Windows;
-using System.Windows.Data;
 using GoldShopWpf.Services;
 using GoldShopWpf.Views;
 
@@ -10,11 +9,15 @@ namespace GoldShopWpf.ViewModels;
 
 public class NotesViewModel : ViewModelBase
 {
+    private const int PageSize = 50;
+
     private string _searchText = string.Empty;
     private NotesGridItem? _selectedNote;
+    private int _currentPage = 1;
+    private int _totalPages = 1;
+    private int _totalRecords;
 
     public ObservableCollection<NotesGridItem> Notes { get; } = new();
-    public ICollectionView NotesView { get; }
 
     public string SearchText
     {
@@ -23,8 +26,8 @@ public class NotesViewModel : ViewModelBase
         {
             if (SetProperty(ref _searchText, value))
             {
-                NotesView.Refresh();
-                RefreshSelectionState();
+                CurrentPage = 1;
+                Load();
             }
         }
     }
@@ -41,23 +44,67 @@ public class NotesViewModel : ViewModelBase
         }
     }
 
+    public int CurrentPage
+    {
+        get => _currentPage;
+        private set
+        {
+            if (SetProperty(ref _currentPage, value))
+            {
+                OnPropertyChanged(nameof(PageSummary));
+                PreviousPageCommand.RaiseCanExecuteChanged();
+                NextPageCommand.RaiseCanExecuteChanged();
+            }
+        }
+    }
+
+    public int TotalPages
+    {
+        get => _totalPages;
+        private set
+        {
+            if (SetProperty(ref _totalPages, value))
+            {
+                OnPropertyChanged(nameof(PageSummary));
+                PreviousPageCommand.RaiseCanExecuteChanged();
+                NextPageCommand.RaiseCanExecuteChanged();
+            }
+        }
+    }
+
+    public int TotalRecords
+    {
+        get => _totalRecords;
+        private set
+        {
+            if (SetProperty(ref _totalRecords, value))
+            {
+                OnPropertyChanged(nameof(PageSummary));
+            }
+        }
+    }
+
+    public string PageSummary => UiText.Format("LblPageSummary", CurrentPage, TotalPages, TotalRecords);
+    public string RowsCountLabel => UiText.Format("LblRows", Notes.Count);
+    public bool HasPreviousPage => CurrentPage > 1;
+    public bool HasNextPage => CurrentPage < TotalPages;
+
     public bool? AreAllVisibleSelected
     {
         get
         {
-            var visible = GetVisibleNotes().ToList();
-            if (visible.Count == 0)
+            if (Notes.Count == 0)
             {
                 return false;
             }
 
-            var selectedCount = visible.Count(note => note.IsSelected);
+            var selectedCount = Notes.Count(note => note.IsSelected);
             if (selectedCount == 0)
             {
                 return false;
             }
 
-            return selectedCount == visible.Count ? true : null;
+            return selectedCount == Notes.Count ? true : null;
         }
         set
         {
@@ -66,7 +113,7 @@ public class NotesViewModel : ViewModelBase
                 return;
             }
 
-            foreach (var note in GetVisibleNotes())
+            foreach (var note in Notes)
             {
                 note.IsSelected = value.Value;
             }
@@ -77,41 +124,63 @@ public class NotesViewModel : ViewModelBase
 
     public int CheckedCount => Notes.Count(note => note.IsSelected);
 
-    public RelayCommand AddCommand { get; }
-    public RelayCommand EditCommand { get; }
-    public RelayCommand DeleteCommand { get; }
-    public RelayCommand RefreshCommand { get; }
+    public AsyncRelayCommand AddCommand { get; }
+    public AsyncRelayCommand EditCommand { get; }
+    public AsyncRelayCommand DeleteCommand { get; }
+    public AsyncRelayCommand RefreshCommand { get; }
+    public AsyncRelayCommand PreviousPageCommand { get; }
+    public AsyncRelayCommand NextPageCommand { get; }
 
     public NotesViewModel()
     {
-        NotesView = CollectionViewSource.GetDefaultView(Notes);
-        NotesView.Filter = FilterNote;
-        NotesView.SortDescriptions.Add(new SortDescription(nameof(NotesGridItem.CreatedAt), ListSortDirection.Descending));
         Notes.CollectionChanged += OnNotesCollectionChanged;
 
-        AddCommand = new RelayCommand(_ => AddNote());
-        EditCommand = new RelayCommand(_ => EditNote(), _ => GetEditableNote() != null);
-        DeleteCommand = new RelayCommand(_ => DeleteNotes(), _ => GetDeleteTargets().Count > 0);
-        RefreshCommand = new RelayCommand(_ => Load());
+        AddCommand = TrackCommand(new AsyncRelayCommand(_ => AddNoteAsync(), _ => !IsBusy));
+        EditCommand = TrackCommand(new AsyncRelayCommand(_ => EditNoteAsync(), _ => !IsBusy && GetEditableNote() != null));
+        DeleteCommand = TrackCommand(new AsyncRelayCommand(_ => DeleteNotesAsync(), _ => !IsBusy && GetDeleteTargets().Count > 0));
+        RefreshCommand = TrackCommand(new AsyncRelayCommand(_ => LoadAsync(), _ => !IsBusy));
+        PreviousPageCommand = TrackCommand(new AsyncRelayCommand(_ => ChangePageAsync(-1), _ => !IsBusy && HasPreviousPage));
+        NextPageCommand = TrackCommand(new AsyncRelayCommand(_ => ChangePageAsync(1), _ => !IsBusy && HasNextPage));
 
         Load();
     }
 
     public void Load()
     {
-        Notes.Clear();
-        SelectedNote = null;
-
-        foreach (var note in AppServices.ClientNoteService.GetNotes())
-        {
-            AddNoteRow(note.Id, note.ClientName, note.Content, note.CreatedAt);
-        }
-
-        NotesView.Refresh();
-        RefreshSelectionState();
+        ObserveBackgroundTask(LoadAsync(), "NotesViewModel.Load");
     }
 
-    private void AddNote()
+    public async Task LoadAsync()
+    {
+        await RunBusyAsync("Loading notes...", async () =>
+        {
+            var requestedPage = CurrentPage;
+            var page = await Task.Run(() => AppServices.ClientNoteService.GetNotesPage(SearchText, requestedPage, PageSize));
+
+            var effectiveTotalPages = Math.Max(page.TotalPages, 1);
+            if (requestedPage > effectiveTotalPages)
+            {
+                CurrentPage = effectiveTotalPages;
+                page = await Task.Run(() => AppServices.ClientNoteService.GetNotesPage(SearchText, CurrentPage, PageSize));
+            }
+
+            TotalRecords = page.TotalCount;
+            TotalPages = Math.Max(page.TotalPages, 1);
+
+            Notes.Clear();
+            SelectedNote = null;
+
+            foreach (var note in page.Items)
+            {
+                AddNoteRow(note.Id, note.ClientName, note.Content, note.CreatedAt);
+            }
+
+            OnPropertyChanged(nameof(RowsCountLabel));
+            RefreshSelectionState();
+        }, UiText.L("MsgGenericError"));
+    }
+
+    private async Task AddNoteAsync()
     {
         var window = new NoteWindow
         {
@@ -123,12 +192,17 @@ public class NotesViewModel : ViewModelBase
             return;
         }
 
-        AppServices.ClientNoteService.AddNote(window.ClientName, window.NoteContent);
-        Load();
+        await RunBusyAsync("Saving note...", async () =>
+        {
+            await Task.Run(() => AppServices.ClientNoteService.AddNote(window.ClientName, window.NoteContent));
+        }, string.Empty, rethrow: true);
+
+        CurrentPage = 1;
+        await LoadAsync();
         MessageBox.Show(UiText.L("MsgNoteSaved"), UiText.L("TitleNotes"), MessageBoxButton.OK, MessageBoxImage.Information);
     }
 
-    private void EditNote()
+    private async Task EditNoteAsync()
     {
         var editable = GetEditableNote();
         if (editable == null)
@@ -146,12 +220,16 @@ public class NotesViewModel : ViewModelBase
             return;
         }
 
-        AppServices.ClientNoteService.UpdateNote(editable.Id, window.ClientName, window.NoteContent, editable.CreatedAt);
-        Load();
+        await RunBusyAsync("Saving note...", async () =>
+        {
+            await Task.Run(() => AppServices.ClientNoteService.UpdateNote(editable.Id, window.ClientName, window.NoteContent, editable.CreatedAt));
+        }, string.Empty, rethrow: true);
+
+        await LoadAsync();
         MessageBox.Show(UiText.L("MsgNoteUpdated"), UiText.L("TitleNotes"), MessageBoxButton.OK, MessageBoxImage.Information);
     }
 
-    private void DeleteNotes()
+    private async Task DeleteNotesAsync()
     {
         var deleteTargets = GetDeleteTargets();
         if (deleteTargets.Count == 0)
@@ -174,12 +252,18 @@ public class NotesViewModel : ViewModelBase
             return;
         }
 
-        foreach (var note in deleteTargets)
+        await RunBusyAsync("Deleting notes...", async () =>
         {
-            AppServices.ClientNoteService.DeleteNote(note.Id);
-        }
+            await Task.Run(() =>
+            {
+                foreach (var note in deleteTargets)
+                {
+                    AppServices.ClientNoteService.DeleteNote(note.Id);
+                }
+            });
+        }, string.Empty, rethrow: true);
 
-        Load();
+        await LoadAsync();
         MessageBox.Show(
             string.Format(UiText.L("MsgNotesDeleted"), deleteTargets.Count),
             UiText.L("TitleNotes"),
@@ -199,6 +283,12 @@ public class NotesViewModel : ViewModelBase
 
         row.PropertyChanged += OnNoteRowPropertyChanged;
         Notes.Add(row);
+    }
+
+    private Task ChangePageAsync(int delta)
+    {
+        CurrentPage = Math.Clamp(CurrentPage + delta, 1, TotalPages);
+        return LoadAsync();
     }
 
     private void OnNotesCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
@@ -226,28 +316,6 @@ public class NotesViewModel : ViewModelBase
         {
             RefreshSelectionState();
         }
-    }
-
-    private bool FilterNote(object obj)
-    {
-        if (obj is not NotesGridItem note)
-        {
-            return false;
-        }
-
-        var query = SearchText.Trim();
-        if (string.IsNullOrWhiteSpace(query))
-        {
-            return true;
-        }
-
-        return note.ClientName.Contains(query, StringComparison.CurrentCultureIgnoreCase) ||
-               note.Content.Contains(query, StringComparison.CurrentCultureIgnoreCase);
-    }
-
-    private IEnumerable<NotesGridItem> GetVisibleNotes()
-    {
-        return NotesView.Cast<NotesGridItem>();
     }
 
     private List<NotesGridItem> GetCheckedNotes()
@@ -286,6 +354,7 @@ public class NotesViewModel : ViewModelBase
     {
         OnPropertyChanged(nameof(AreAllVisibleSelected));
         OnPropertyChanged(nameof(CheckedCount));
+        OnPropertyChanged(nameof(RowsCountLabel));
         EditCommand.RaiseCanExecuteChanged();
         DeleteCommand.RaiseCanExecuteChanged();
     }

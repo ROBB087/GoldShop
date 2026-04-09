@@ -1,158 +1,165 @@
 using System.IO;
-using System.Security.Cryptography;
-using System.Text;
+using System.Windows;
 using GoldShopCore.Models;
 using GoldShopCore.Services;
 using GoldShopWpf.Views;
-using Microsoft.Win32;
-using System.Windows;
 
 namespace GoldShopWpf.Services;
 
 public static class LicenseService
 {
-    private const string ProductCode = "GoldShopWpf";
-    private const string PublicKeyXml = "<RSAKeyValue><Modulus>xtOrITHZZh0mXFtzge9oM2LjDKoJ7vThphUt2MqODyFPhiCb5P4hmpFX3Fux7QQpqupTF2ffVJXJiq3vh51UT6fYwaocvt9qtFmFWRskjgJNhEJfcE8ymEBSQehgT9QgRdRxgmQUcI2470liPSHvjP/pFgl6WYVFDlumEVcIxrlWTy+DHNkKcyUFDrO6PnCtBGGNxqyJ+tK1kv8WeDkIcG4BF5pC97xBzigOtozxwdH7niIwtU8yNcelNm17P8drHwbjkxrvhT1LPl9NwSGZgajWGvAufmn1SK1nVDCwXcT8NDsYz8vB3rpnifPet9Sa2pQU2e7z4sSJlW4yM1xl2Q==</Modulus><Exponent>AQAB</Exponent></RSAKeyValue>";
-    private static readonly byte[] Entropy = Encoding.UTF8.GetBytes("GoldShop::License");
+    private static readonly InstalledLicenseStore InstalledLicenseStore = new();
+    private static readonly UsedTokenStore UsedTokenStore = new();
 
-    public static AppLicense? CurrentLicense { get; private set; }
-    public static string LicensedTo => CurrentLicense?.LicensedTo ?? "Unlicensed";
+    public static InstalledLicenseRecord? CurrentLicense { get; private set; }
 
-    public static string GetMachineId()
-    {
-        var rawMachineValue = GetMachineGuid();
-        using var sha = SHA256.Create();
-        var hash = sha.ComputeHash(Encoding.UTF8.GetBytes($"{rawMachineValue}|{ProductCode}"));
-        var hex = Convert.ToHexString(hash);
-        return string.Join("-",
-            hex[..5],
-            hex[5..10],
-            hex[10..15],
-            hex[15..20],
-            hex[20..25]);
-    }
+    public static string GetMachineId() => MachineFingerprintService.GetCurrentMachineId();
 
     public static bool EnsureActivated()
     {
-        if (TryLoadStoredLicense(out var license, out _))
+        var machineId = GetMachineId();
+        var status = InspectActivationState(machineId, out var license, out var error);
+
+        if (status == LicenseStartupStatus.Valid)
         {
             CurrentLicense = license;
             return true;
         }
 
-        var activationWindow = new ActivationWindow();
-
-        var result = activationWindow.ShowDialog();
-        return result == true && CurrentLicense != null;
-    }
-
-    public static bool TryActivate(string activationKey, out string error)
-    {
-        if (!TryValidateKey(activationKey, out var license, out error))
+        if (status == LicenseStartupStatus.RequiresActivation)
         {
-            return false;
+            var activationWindow = new ActivationWindow();
+            var result = activationWindow.ShowDialog();
+            return result == true && CurrentLicense != null;
         }
 
-        SaveLicenseKey(activationKey.Trim());
-        CurrentLicense = license;
-        return true;
+        MessageBox.Show(error, "التفعيل", MessageBoxButton.OK, MessageBoxImage.Stop);
+        FileLogService.LogWarning("License startup", error);
+        return false;
     }
 
-    public static bool TryValidateKey(string activationKey, out AppLicense? license, out string error)
+    public static bool TryActivate(string activationToken, out string error)
     {
-        if (!LicenseKeyCodec.TryReadKey(activationKey, PublicKeyXml, out license, out error))
+        error = string.Empty;
+        var normalizedToken = activationToken.Trim();
+        if (string.IsNullOrWhiteSpace(normalizedToken))
         {
-            error = TranslateError(error);
-            return false;
-        }
-
-        if (!string.Equals(license!.ProductCode, ProductCode, StringComparison.Ordinal))
-        {
-            error = "هذا المفتاح لا يخص هذا البرنامج.";
-            license = null;
+            error = "أدخل رمز التفعيل أولاً.";
             return false;
         }
 
         var machineId = GetMachineId();
-        if (!string.Equals(license.MachineId, machineId, StringComparison.OrdinalIgnoreCase))
+        var tokenHash = TokenHasher.HashToken(normalizedToken);
+        if (!ValidTokenCatalog.ContainsHash(tokenHash))
         {
-            error = "هذا المفتاح مرتبط بجهاز آخر.";
-            license = null;
+            error = "رمز التفعيل غير صالح.";
+            FileLogService.LogWarning("License activation", error);
             return false;
         }
 
-        return true;
+        UsedTokenRegistry registry;
+        try
+        {
+            registry = UsedTokenStore.Load(machineId);
+        }
+        catch (Exception ex)
+        {
+            FileLogService.LogError("Failed to load used-token registry.", ex);
+            error = "تعذر قراءة سجل التفعيل المحلي.";
+            return false;
+        }
+
+        if (registry.TokenHashes.Contains(tokenHash, StringComparer.Ordinal))
+        {
+            error = "تم استخدام رمز التفعيل هذا من قبل ولا يمكن إعادة استخدامه.";
+            FileLogService.LogWarning("License activation", error);
+            return false;
+        }
+
+        var updatedRegistry = new UsedTokenRegistry
+        {
+            ProductCode = LicenseConstants.ProductCode,
+            TokenHashes = [.. registry.TokenHashes, tokenHash]
+        };
+
+        var installedLicense = new InstalledLicenseRecord
+        {
+            TokenHash = tokenHash,
+            MachineId = machineId,
+            ProductCode = LicenseConstants.ProductCode,
+            ActivationDateUtc = DateTime.UtcNow
+        };
+
+        try
+        {
+            UsedTokenStore.Save(updatedRegistry, machineId);
+            InstalledLicenseStore.Save(installedLicense, machineId);
+            CurrentLicense = installedLicense;
+            FileLogService.LogInfo("License activation", $"Activation succeeded for machine {machineId}.");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            FileLogService.LogError("Failed to persist offline activation.", ex);
+            error = "تعذر حفظ بيانات التفعيل بشكل آمن.";
+            return false;
+        }
     }
 
-    private static bool TryLoadStoredLicense(out AppLicense? license, out string error)
+    private static LicenseStartupStatus InspectActivationState(string machineId, out InstalledLicenseRecord? license, out string error)
     {
         license = null;
         error = string.Empty;
 
-        if (!File.Exists(LicenseFilePath))
+        var hasLicenseFile = File.Exists(LicensePathProvider.LicenseFilePath);
+        var hasUsedTokensFile = File.Exists(LicensePathProvider.UsedTokensFilePath);
+
+        if (!hasLicenseFile && !hasUsedTokensFile)
         {
-            error = "License file not found.";
-            return false;
+            return LicenseStartupStatus.RequiresActivation;
+        }
+
+        if (!hasLicenseFile || !hasUsedTokensFile)
+        {
+            error = "تم اكتشاف عبث بملفات التفعيل المحلية.";
+            return LicenseStartupStatus.Tampered;
         }
 
         try
         {
-            var encrypted = File.ReadAllBytes(LicenseFilePath);
-            var rawKeyBytes = ProtectedData.Unprotect(encrypted, Entropy, DataProtectionScope.LocalMachine);
-            var rawKey = Encoding.UTF8.GetString(rawKeyBytes);
-            return TryValidateKey(rawKey, out license, out error);
+            var registry = UsedTokenStore.Load(machineId);
+            license = InstalledLicenseStore.Load(machineId);
+
+            if (!string.Equals(license.MachineId, machineId, StringComparison.OrdinalIgnoreCase))
+            {
+                error = "ملف الترخيص لا يخص هذا الجهاز.";
+                license = null;
+                return LicenseStartupStatus.Tampered;
+            }
+
+            if (string.IsNullOrWhiteSpace(license.TokenHash) ||
+                !ValidTokenCatalog.ContainsHash(license.TokenHash) ||
+                !registry.TokenHashes.Contains(license.TokenHash, StringComparer.Ordinal))
+            {
+                error = "تم اكتشاف عبث ببيانات التفعيل المحلية.";
+                license = null;
+                return LicenseStartupStatus.Tampered;
+            }
+
+            return LicenseStartupStatus.Valid;
         }
         catch (Exception ex)
         {
-            FileLogService.LogError("Failed to load license file.", ex);
-            error = "تعذر قراءة ملف الترخيص.";
-            return false;
+            FileLogService.LogError("Offline license startup validation failed.", ex);
+            error = "تعذر قراءة ملفات التفعيل أو تم اكتشاف محاولة عبث.";
+            return LicenseStartupStatus.Tampered;
         }
     }
 
-    private static void SaveLicenseKey(string activationKey)
+    private enum LicenseStartupStatus
     {
-        Directory.CreateDirectory(LicenseDirectoryPath);
-        var encrypted = ProtectedData.Protect(Encoding.UTF8.GetBytes(activationKey), Entropy, DataProtectionScope.LocalMachine);
-        File.WriteAllBytes(LicenseFilePath, encrypted);
+        Valid,
+        RequiresActivation,
+        Tampered
     }
-
-    private static string GetMachineGuid()
-    {
-        foreach (var view in new[] { RegistryView.Registry64, RegistryView.Registry32 })
-        {
-            try
-            {
-                using var machineKey = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, view)
-                    .OpenSubKey(@"SOFTWARE\Microsoft\Cryptography");
-                var machineGuid = machineKey?.GetValue("MachineGuid")?.ToString();
-                if (!string.IsNullOrWhiteSpace(machineGuid))
-                {
-                    return machineGuid;
-                }
-            }
-            catch
-            {
-            }
-        }
-
-        return $"{Environment.MachineName}|{Environment.OSVersion.VersionString}|{Environment.ProcessorCount}";
-    }
-
-    private static string TranslateError(string error)
-    {
-        return error switch
-        {
-            "License key is empty." => "أدخل مفتاح الترخيص أولاً.",
-            "License key format is invalid." => "صيغة مفتاح الترخيص غير صحيحة.",
-            "License signature is invalid." => "توقيع مفتاح الترخيص غير صالح.",
-            "License payload is invalid." => "بيانات مفتاح الترخيص غير صالحة.",
-            _ => error
-        };
-    }
-
-    private static string LicenseDirectoryPath =>
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "GoldShop");
-
-    private static string LicenseFilePath => Path.Combine(LicenseDirectoryPath, "license.dat");
 }

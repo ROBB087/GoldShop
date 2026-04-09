@@ -344,13 +344,96 @@
                 <Setter Property="MinHeight" Value="56" />
                 <Setter Property="MinWidth" Value="220" />
                 <Setter Property="Padding" Value="18,8" />
-                <Setter Property="FontSize" Value="14" />
+                <Setter Property="FontSize" Value="15" />
                 <Setter Property="SelectedDateFormat" Value="Short" />
                 <Setter Property="FlowDirection" Value="LeftToRight" />
                 <Setter Property="materialDesign:HintAssist.HintOpacity" Value="0.55" />
                 <Setter Property="materialDesign:TextFieldAssist.DecorationVisibility" Value="Collapsed" />
-                <EventSetter Event="Loaded" Handler="OnDatePickerLoaded" />
-                <EventSetter Event="SelectedDateChanged" Handler="OnDatePickerSelectedDateChanged" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="DatePicker">
+                            <Grid>
+                                <Border x:Name="PickerBorder"
+                                        Background="{TemplateBinding Background}"
+                                        BorderBrush="{DynamicResource InputBorderBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="12"
+                                        MinHeight="{TemplateBinding MinHeight}">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="48" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <DatePickerTextBox x:Name="PART_TextBox"
+                                                           Grid.Column="0"
+                                                           Margin="0"
+                                                           Padding="10,8"
+                                                           Background="Transparent"
+                                                           BorderThickness="0"
+                                                           FontSize="{TemplateBinding FontSize}"
+                                                           TextAlignment="Center"
+                                                           HorizontalContentAlignment="Center"
+                                                           VerticalContentAlignment="Center" />
+
+                                        <Button x:Name="PART_Button"
+                                                Grid.Column="1"
+                                                Margin="0"
+                                                Padding="0"
+                                                BorderThickness="0"
+                                                Background="#F7F7F5"
+                                                Cursor="Hand"
+                                                Focusable="False">
+                                            <Button.Template>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border Background="{TemplateBinding Background}"
+                                                            BorderBrush="#E5E7EB"
+                                                            BorderThickness="1,0,0,0"
+                                                            CornerRadius="0,12,12,0">
+                                                        <materialDesign:PackIcon Kind="CalendarMonth"
+                                                                                 Width="18"
+                                                                                 Height="18"
+                                                                                 HorizontalAlignment="Center"
+                                                                                 VerticalAlignment="Center"
+                                                                                 Foreground="{DynamicResource MutedTextBrush}" />
+                                                    </Border>
+                                                </ControlTemplate>
+                                            </Button.Template>
+                                        </Button>
+                                    </Grid>
+                                </Border>
+
+                                <Popup x:Name="PART_Popup"
+                                       Placement="Bottom"
+                                       AllowsTransparency="True"
+                                       Focusable="False"
+                                       PopupAnimation="Fade"
+                                       IsOpen="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}}">
+                                    <Border Margin="0,6,0,0"
+                                            Background="#FFFFFF"
+                                            BorderBrush="#E5E7EB"
+                                            BorderThickness="1"
+                                            CornerRadius="16">
+                                        <Calendar x:Name="PART_Calendar"
+                                                  Margin="8" />
+                                    </Border>
+                                </Popup>
+                            </Grid>
+
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                                    <Setter TargetName="PickerBorder" Property="BorderBrush" Value="#D4AF37" />
+                                </Trigger>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="PickerBorder" Property="BorderBrush" Value="#C7CCD4" />
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter TargetName="PickerBorder" Property="Opacity" Value="0.6" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
             </Style>
 
             <Style x:Key="SearchableComboBox" TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
@@ -516,11 +599,11 @@
             </Style>
 
             <Style TargetType="{x:Type DatePickerTextBox}">
-                <Setter Property="FontSize" Value="14" />
-                <Setter Property="TextAlignment" Value="Left" />
+                <Setter Property="FontSize" Value="15" />
+                <Setter Property="TextAlignment" Value="Center" />
                 <Setter Property="VerticalContentAlignment" Value="Center" />
-                <Setter Property="HorizontalContentAlignment" Value="Left" />
-                <Setter Property="Padding" Value="12,8,40,8" />
+                <Setter Property="HorizontalContentAlignment" Value="Center" />
+                <Setter Property="Padding" Value="10,8,10,8" />
                 <Setter Property="BorderThickness" Value="0" />
             </Style>
 

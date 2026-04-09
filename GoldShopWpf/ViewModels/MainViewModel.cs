@@ -1,5 +1,3 @@
-using System.IO;
-using GoldShopCore.Data;
 using GoldShopWpf.Services;
 
 namespace GoldShopWpf.ViewModels;
@@ -11,12 +9,10 @@ public class MainViewModel : ViewModelBase
     private string _activePageKey = "Dashboard";
 
     public System.Collections.ObjectModel.ObservableCollection<ToastMessageViewModel> Toasts => ToastService.Messages;
-    public string LicensedToDisplay => $"Licensed to: {LicenseService.LicensedTo}";
     public DashboardViewModel Dashboard { get; }
     public SuppliersViewModel Suppliers { get; }
     public SupplierDetailsViewModel SupplierDetails { get; }
     public TransactionsViewModel Transactions { get; }
-    public WeeklyReportViewModel WeeklyReport { get; }
     public StatementViewModel Statement { get; }
     public NotesViewModel Notes { get; }
     public PricingSettingsViewModel PricingSettings { get; }
@@ -44,7 +40,6 @@ public class MainViewModel : ViewModelBase
     public RelayCommand ShowSuppliersCommand { get; }
     public RelayCommand ShowTransactionsCommand { get; }
     public RelayCommand ShowSupplierDetailsCommand { get; }
-    public RelayCommand ShowWeeklyReportCommand { get; }
     public RelayCommand ShowStatementCommand { get; }
     public RelayCommand ShowNotesCommand { get; }
     public RelayCommand ShowPricingSettingsCommand { get; }
@@ -58,7 +53,6 @@ public class MainViewModel : ViewModelBase
         Suppliers = new SuppliersViewModel();
         SupplierDetails = new SupplierDetailsViewModel();
         Transactions = new TransactionsViewModel();
-        WeeklyReport = new WeeklyReportViewModel();
         Statement = new StatementViewModel();
         Notes = new NotesViewModel();
         PricingSettings = new PricingSettingsViewModel();
@@ -72,7 +66,6 @@ public class MainViewModel : ViewModelBase
             SupplierDetails.LoadAll();
             Navigate(SupplierDetails, L("NavSupplierDetails"), "SupplierDetails");
         });
-        ShowWeeklyReportCommand = new RelayCommand(_ => Navigate(WeeklyReport, L("NavWeeklyReport"), "WeeklyReport"));
         ShowStatementCommand = new RelayCommand(_ => Navigate(Statement, L("NavStatement"), "Statement"));
         ShowNotesCommand = new RelayCommand(_ => Navigate(Notes, L("NavNotes"), "Notes"));
         ShowPricingSettingsCommand = new RelayCommand(_ => Navigate(PricingSettings, L("NavPricingSettings"), "PricingSettings"));
@@ -126,9 +119,6 @@ public class MainViewModel : ViewModelBase
             case TransactionsViewModel transactions:
                 transactions.Load();
                 break;
-            case WeeklyReportViewModel report:
-                report.Load();
-                break;
             case NotesViewModel notes:
                 notes.Load();
                 break;
@@ -150,12 +140,12 @@ public class MainViewModel : ViewModelBase
         {
             Title = UiText.L("MsgSaveBackupDialogTitle"),
             Filter = UiText.L("FilterSqlite"),
-            FileName = $"goldshop-backup-{DateTime.Now:yyyyMMdd}.db"
+            FileName = AppServices.BackupService.BuildManualBackupFileName()
         };
 
         if (dialog.ShowDialog() == true)
         {
-            File.Copy(Database.DbFilePath, dialog.FileName, true);
+            AppServices.BackupService.CreateManualBackup(dialog.FileName);
             ToastService.ShowSuccess(UiText.L("MsgBackupCreated"));
         }
     }
@@ -164,14 +154,12 @@ public class MainViewModel : ViewModelBase
     {
         var next = LocalizationService.CurrentLanguage == "ar" ? "en" : "ar";
         LocalizationService.SetLanguage(next);
-        // refresh title to match language
         switch (CurrentPage)
         {
             case DashboardViewModel: PageTitle = L("NavDashboard"); break;
             case SuppliersViewModel: PageTitle = L("NavSuppliers"); break;
             case SupplierDetailsViewModel: PageTitle = L("NavSupplierDetails"); break;
             case TransactionsViewModel: PageTitle = L("NavTransactions"); break;
-            case WeeklyReportViewModel: PageTitle = L("NavWeeklyReport"); break;
             case StatementViewModel: PageTitle = L("NavStatement"); break;
             case NotesViewModel: PageTitle = L("NavNotes"); break;
             case PricingSettingsViewModel: PageTitle = L("NavPricingSettings"); break;
@@ -182,7 +170,6 @@ public class MainViewModel : ViewModelBase
         Dashboard.Load();
         Suppliers.Load();
         Transactions.RefreshLocalization();
-        WeeklyReport.Load();
         Notes.Load();
         PricingSettings.Load();
         Statement.GenerateCommand.Execute(null);

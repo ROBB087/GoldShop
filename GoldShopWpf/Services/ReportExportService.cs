@@ -60,14 +60,31 @@ public static class ReportExportService
 
     public static void ShareFile(string filePath)
     {
-        var message = $"{UiText.L("MsgShareReport")} {filePath}";
+        var message = UiText.L("MsgWhatsAppManualShare");
         var url = $"https://wa.me/?text={Uri.EscapeDataString(message)}";
+
+        if (File.Exists(filePath))
+        {
+            System.Windows.Clipboard.SetText(filePath);
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = "explorer.exe",
+                Arguments = $"/select,\"{filePath}\"",
+                UseShellExecute = true
+            });
+        }
 
         Process.Start(new ProcessStartInfo
         {
             FileName = url,
             UseShellExecute = true
         });
+
+        MessageBox.Show(
+            $"{UiText.L("MsgWhatsAppManualShare")}{Environment.NewLine}{Environment.NewLine}{filePath}",
+            UiText.L("BtnShare"),
+            MessageBoxButton.OK,
+            MessageBoxImage.Information);
     }
 
     private static void SaveElementAsPng(FrameworkElement element, string filePath)

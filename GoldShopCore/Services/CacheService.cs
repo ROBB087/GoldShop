@@ -61,7 +61,7 @@ public class CacheService
                 return;
             }
 
-            _suppliers = _suppliers.Where(supplier => supplier.Id != supplierId).Select(CloneSupplier).ToList();
+            _suppliers.RemoveAll(supplier => supplier.Id == supplierId);
         }
     }
 

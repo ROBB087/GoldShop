@@ -10,11 +10,11 @@ namespace GoldShopWpf.ViewModels;
 public class SupplierDetailsViewModel : ViewModelBase
 {
     private const int AllTradersId = 0;
-    private const int DefaultPageSize = 50;
+    private const int DefaultPageSize = 25;
 
     private SupplierListItem? _supplier;
-    private DateTime? _fromDate;
-    private DateTime? _toDate;
+    private DateTime? _fromDate = DateTime.Today.AddDays(-30);
+    private DateTime? _toDate = DateTime.Today;
     private SupplierListItem? _selectedTrader;
     private TransactionRow? _selectedTransaction;
     private decimal _totalGold21;
@@ -30,6 +30,9 @@ public class SupplierDetailsViewModel : ViewModelBase
     private int _discountsTotalCount;
     private bool _isUpdatingSelection;
     private DiscountListItem? _selectedDiscount;
+    private bool _suppressDateAutoRefresh;
+    private CancellationTokenSource? _dateRefreshCts;
+    private Dictionary<int, string> _supplierLookup = [];
 
     public ObservableCollection<SupplierListItem> SupplierOptions { get; } = new();
     public ObservableCollection<TransactionRow> Transactions { get; } = new();
@@ -154,13 +157,25 @@ public class SupplierDetailsViewModel : ViewModelBase
     public DateTime? FromDate
     {
         get => _fromDate;
-        set => SetProperty(ref _fromDate, value);
+        set
+        {
+            if (SetProperty(ref _fromDate, value))
+            {
+                OnDateFilterChanged();
+            }
+        }
     }
 
     public DateTime? ToDate
     {
         get => _toDate;
-        set => SetProperty(ref _toDate, value);
+        set
+        {
+            if (SetProperty(ref _toDate, value))
+            {
+                OnDateFilterChanged();
+            }
+        }
     }
 
     public TransactionRow? SelectedTransaction
@@ -338,28 +353,28 @@ public class SupplierDetailsViewModel : ViewModelBase
     public bool HasPreviousDiscountsPage => DiscountsCurrentPage > 1;
     public bool HasNextDiscountsPage => DiscountsCurrentPage < DiscountsTotalPages;
 
-    public RelayCommand ApplyFilterCommand { get; }
-    public RelayCommand ClearFilterCommand { get; }
-    public RelayCommand AddTransactionCommand { get; }
-    public RelayCommand AddDiscountCommand { get; }
-    public RelayCommand EditTransactionCommand { get; }
-    public RelayCommand DeleteTransactionCommand { get; }
-    public RelayCommand EditDiscountCommand { get; }
-    public RelayCommand DeleteDiscountCommand { get; }
-    public RelayCommand EditTransactionRowCommand { get; }
-    public RelayCommand DeleteTransactionRowCommand { get; }
-    public RelayCommand EditDiscountRowCommand { get; }
-    public RelayCommand DeleteDiscountRowCommand { get; }
-    public RelayCommand RefreshCommand { get; }
+    public AsyncRelayCommand ApplyFilterCommand { get; }
+    public AsyncRelayCommand ClearFilterCommand { get; }
+    public AsyncRelayCommand AddTransactionCommand { get; }
+    public AsyncRelayCommand AddDiscountCommand { get; }
+    public AsyncRelayCommand EditTransactionCommand { get; }
+    public AsyncRelayCommand DeleteTransactionCommand { get; }
+    public AsyncRelayCommand EditDiscountCommand { get; }
+    public AsyncRelayCommand DeleteDiscountCommand { get; }
+    public AsyncRelayCommand EditTransactionRowCommand { get; }
+    public AsyncRelayCommand DeleteTransactionRowCommand { get; }
+    public AsyncRelayCommand EditDiscountRowCommand { get; }
+    public AsyncRelayCommand DeleteDiscountRowCommand { get; }
+    public AsyncRelayCommand RefreshCommand { get; }
     public RelayCommand PrintStatementCommand { get; }
     public RelayCommand ViewTransactionRowCommand { get; }
     public RelayCommand ViewDiscountRowCommand { get; }
-    public RelayCommand PreviousTransactionsPageCommand { get; }
-    public RelayCommand NextTransactionsPageCommand { get; }
-    public RelayCommand GoToTransactionsPageCommand { get; }
-    public RelayCommand PreviousDiscountsPageCommand { get; }
-    public RelayCommand NextDiscountsPageCommand { get; }
-    public RelayCommand GoToDiscountsPageCommand { get; }
+    public AsyncRelayCommand PreviousTransactionsPageCommand { get; }
+    public AsyncRelayCommand NextTransactionsPageCommand { get; }
+    public AsyncRelayCommand GoToTransactionsPageCommand { get; }
+    public AsyncRelayCommand PreviousDiscountsPageCommand { get; }
+    public AsyncRelayCommand NextDiscountsPageCommand { get; }
+    public AsyncRelayCommand GoToDiscountsPageCommand { get; }
     public RelayCommand ClearTransactionSelectionCommand { get; }
     public RelayCommand ClearDiscountSelectionCommand { get; }
 
@@ -367,50 +382,44 @@ public class SupplierDetailsViewModel : ViewModelBase
     {
         Transactions.CollectionChanged += OnTransactionsCollectionChanged;
         Discounts.CollectionChanged += OnDiscountsCollectionChanged;
-        ApplyFilterCommand = new RelayCommand(_ =>
+        ApplyFilterCommand = TrackCommand(new AsyncRelayCommand(_ =>
         {
             ResetPages();
-            if (SelectedTrader != null)
-            {
-                LoadTraderData(SelectedTrader.Id);
-            }
-        });
-        ClearFilterCommand = new RelayCommand(_ =>
+            return SelectedTrader == null
+                ? Task.CompletedTask
+                : LoadTraderDataAsync(SelectedTrader.Id);
+        }, _ => !IsBusy));
+        ClearFilterCommand = TrackCommand(new AsyncRelayCommand(_ =>
         {
+            _suppressDateAutoRefresh = true;
             FromDate = null;
             ToDate = null;
+            _suppressDateAutoRefresh = false;
             ResetPages();
-            if (SelectedTrader != null)
-            {
-                LoadTraderData(SelectedTrader.Id);
-            }
-        });
-        AddTransactionCommand = new RelayCommand(_ => AddTransaction(), _ => Supplier != null);
-        AddDiscountCommand = new RelayCommand(_ => AddDiscount(), _ => Supplier != null);
-        EditTransactionCommand = new RelayCommand(_ => EditTransaction(null), _ => GetEditableTransaction(null) != null);
-        DeleteTransactionCommand = new RelayCommand(_ => DeleteTransactions(null), _ => GetTransactionDeleteTargets(null).Count > 0);
-        EditDiscountCommand = new RelayCommand(_ => EditDiscount(null), _ => GetEditableDiscount(null) != null);
-        DeleteDiscountCommand = new RelayCommand(_ => DeleteDiscounts(null), _ => GetDiscountDeleteTargets(null).Count > 0);
-        EditTransactionRowCommand = new RelayCommand(row => EditTransaction(row), row => GetEditableTransaction(row) != null);
-        DeleteTransactionRowCommand = new RelayCommand(row => DeleteTransactions(row), row => GetTransactionDeleteTargets(row).Count > 0);
-        EditDiscountRowCommand = new RelayCommand(row => EditDiscount(row), row => GetEditableDiscount(row) != null);
-        DeleteDiscountRowCommand = new RelayCommand(row => DeleteDiscounts(row), row => GetDiscountDeleteTargets(row).Count > 0);
-        RefreshCommand = new RelayCommand(_ =>
-        {
-            if (SelectedTrader != null)
-            {
-                LoadTraderData(SelectedTrader.Id);
-            }
-        }, _ => SelectedTrader != null);
+            return SelectedTrader == null
+                ? Task.CompletedTask
+                : LoadTraderDataAsync(SelectedTrader.Id);
+        }, _ => !IsBusy));
+        AddTransactionCommand = TrackCommand(new AsyncRelayCommand(_ => AddTransactionAsync(), _ => !IsBusy && Supplier != null));
+        AddDiscountCommand = TrackCommand(new AsyncRelayCommand(_ => AddDiscountAsync(), _ => !IsBusy && Supplier != null));
+        EditTransactionCommand = TrackCommand(new AsyncRelayCommand(_ => EditTransactionAsync(null), _ => !IsBusy && GetEditableTransaction(null) != null));
+        DeleteTransactionCommand = TrackCommand(new AsyncRelayCommand(_ => DeleteTransactionsAsync(null), _ => !IsBusy && GetTransactionDeleteTargets(null).Count > 0));
+        EditDiscountCommand = TrackCommand(new AsyncRelayCommand(_ => EditDiscountAsync(null), _ => !IsBusy && GetEditableDiscount(null) != null));
+        DeleteDiscountCommand = TrackCommand(new AsyncRelayCommand(_ => DeleteDiscountsAsync(null), _ => !IsBusy && GetDiscountDeleteTargets(null).Count > 0));
+        EditTransactionRowCommand = TrackCommand(new AsyncRelayCommand(row => EditTransactionAsync(row), row => !IsBusy && GetEditableTransaction(row) != null));
+        DeleteTransactionRowCommand = TrackCommand(new AsyncRelayCommand(row => DeleteTransactionsAsync(row), row => !IsBusy && GetTransactionDeleteTargets(row).Count > 0));
+        EditDiscountRowCommand = TrackCommand(new AsyncRelayCommand(row => EditDiscountAsync(row), row => !IsBusy && GetEditableDiscount(row) != null));
+        DeleteDiscountRowCommand = TrackCommand(new AsyncRelayCommand(row => DeleteDiscountsAsync(row), row => !IsBusy && GetDiscountDeleteTargets(row).Count > 0));
+        RefreshCommand = TrackCommand(new AsyncRelayCommand(_ => SelectedTrader == null ? Task.CompletedTask : LoadTraderDataAsync(SelectedTrader.Id), _ => !IsBusy && SelectedTrader != null));
         PrintStatementCommand = new RelayCommand(_ => PrintStatement(), _ => Supplier != null);
         ViewTransactionRowCommand = new RelayCommand(row => ViewTransactionRow(row as TransactionRow), row => row is TransactionRow);
         ViewDiscountRowCommand = new RelayCommand(row => ViewDiscountRow(row as DiscountListItem), row => row is DiscountListItem);
-        PreviousTransactionsPageCommand = new RelayCommand(_ => ChangeTransactionsPage(-1), _ => HasPreviousTransactionsPage);
-        NextTransactionsPageCommand = new RelayCommand(_ => ChangeTransactionsPage(1), _ => HasNextTransactionsPage);
-        GoToTransactionsPageCommand = new RelayCommand(_ => GoToTransactionsPage());
-        PreviousDiscountsPageCommand = new RelayCommand(_ => ChangeDiscountsPage(-1), _ => HasPreviousDiscountsPage);
-        NextDiscountsPageCommand = new RelayCommand(_ => ChangeDiscountsPage(1), _ => HasNextDiscountsPage);
-        GoToDiscountsPageCommand = new RelayCommand(_ => GoToDiscountsPage());
+        PreviousTransactionsPageCommand = TrackCommand(new AsyncRelayCommand(_ => ChangeTransactionsPageAsync(-1), _ => !IsBusy && HasPreviousTransactionsPage));
+        NextTransactionsPageCommand = TrackCommand(new AsyncRelayCommand(_ => ChangeTransactionsPageAsync(1), _ => !IsBusy && HasNextTransactionsPage));
+        GoToTransactionsPageCommand = TrackCommand(new AsyncRelayCommand(_ => GoToTransactionsPageAsync(), _ => !IsBusy && SelectedTrader != null));
+        PreviousDiscountsPageCommand = TrackCommand(new AsyncRelayCommand(_ => ChangeDiscountsPageAsync(-1), _ => !IsBusy && HasPreviousDiscountsPage));
+        NextDiscountsPageCommand = TrackCommand(new AsyncRelayCommand(_ => ChangeDiscountsPageAsync(1), _ => !IsBusy && HasNextDiscountsPage));
+        GoToDiscountsPageCommand = TrackCommand(new AsyncRelayCommand(_ => GoToDiscountsPageAsync(), _ => !IsBusy && SelectedTrader != null));
         ClearTransactionSelectionCommand = new RelayCommand(_ => ClearTransactionSelection(), _ => HasTransactionSelection);
         ClearDiscountSelectionCommand = new RelayCommand(_ => ClearDiscountSelection(), _ => HasDiscountSelection);
 
@@ -438,6 +447,8 @@ public class SupplierDetailsViewModel : ViewModelBase
     private void LoadSupplierOptions()
     {
         var selectedTraderId = SelectedTrader?.Id ?? Supplier?.Id ?? AllTradersId;
+        var supplierRecords = AppServices.SupplierService.GetSuppliers();
+        _supplierLookup = supplierRecords.ToDictionary(s => s.Id, s => s.Name);
         SupplierOptions.Clear();
         SupplierOptions.Add(new SupplierListItem
         {
@@ -445,7 +456,7 @@ public class SupplierDetailsViewModel : ViewModelBase
             Name = UiText.L("LblAllSuppliers")
         });
 
-        foreach (var supplier in AppServices.SupplierService.GetSuppliers())
+        foreach (var supplier in supplierRecords)
         {
             SupplierOptions.Add(new SupplierListItem
             {
@@ -470,7 +481,7 @@ public class SupplierDetailsViewModel : ViewModelBase
 
     public void LoadTraderData(int traderId)
     {
-        _ = LoadTraderDataAsync(traderId);
+        ObserveBackgroundTask(LoadTraderDataAsync(traderId), "SupplierDetailsViewModel.LoadTraderData");
     }
 
     private async Task LoadTraderDataAsync(int traderId)
@@ -496,14 +507,13 @@ public class SupplierDetailsViewModel : ViewModelBase
 
             var pageData = await Task.Run(() =>
             {
-                var supplierLookup = AppServices.SupplierService.GetSuppliers().ToDictionary(s => s.Id, s => s.Name);
                 int? supplierId = traderId == AllTradersId ? null : traderId;
                 var transactionsPage = AppServices.TransactionService.GetTransactionsPage(supplierId, FromDate, ToDate, requestedTransactionsPage, PageSize);
                 var discountsPage = AppServices.DiscountService.GetDiscountsPage(supplierId, FromDate, ToDate, requestedDiscountsPage, PageSize);
                 var summary = supplierId.HasValue
                     ? AppServices.TransactionService.GetSummary(supplierId.Value, FromDate, ToDate)
                     : AppServices.TransactionService.GetSummaryAll(FromDate, ToDate);
-                return (supplierLookup, transactionsPage, discountsPage, summary);
+                return (transactionsPage, discountsPage, summary);
             });
 
             int? supplierId = traderId == AllTradersId ? null : traderId;
@@ -539,7 +549,7 @@ public class SupplierDetailsViewModel : ViewModelBase
                 {
                     Id = transaction.Id,
                     SupplierId = transaction.SupplierId,
-                    SupplierName = pageData.supplierLookup.TryGetValue(transaction.SupplierId, out var supplierName) ? supplierName : string.Empty,
+                    SupplierName = _supplierLookup.TryGetValue(transaction.SupplierId, out var supplierName) ? supplierName : string.Empty,
                     Date = transaction.Date,
                     Type = transaction.Type,
                     Category = transaction.Category,
@@ -565,7 +575,7 @@ public class SupplierDetailsViewModel : ViewModelBase
                 {
                     Id = discount.Id,
                     SupplierId = discount.SupplierId,
-                    SupplierName = pageData.supplierLookup.TryGetValue(discount.SupplierId, out var supplierName) ? supplierName : string.Empty,
+                    SupplierName = _supplierLookup.TryGetValue(discount.SupplierId, out var supplierName) ? supplierName : string.Empty,
                     Type = discount.Type,
                     Amount = discount.Amount,
                     Notes = discount.Notes ?? string.Empty,
@@ -604,7 +614,7 @@ public class SupplierDetailsViewModel : ViewModelBase
         RefreshDiscountSelectionState();
     }
 
-    private async void AddTransaction()
+    private async Task AddTransactionAsync()
     {
         if (Supplier == null)
         {
@@ -634,28 +644,30 @@ public class SupplierDetailsViewModel : ViewModelBase
 
         try
         {
-            await Task.Run(() => AppServices.TransactionService.AddTransaction(
-                Supplier.Id,
-                transactionDate,
-                transactionCategory,
-                originalWeight,
-                itemName,
-                originalKarat,
-                manufacturingPerGram,
-                improvementPerGram,
-                notes));
+            await RunBusyAsync(UiText.L("MsgSavingTransaction"), async () =>
+            {
+                await Task.Run(() => AppServices.TransactionService.AddTransaction(
+                    Supplier.Id,
+                    transactionDate,
+                    transactionCategory,
+                    originalWeight,
+                    itemName,
+                    originalKarat,
+                    manufacturingPerGram,
+                    improvementPerGram,
+                    notes));
+            }, string.Empty, rethrow: true);
 
             ToastService.ShowSuccess(UiText.L("MsgTransactionSaved"));
             await LoadTraderDataAsync(SelectedTrader?.Id ?? Supplier.Id);
         }
         catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
         {
-            FileLogService.LogError("Add transaction from trader details failed", ex);
             ToastService.ShowWarning(UiText.LocalizeException(ex.Message));
         }
     }
 
-    private async void AddDiscount()
+    private async Task AddDiscountAsync()
     {
         if (Supplier == null)
         {
@@ -674,13 +686,16 @@ public class SupplierDetailsViewModel : ViewModelBase
 
         try
         {
-            await Task.Run(() => AppServices.DiscountService.AddDiscount(Supplier.Id, discountType, amount, notes, FromDate, ToDate));
+            await RunBusyAsync(UiText.L("MsgSavingDiscount", "Saving discount..."), async () =>
+            {
+                await Task.Run(() => AppServices.DiscountService.AddDiscount(Supplier.Id, discountType, amount, notes, FromDate, ToDate));
+            }, string.Empty, rethrow: true);
+
             ToastService.ShowSuccess(UiText.L("MsgDiscountSaved"));
             await LoadTraderDataAsync(SelectedTrader?.Id ?? Supplier.Id);
         }
         catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
         {
-            FileLogService.LogError("Add discount from trader details failed", ex);
             ToastService.ShowWarning(UiText.LocalizeException(ex.Message));
         }
     }
@@ -696,7 +711,7 @@ public class SupplierDetailsViewModel : ViewModelBase
         dialog.ShowDialog();
     }
 
-    private async void EditTransaction(object? parameter)
+    private async Task EditTransactionAsync(object? parameter)
     {
         var transaction = GetEditableTransaction(parameter);
         if (transaction == null)
@@ -721,28 +736,31 @@ public class SupplierDetailsViewModel : ViewModelBase
 
         try
         {
-            await Task.Run(() => AppServices.TransactionService.UpdateTransaction(
-                transaction.Id,
-                transaction.SupplierId,
-                transactionDate,
-                transactionCategory,
-                originalWeight,
-                itemName,
-                originalKarat,
-                manufacturingPerGram,
-                improvementPerGram,
-                notes));
+            await RunBusyAsync(UiText.L("MsgSavingTransaction"), async () =>
+            {
+                await Task.Run(() => AppServices.TransactionService.UpdateTransaction(
+                    transaction.Id,
+                    transaction.SupplierId,
+                    transactionDate,
+                    transactionCategory,
+                    originalWeight,
+                    itemName,
+                    originalKarat,
+                    manufacturingPerGram,
+                    improvementPerGram,
+                    notes));
+            }, string.Empty, rethrow: true);
+
             ToastService.ShowSuccess(UiText.L("MsgTransactionUpdated", UiText.L("MsgTransactionSaved")));
             await LoadTraderDataAsync(SelectedTrader?.Id ?? Supplier?.Id ?? AllTradersId);
         }
         catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
         {
-            FileLogService.LogError("Edit transaction from trader details failed", ex);
             ToastService.ShowWarning(UiText.LocalizeException(ex.Message));
         }
     }
 
-    private async void DeleteTransactions(object? parameter)
+    private async Task DeleteTransactionsAsync(object? parameter)
     {
         var deleteTargets = GetTransactionDeleteTargets(parameter);
         if (deleteTargets.Count == 0)
@@ -766,13 +784,17 @@ public class SupplierDetailsViewModel : ViewModelBase
 
         try
         {
-            await Task.Run(() =>
+            await RunBusyAsync(UiText.L("MsgDeletingTransaction", "Deleting transaction..."), async () =>
             {
-                foreach (var target in deleteTargets)
+                await Task.Run(() =>
                 {
-                    AppServices.TransactionService.DeleteTransaction(target.Id);
-                }
-            });
+                    foreach (var target in deleteTargets)
+                    {
+                        AppServices.TransactionService.DeleteTransaction(target.Id);
+                    }
+                });
+            }, string.Empty, rethrow: true);
+
             ToastService.ShowSuccess(deleteTargets.Count == 1
                 ? UiText.L("MsgTransactionDeleted", "Transaction deleted successfully.")
                 : UiText.Format("MsgTransactionsDeleted", deleteTargets.Count));
@@ -780,7 +802,6 @@ public class SupplierDetailsViewModel : ViewModelBase
         }
         catch (InvalidOperationException ex)
         {
-            FileLogService.LogError("Delete transaction from trader details failed", ex);
             ToastService.ShowWarning(UiText.LocalizeException(ex.Message));
         }
     }
@@ -800,7 +821,7 @@ public class SupplierDetailsViewModel : ViewModelBase
             System.Windows.MessageBoxImage.Information);
     }
 
-    private async void EditDiscount(object? parameter)
+    private async Task EditDiscountAsync(object? parameter)
     {
         var discount = GetEditableDiscount(parameter);
         if (discount == null)
@@ -820,18 +841,21 @@ public class SupplierDetailsViewModel : ViewModelBase
 
         try
         {
-            await Task.Run(() => AppServices.DiscountService.UpdateDiscount(discount.Id, discount.SupplierId, discountType, amount, notes, FromDate, ToDate));
+            await RunBusyAsync(UiText.L("MsgSavingDiscount", "Saving discount..."), async () =>
+            {
+                await Task.Run(() => AppServices.DiscountService.UpdateDiscount(discount.Id, discount.SupplierId, discountType, amount, notes, FromDate, ToDate));
+            }, string.Empty, rethrow: true);
+
             ToastService.ShowSuccess(UiText.L("MsgDiscountUpdated", UiText.L("MsgDiscountSaved")));
             await LoadTraderDataAsync(SelectedTrader?.Id ?? Supplier?.Id ?? AllTradersId);
         }
         catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
         {
-            FileLogService.LogError("Edit discount from trader details failed", ex);
             ToastService.ShowWarning(UiText.LocalizeException(ex.Message));
         }
     }
 
-    private async void DeleteDiscounts(object? parameter)
+    private async Task DeleteDiscountsAsync(object? parameter)
     {
         var deleteTargets = GetDiscountDeleteTargets(parameter);
         if (deleteTargets.Count == 0)
@@ -855,13 +879,17 @@ public class SupplierDetailsViewModel : ViewModelBase
 
         try
         {
-            await Task.Run(() =>
+            await RunBusyAsync(UiText.L("MsgDeletingDiscount", "Deleting discount..."), async () =>
             {
-                foreach (var target in deleteTargets)
+                await Task.Run(() =>
                 {
-                    AppServices.DiscountService.DeleteDiscount(target.Id);
-                }
-            });
+                    foreach (var target in deleteTargets)
+                    {
+                        AppServices.DiscountService.DeleteDiscount(target.Id);
+                    }
+                });
+            }, string.Empty, rethrow: true);
+
             ToastService.ShowSuccess(deleteTargets.Count == 1
                 ? UiText.L("MsgDiscountDeleted", "Discount deleted successfully.")
                 : UiText.Format("MsgDiscountsDeleted", deleteTargets.Count));
@@ -869,7 +897,6 @@ public class SupplierDetailsViewModel : ViewModelBase
         }
         catch (InvalidOperationException ex)
         {
-            FileLogService.LogError("Delete discount from trader details failed", ex);
             ToastService.ShowWarning(UiText.LocalizeException(ex.Message));
         }
     }
@@ -938,28 +965,28 @@ public class SupplierDetailsViewModel : ViewModelBase
         }
     }
 
-    private void ChangeTransactionsPage(int delta)
+    private Task ChangeTransactionsPageAsync(int delta)
     {
         TransactionsCurrentPage = Math.Clamp(TransactionsCurrentPage + delta, 1, TransactionsTotalPages);
-        LoadTraderData(SelectedTrader?.Id ?? AllTradersId);
+        return LoadTraderDataAsync(SelectedTrader?.Id ?? AllTradersId);
     }
 
-    private void ChangeDiscountsPage(int delta)
+    private Task ChangeDiscountsPageAsync(int delta)
     {
         DiscountsCurrentPage = Math.Clamp(DiscountsCurrentPage + delta, 1, DiscountsTotalPages);
-        LoadTraderData(SelectedTrader?.Id ?? AllTradersId);
+        return LoadTraderDataAsync(SelectedTrader?.Id ?? AllTradersId);
     }
 
-    private void GoToTransactionsPage()
+    private Task GoToTransactionsPageAsync()
     {
         TransactionsCurrentPage = Math.Clamp(TransactionsCurrentPage, 1, TransactionsTotalPages);
-        LoadTraderData(SelectedTrader?.Id ?? AllTradersId);
+        return LoadTraderDataAsync(SelectedTrader?.Id ?? AllTradersId);
     }
 
-    private void GoToDiscountsPage()
+    private Task GoToDiscountsPageAsync()
     {
         DiscountsCurrentPage = Math.Clamp(DiscountsCurrentPage, 1, DiscountsTotalPages);
-        LoadTraderData(SelectedTrader?.Id ?? AllTradersId);
+        return LoadTraderDataAsync(SelectedTrader?.Id ?? AllTradersId);
     }
 
     private TransactionListItem CreateTransactionListItem(TransactionRow transaction)
@@ -1163,5 +1190,44 @@ public class SupplierDetailsViewModel : ViewModelBase
         EditDiscountRowCommand.RaiseCanExecuteChanged();
         DeleteDiscountRowCommand.RaiseCanExecuteChanged();
         ClearDiscountSelectionCommand.RaiseCanExecuteChanged();
+    }
+
+    private void OnDateFilterChanged()
+    {
+        if (_suppressDateAutoRefresh || _isUpdatingSelection)
+        {
+            return;
+        }
+
+        ResetPages();
+        ScheduleDateAutoRefresh();
+    }
+
+    private void ScheduleDateAutoRefresh()
+    {
+        if (SelectedTrader == null)
+        {
+            return;
+        }
+
+        _dateRefreshCts?.Cancel();
+        _dateRefreshCts?.Dispose();
+        _dateRefreshCts = new CancellationTokenSource();
+        var token = _dateRefreshCts.Token;
+        var traderId = SelectedTrader.Id;
+
+        ObserveBackgroundTask(AutoRefreshAsync(traderId, token), "SupplierDetailsViewModel.DateFilterAutoRefresh");
+    }
+
+    private async Task AutoRefreshAsync(int traderId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            await LoadTraderDataAsync(traderId);
+        }
+        catch (OperationCanceledException)
+        {
+        }
     }
 }

@@ -48,15 +48,6 @@ WHERE Id = $id;";
         return reader.Read() ? MapTransaction(reader) : null;
     }
 
-    public int Add(SupplierTransaction transaction)
-    {
-        using var connection = Database.OpenConnection();
-        using var sqliteTransaction = connection.BeginTransaction();
-        var id = Add(connection, sqliteTransaction, transaction);
-        sqliteTransaction.Commit();
-        return id;
-    }
-
     public int Add(SqliteConnection connection, SqliteTransaction transaction, SupplierTransaction transactionModel)
     {
         using var command = connection.CreateCommand();

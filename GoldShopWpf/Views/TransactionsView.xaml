@@ -176,8 +176,15 @@
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
-                        <DataGridTextColumn Header="{DynamicResource LblDate}" Binding="{Binding Date, StringFormat={}{0:yyyy/MM/dd}}" Width="1.1*" MinWidth="84" ElementStyle="{StaticResource GridCellTextStyle}" />
-                        <DataGridTextColumn Header="{DynamicResource LblTrader}" Binding="{Binding SupplierName}" Width="1.6*" MinWidth="120" ElementStyle="{StaticResource GridCellTextStyle}" />
+                        <DataGridTemplateColumn Header="{DynamicResource LblTrader}" Width="1.6*" MinWidth="120">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding SupplierName}"
+                                               Style="{StaticResource GridCellTextStyle}"
+                                               FontWeight="Bold" />
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
                         <DataGridTemplateColumn Header="{DynamicResource LblType}" Width="1.2*" MinWidth="96">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
@@ -199,10 +206,10 @@
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
                         <DataGridTextColumn Header="{DynamicResource LblWeight}" Binding="{Binding OriginalWeight, Converter={StaticResource MoneyFormatConverter}, ConverterParameter='g'}" Width="*" MinWidth="78" ElementStyle="{StaticResource GridCellTextStyle}" />
-                        <DataGridTextColumn Header="{DynamicResource LblEquivalent21}" Binding="{Binding Equivalent21, Converter={StaticResource MoneyFormatConverter}, ConverterParameter='g'}" Width="*" MinWidth="92" ElementStyle="{StaticResource GridCellTextStyle}" />
                         <DataGridTextColumn Header="{DynamicResource LblKarat}" Binding="{Binding OriginalKarat}" Width="0.8*" MinWidth="60" ElementStyle="{StaticResource GridCellTextStyle}" />
-                        <DataGridTextColumn Header="{DynamicResource LblTotalManufacturing}" Binding="{Binding TotalManufacturing, Converter={StaticResource MoneyFormatConverter}}" Width="1.1*" MinWidth="96" ElementStyle="{StaticResource GridCellTextStyle}" />
-                        <DataGridTextColumn Header="{DynamicResource LblTotalImprovement}" Binding="{Binding TotalImprovement, Converter={StaticResource MoneyFormatConverter}}" Width="1.1*" MinWidth="96" ElementStyle="{StaticResource GridCellTextStyle}" />
+                        <DataGridTextColumn Header="{DynamicResource LblEquivalent21}" Binding="{Binding Equivalent21, Converter={StaticResource MoneyFormatConverter}, ConverterParameter='g'}" Width="*" MinWidth="92" ElementStyle="{StaticResource GridCellTextStyle}" />
+                        <DataGridTextColumn Header="{DynamicResource LblItem}" Binding="{Binding ItemName}" Width="1.2*" MinWidth="110" ElementStyle="{StaticResource GridCellTextStyle}" />
+                        <DataGridTextColumn Header="{DynamicResource LblNotes}" Binding="{Binding Notes}" Width="1.4*" MinWidth="140" ElementStyle="{StaticResource GridCellTextStyle}" />
                         <DataGridTextColumn Header="{DynamicResource LblCreatedAt}" Binding="{Binding CreatedAt, StringFormat={}{0:yyyy/MM/dd HH:mm}}" Width="1.3*" MinWidth="140" ElementStyle="{StaticResource GridCellTextStyle}" />
                         <DataGridTextColumn Header="{DynamicResource LblLastUpdated}" Binding="{Binding UpdatedAt, StringFormat={}{0:yyyy/MM/dd HH:mm}}" Width="1.3*" MinWidth="140" ElementStyle="{StaticResource GridCellTextStyle}" />
                         <DataGridTemplateColumn Header="..." Width="86">
@@ -252,7 +259,7 @@
                     </WrapPanel>
                 </Border>
 
-                <Border Grid.RowSpan="3" Visibility="{Binding IsBusy, Converter={StaticResource BooleanToVisibilityConverter}}" Background="#B3FFFFFF">
+                <Border Grid.RowSpan="3" Visibility="{Binding IsBusyVisible, Converter={StaticResource BooleanToVisibilityConverter}}" Background="#B3FFFFFF">
                     <Border Style="{StaticResource LoadingOverlayCard}">
                         <StackPanel>
                             <ProgressBar IsIndeterminate="True" Width="180" Height="6" Margin="0,0,0,14" />

@@ -46,10 +46,10 @@
                         <TextBlock Text="{DynamicResource LblTo}" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource MutedTextBrush}" Margin="0,0,0,6" />
                         <DatePicker x:Name="ToDate" Margin="0" />
                     </StackPanel>
-                    <Button Style="{StaticResource PrimaryButton}" Margin="0,18,12,0" Click="OnGenerate" ToolTip="{DynamicResource BtnApply}">
+                    <Button Style="{StaticResource PrimaryButton}" Margin="0,18,12,0" Click="OnGenerate" ToolTip="{DynamicResource BtnUpdateDates}">
                         <StackPanel Orientation="Horizontal">
                             <materialDesign:PackIcon Kind="Refresh" Width="18" Height="18" Margin="0,0,6,0" />
-                            <TextBlock Text="{DynamicResource BtnApply}" />
+                            <TextBlock Text="{DynamicResource BtnUpdateDates}" />
                         </StackPanel>
                     </Button>
                     <Button Style="{StaticResource GhostButton}" Margin="0,18,0,0" Click="OnPrint" ToolTip="{DynamicResource BtnPrint}">

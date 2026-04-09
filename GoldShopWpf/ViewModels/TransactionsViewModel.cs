@@ -9,7 +9,7 @@ namespace GoldShopWpf.ViewModels;
 public class TransactionsViewModel : ViewModelBase
 {
     private const int AllTradersId = 0;
-    private const int PageSize = 200;
+    private const int PageSize = 50;
     private static readonly TimeSpan DefaultLookback = TimeSpan.FromDays(30);
 
     private DateTime? _fromDate = DateTime.Today.AddDays(-30);
@@ -21,6 +21,9 @@ public class TransactionsViewModel : ViewModelBase
     private int _totalPages = 1;
     private int _totalRecords;
     private bool _isRefreshingSuppliers;
+    private bool _suppressDateAutoRefresh;
+    private CancellationTokenSource? _dateRefreshCts;
+    private Dictionary<int, string> _supplierLookup = [];
 
     public ObservableCollection<SupplierListItem> Suppliers { get; } = new();
     public ObservableCollection<TransactionListItem> FilteredTransactions { get; } = new();
@@ -67,13 +70,25 @@ public class TransactionsViewModel : ViewModelBase
     public DateTime? FromDate
     {
         get => _fromDate;
-        set => SetProperty(ref _fromDate, value);
+        set
+        {
+            if (SetProperty(ref _fromDate, value))
+            {
+                OnDateFilterChanged();
+            }
+        }
     }
 
     public DateTime? ToDate
     {
         get => _toDate;
-        set => SetProperty(ref _toDate, value);
+        set
+        {
+            if (SetProperty(ref _toDate, value))
+            {
+                OnDateFilterChanged();
+            }
+        }
     }
 
     public string SearchText
@@ -163,33 +178,33 @@ public class TransactionsViewModel : ViewModelBase
     public bool HasPreviousPage => CurrentPage > 1;
     public bool HasNextPage => CurrentPage < TotalPages;
 
-    public RelayCommand RefreshCommand { get; }
-    public RelayCommand AddCommand { get; }
+    public AsyncRelayCommand RefreshCommand { get; }
+    public AsyncRelayCommand AddCommand { get; }
     public RelayCommand AddTraderCommand { get; }
-    public RelayCommand ResetFiltersCommand { get; }
-    public RelayCommand EditCommand { get; }
-    public RelayCommand DeleteCommand { get; }
+    public AsyncRelayCommand ResetFiltersCommand { get; }
+    public AsyncRelayCommand EditCommand { get; }
+    public AsyncRelayCommand DeleteCommand { get; }
     public RelayCommand ViewRowCommand { get; }
-    public RelayCommand EditRowCommand { get; }
-    public RelayCommand DeleteRowCommand { get; }
-    public RelayCommand PreviousPageCommand { get; }
-    public RelayCommand NextPageCommand { get; }
+    public AsyncRelayCommand EditRowCommand { get; }
+    public AsyncRelayCommand DeleteRowCommand { get; }
+    public AsyncRelayCommand PreviousPageCommand { get; }
+    public AsyncRelayCommand NextPageCommand { get; }
     public RelayCommand ClearSelectionCommand { get; }
 
     public TransactionsViewModel()
     {
         FilteredTransactions.CollectionChanged += OnTransactionsCollectionChanged;
-        RefreshCommand = new RelayCommand(async _ => await LoadAsync());
-        AddCommand = new RelayCommand(_ => AddTransaction());
+        RefreshCommand = TrackCommand(new AsyncRelayCommand(_ => LoadAsync(), _ => !IsBusy));
+        AddCommand = TrackCommand(new AsyncRelayCommand(_ => AddTransactionAsync(), _ => !IsBusy));
         AddTraderCommand = new RelayCommand(_ => AddTrader());
-        ResetFiltersCommand = new RelayCommand(_ => ResetFilters());
-        EditCommand = new RelayCommand(_ => EditTransaction(null), _ => GetEditableTransaction(null) != null);
-        DeleteCommand = new RelayCommand(_ => DeleteTransactions(null), _ => GetDeleteTargets(null).Count > 0);
+        ResetFiltersCommand = TrackCommand(new AsyncRelayCommand(_ => ResetFiltersAsync(), _ => !IsBusy));
+        EditCommand = TrackCommand(new AsyncRelayCommand(_ => EditTransactionAsync(null), _ => !IsBusy && GetEditableTransaction(null) != null));
+        DeleteCommand = TrackCommand(new AsyncRelayCommand(_ => DeleteTransactionsAsync(null), _ => !IsBusy && GetDeleteTargets(null).Count > 0));
         ViewRowCommand = new RelayCommand(row => ViewTransaction(row as TransactionListItem), row => row is TransactionListItem);
-        EditRowCommand = new RelayCommand(row => EditTransaction(row), row => GetEditableTransaction(row) != null);
-        DeleteRowCommand = new RelayCommand(row => DeleteTransactions(row), row => GetDeleteTargets(row).Count > 0);
-        PreviousPageCommand = new RelayCommand(_ => ChangePage(-1), _ => HasPreviousPage);
-        NextPageCommand = new RelayCommand(_ => ChangePage(1), _ => HasNextPage);
+        EditRowCommand = TrackCommand(new AsyncRelayCommand(row => EditTransactionAsync(row), row => !IsBusy && GetEditableTransaction(row) != null));
+        DeleteRowCommand = TrackCommand(new AsyncRelayCommand(row => DeleteTransactionsAsync(row), row => !IsBusy && GetDeleteTargets(row).Count > 0));
+        PreviousPageCommand = TrackCommand(new AsyncRelayCommand(_ => ChangePageAsync(-1), _ => !IsBusy && HasPreviousPage));
+        NextPageCommand = TrackCommand(new AsyncRelayCommand(_ => ChangePageAsync(1), _ => !IsBusy && HasNextPage));
         ClearSelectionCommand = new RelayCommand(_ => ClearSelection(), _ => HasSelection);
         LoadSuppliers();
         Load();
@@ -197,14 +212,13 @@ public class TransactionsViewModel : ViewModelBase
 
     public void Load()
     {
-        LoadSuppliers();
-        _ = LoadAsync();
+        ObserveBackgroundTask(LoadAsync(), "TransactionsViewModel.Load");
     }
 
     public void RefreshLocalization()
     {
         LoadSuppliers();
-        _ = LoadAsync();
+        ObserveBackgroundTask(LoadAsync(), "TransactionsViewModel.RefreshLocalization");
     }
 
     public async Task LoadAsync()
@@ -220,16 +234,9 @@ public class TransactionsViewModel : ViewModelBase
             var supplierId = SelectedSupplier?.Id > 0 ? SelectedSupplier.Id : (int?)null;
             var requestedPage = CurrentPage;
 
-            var pageData = await Task.Run(() =>
-            {
-                var suppliers = AppServices.SupplierService.GetSuppliers();
-                var supplierLookup = suppliers.ToDictionary(s => s.Id, s => s.Name);
-                var page = AppServices.TransactionService.GetTransactionsPage(supplierId, FromDate, ToDate, requestedPage, PageSize);
-                return (supplierLookup, page);
-            });
+            var page = await Task.Run(() => AppServices.TransactionService.GetTransactionsPage(supplierId, FromDate, ToDate, requestedPage, PageSize));
 
-            var effectiveTotalPages = Math.Max(pageData.page.TotalPages, 1);
-            var page = pageData.page;
+            var effectiveTotalPages = Math.Max(page.TotalPages, 1);
             if (requestedPage > effectiveTotalPages)
             {
                 CurrentPage = effectiveTotalPages;
@@ -248,7 +255,7 @@ public class TransactionsViewModel : ViewModelBase
                 {
                     Id = transaction.Id,
                     SupplierId = transaction.SupplierId,
-                    SupplierName = pageData.supplierLookup.TryGetValue(transaction.SupplierId, out var name) ? name : string.Empty,
+                    SupplierName = _supplierLookup.TryGetValue(transaction.SupplierId, out var name) ? name : string.Empty,
                     Date = transaction.Date,
                     Type = transaction.Type,
                     Category = transaction.Category,
@@ -299,9 +306,11 @@ public class TransactionsViewModel : ViewModelBase
     {
         _isRefreshingSuppliers = true;
         var selectedId = SelectedSupplier?.Id ?? AllTradersId;
+        var supplierRecords = AppServices.SupplierService.GetSuppliers();
+        _supplierLookup = supplierRecords.ToDictionary(s => s.Id, s => s.Name);
         Suppliers.Clear();
         Suppliers.Add(new SupplierListItem { Id = AllTradersId, Name = UiText.L("LblAllSuppliers") });
-        foreach (var supplier in AppServices.SupplierService.GetSuppliers())
+        foreach (var supplier in supplierRecords)
         {
             Suppliers.Add(new SupplierListItem
             {
@@ -318,7 +327,7 @@ public class TransactionsViewModel : ViewModelBase
         _isRefreshingSuppliers = false;
     }
 
-    private async void AddTransaction()
+    private async Task AddTransactionAsync()
     {
         var selectedSupplierId = SelectedSupplier?.Id > 0 ? SelectedSupplier.Id : (int?)null;
         var defaults = AppServices.PricingSettingsService.GetLatest();
@@ -402,7 +411,7 @@ public class TransactionsViewModel : ViewModelBase
         dialog.ShowDialog();
     }
 
-    private async void EditTransaction(object? parameter)
+    private async Task EditTransactionAsync(object? parameter)
     {
         var transaction = GetEditableTransaction(parameter);
         if (transaction == null)
@@ -452,7 +461,7 @@ public class TransactionsViewModel : ViewModelBase
         }
     }
 
-    private async void DeleteTransactions(object? parameter)
+    private async Task DeleteTransactionsAsync(object? parameter)
     {
         var deleteTargets = GetDeleteTargets(parameter);
         if (deleteTargets.Count == 0)
@@ -499,20 +508,55 @@ public class TransactionsViewModel : ViewModelBase
         }
     }
 
-    private void ResetFilters()
+    private Task ResetFiltersAsync()
     {
+        _suppressDateAutoRefresh = true;
         FromDate = DateTime.Today.Subtract(DefaultLookback);
         ToDate = DateTime.Today;
+        _suppressDateAutoRefresh = false;
         SearchText = string.Empty;
         SelectedSupplier = Suppliers.FirstOrDefault();
         CurrentPage = 1;
-        _ = LoadAsync();
+        return LoadAsync();
     }
 
-    private void ChangePage(int delta)
+    private void OnDateFilterChanged()
+    {
+        if (_suppressDateAutoRefresh)
+        {
+            return;
+        }
+
+        CurrentPage = 1;
+        ScheduleDateAutoRefresh();
+    }
+
+    private void ScheduleDateAutoRefresh()
+    {
+        _dateRefreshCts?.Cancel();
+        _dateRefreshCts?.Dispose();
+        _dateRefreshCts = new CancellationTokenSource();
+        var token = _dateRefreshCts.Token;
+
+        ObserveBackgroundTask(AutoRefreshAsync(token), "TransactionsViewModel.DateFilterAutoRefresh");
+    }
+
+    private async Task AutoRefreshAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            await LoadAsync();
+        }
+        catch (OperationCanceledException)
+        {
+        }
+    }
+
+    private Task ChangePageAsync(int delta)
     {
         CurrentPage = Math.Clamp(CurrentPage + delta, 1, TotalPages);
-        Load();
+        return LoadAsync();
     }
 
     private void ClearSelection()

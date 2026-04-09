@@ -19,20 +19,18 @@ public partial class ActivationWindow : Window
 
     private void OnActivate(object sender, RoutedEventArgs e)
     {
-        if (LicenseService.TryActivate(LicenseKeyTextBox.Text, out var error))
+        if (!LicenseService.TryActivate(LicenseKeyTextBox.Text, out var error))
         {
-            MessageBox.Show($"تم تفعيل البرنامج بنجاح.\nLicensed to: {LicenseService.LicensedTo}", "التفعيل", MessageBoxButton.OK, MessageBoxImage.Information);
-            DialogResult = true;
-            Close();
+            MessageBox.Show(error, "التفعيل", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
-        MessageBox.Show(error, "التفعيل", MessageBoxButton.OK, MessageBoxImage.Warning);
+        MessageBox.Show("تم تفعيل البرنامج بنجاح. سيتم فتح النظام الآن.", "التفعيل", MessageBoxButton.OK, MessageBoxImage.Information);
+        DialogResult = true;
     }
 
     private void OnClose(object sender, RoutedEventArgs e)
     {
         DialogResult = false;
-        Close();
     }
 }

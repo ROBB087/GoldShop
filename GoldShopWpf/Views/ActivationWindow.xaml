@@ -3,18 +3,21 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         Title="تفعيل البرنامج"
-        Width="720"
-        Height="620"
-        MinWidth="680"
-        MinHeight="580"
+        Width="920"
+        Height="760"
+        MinWidth="760"
+        MinHeight="620"
         WindowStartupLocation="CenterScreen"
-        ResizeMode="NoResize"
+        ResizeMode="CanResize"
+        SizeToContent="Manual"
         FlowDirection="{DynamicResource AppFlowDirection}">
     <Grid Background="{DynamicResource AppBackgroundBrush}">
-        <Border Style="{StaticResource CardContainer}"
-                Margin="24"
+        <Border Margin="20"
+                Padding="0"
                 Background="#FFFDFC"
-                BorderBrush="#E7ECF2">
+                BorderBrush="#E7ECF2"
+                BorderThickness="1"
+                CornerRadius="26">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
@@ -23,10 +26,10 @@
                 </Grid.RowDefinitions>
 
                 <Border Grid.Row="0"
-                        Margin="0,0,0,20"
+                        Margin="22,22,22,18"
                         Padding="24"
-                        CornerRadius="22"
-                        Background="#FFF9EC"
+                        CornerRadius="24"
+                        Background="#FFF8E8"
                         BorderBrush="#F1E0A9"
                         BorderThickness="1">
                     <Grid>
@@ -35,90 +38,174 @@
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
 
-                        <StackPanel>
-                            <TextBlock Text="تفعيل البرنامج" FontSize="26" FontWeight="Bold" />
-                            <TextBlock Text="هذا الإصدار محمي برقم جهاز ومفتاح ترخيص. انسخ معرف الجهاز ثم أنشئ المفتاح والصقه هنا." Margin="0,8,0,0" Foreground="{StaticResource MutedTextBrush}" />
-                            <TextBlock Text="Licensed to: Abo Emad" Margin="0,10,0,0" FontWeight="SemiBold" />
+                        <StackPanel Margin="0,0,18,0">
+                            <TextBlock Text="تفعيل البرنامج"
+                                       FontSize="30"
+                                       FontWeight="Bold" />
+                            <TextBlock Text="أدخل رمز التفعيل لمرة واحدة فقط، وسيتم ربطه بهذا الجهاز وحفظه محلياً بشكل مشفر."
+                                       Margin="0,10,0,0"
+                                       TextWrapping="Wrap"
+                                       Foreground="{StaticResource MutedTextBrush}" />
+                            <TextBlock Text="إذا كانت الشاشة صغيرة فسيظهر تمرير تلقائي لتسهيل الوصول إلى كل المحتوى."
+                                       Margin="0,10,0,0"
+                                       TextWrapping="Wrap"
+                                       FontWeight="SemiBold"
+                                       Foreground="#7A5A00" />
                         </StackPanel>
 
                         <Border Grid.Column="1"
-                                Width="58"
-                                Height="58"
-                                CornerRadius="18"
-                                Background="#FFE29A">
+                                Width="72"
+                                Height="72"
+                                CornerRadius="22"
+                                Background="#FFE29A"
+                                VerticalAlignment="Top">
                             <materialDesign:PackIcon Kind="ShieldKeyOutline"
-                                                     Width="28"
-                                                     Height="28"
+                                                     Width="34"
+                                                     Height="34"
                                                      HorizontalAlignment="Center"
                                                      VerticalAlignment="Center" />
                         </Border>
                     </Grid>
                 </Border>
 
-                <StackPanel Grid.Row="1">
-                    <TextBlock Text="معرف الجهاز" Style="{StaticResource FieldLabelText}" />
-                    <TextBox x:Name="MachineIdTextBox"
-                             IsReadOnly="True"
-                             Margin="0,0,0,12"
-                             FontWeight="SemiBold" />
+                <ScrollViewer Grid.Row="1"
+                              Margin="22,0"
+                              VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled"
+                              CanContentScroll="False">
+                    <Grid Margin="0,0,0,12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="1.1*" />
+                            <ColumnDefinition Width="18" />
+                            <ColumnDefinition Width="0.9*" />
+                        </Grid.ColumnDefinitions>
 
-                    <Button Style="{StaticResource GhostButton}"
-                            Width="150"
-                            HorizontalAlignment="Right"
-                            Click="OnCopyMachineId"
-                            Margin="0,0,0,18">
-                        <StackPanel Orientation="Horizontal">
-                            <materialDesign:PackIcon Kind="ContentCopy" Margin="0,0,6,0" />
-                            <TextBlock Text="نسخ معرف الجهاز" />
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="معرف الجهاز"
+                                       Style="{StaticResource FieldLabelText}" />
+                            <TextBox x:Name="MachineIdTextBox"
+                                     IsReadOnly="True"
+                                     Margin="0,0,0,12"
+                                     MinHeight="46"
+                                     Padding="14,10"
+                                     FontWeight="SemiBold"
+                                     TextWrapping="Wrap" />
+
+                            <Button Style="{StaticResource GhostButton}"
+                                    Width="170"
+                                    HorizontalAlignment="Right"
+                                    Margin="0,0,0,24"
+                                    Click="OnCopyMachineId">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="ContentCopy" Margin="0,0,6,0" />
+                                    <TextBlock Text="نسخ معرف الجهاز" />
+                                </StackPanel>
+                            </Button>
+
+                            <TextBlock Text="رمز التفعيل"
+                                       Style="{StaticResource FieldLabelText}" />
+                            <TextBox x:Name="LicenseKeyTextBox"
+                                     AcceptsReturn="True"
+                                     TextWrapping="Wrap"
+                                     VerticalScrollBarVisibility="Auto"
+                                     MinHeight="240"
+                                     Padding="16"
+                                     materialDesign:HintAssist.Hint="ألصق رمز التفعيل هنا" />
                         </StackPanel>
-                    </Button>
 
-                    <TextBlock Text="مفتاح الترخيص" Style="{StaticResource FieldLabelText}" />
-                    <TextBox x:Name="LicenseKeyTextBox"
-                             AcceptsReturn="True"
-                             TextWrapping="Wrap"
-                             VerticalScrollBarVisibility="Auto"
-                             MinHeight="170"
-                             Padding="14"
-                             materialDesign:HintAssist.Hint="الصق مفتاح الترخيص هنا" />
+                        <StackPanel Grid.Column="2">
+                            <Border Padding="18"
+                                    CornerRadius="20"
+                                    Background="#F8FAFC"
+                                    BorderBrush="#DFE7F2"
+                                    BorderThickness="1">
+                                <StackPanel>
+                                    <TextBlock Text="كيف يتم التفعيل؟"
+                                               FontSize="20"
+                                               FontWeight="Bold" />
+                                    <TextBlock Text="1. انسخ معرف الجهاز وأرسله للمسؤول."
+                                               Margin="0,14,0,0"
+                                               TextWrapping="Wrap"
+                                               Foreground="{StaticResource MutedTextBrush}" />
+                                    <TextBlock Text="2. استخدم رمزاً صحيحاً من قائمة الرموز المعتمدة لهذا النظام."
+                                               Margin="0,10,0,0"
+                                               TextWrapping="Wrap"
+                                               Foreground="{StaticResource MutedTextBrush}" />
+                                    <TextBlock Text="3. الصق الرمز هنا ثم اضغط تفعيل."
+                                               Margin="0,10,0,0"
+                                               TextWrapping="Wrap"
+                                               Foreground="{StaticResource MutedTextBrush}" />
+                                    <TextBlock Text="4. بعد نجاح التفعيل لن يمكن استخدام نفس الرمز مرة أخرى على هذا الجهاز أو على جهاز آخر."
+                                               Margin="0,10,0,0"
+                                               TextWrapping="Wrap"
+                                               Foreground="{StaticResource MutedTextBrush}" />
+                                </StackPanel>
+                            </Border>
 
-                    <Border Margin="0,18,0,0"
-                            Padding="16"
-                            CornerRadius="16"
-                            Background="#F8FAFC"
-                            BorderBrush="#DFE7F2"
-                            BorderThickness="1">
-                        <TextBlock Text="خطوات التفعيل: 1) انسخ معرف الجهاز. 2) أنشئ المفتاح من أداة الترخيص. 3) الصق المفتاح واضغط تفعيل." Foreground="{StaticResource MutedTextBrush}" />
-                    </Border>
-                </StackPanel>
+                            <Border Margin="0,18,0,0"
+                                    Padding="18"
+                                    CornerRadius="20"
+                                    Background="#FFF6F1"
+                                    BorderBrush="#F3D3BF"
+                                    BorderThickness="1">
+                                <StackPanel>
+                                    <TextBlock Text="ملاحظات"
+                                               FontSize="18"
+                                               FontWeight="Bold" />
+                                    <TextBlock Text="البرنامج يعمل بدون إنترنت بعد التفعيل."
+                                               Margin="0,12,0,0"
+                                               TextWrapping="Wrap"
+                                               Foreground="{StaticResource MutedTextBrush}" />
+                                    <TextBlock Text="ملفات التفعيل المحلية محمية ومشفرة."
+                                               Margin="0,8,0,0"
+                                               TextWrapping="Wrap"
+                                               Foreground="{StaticResource MutedTextBrush}" />
+                                    <TextBlock Text="إذا ظهر خطأ في الرمز أو تم استخدامه من قبل، اطلب رمز اختبار جديد."
+                                               Margin="0,8,0,0"
+                                               TextWrapping="Wrap"
+                                               Foreground="{StaticResource MutedTextBrush}" />
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </Grid>
+                </ScrollViewer>
 
                 <Border Grid.Row="2"
-                        Margin="0,24,0,0"
+                        Margin="22,0,22,22"
                         Padding="18"
-                        CornerRadius="18"
                         Background="#FFFFFF"
                         BorderBrush="#E7ECF2"
-                        BorderThickness="1">
-                    <WrapPanel HorizontalAlignment="Center">
-                        <Button Style="{StaticResource GhostButton}"
-                                Width="150"
-                                Margin="0,0,12,0"
-                                Click="OnClose">
-                            <StackPanel Orientation="Horizontal">
-                                <materialDesign:PackIcon Kind="CloseCircleOutline" Margin="0,0,6,0" />
-                                <TextBlock Text="إغلاق" />
-                            </StackPanel>
-                        </Button>
+                        BorderThickness="1"
+                        CornerRadius="20">
+                    <DockPanel LastChildFill="False">
+                        <TextBlock DockPanel.Dock="Left"
+                                   VerticalAlignment="Center"
+                                   Foreground="{StaticResource MutedTextBrush}"
+                                   Text="التفعيل مرتبط بهذا الجهاز الحالي"
+                                   TextWrapping="Wrap" />
 
-                        <Button Style="{StaticResource PrimaryButton}"
-                                Width="170"
-                                Click="OnActivate">
-                            <StackPanel Orientation="Horizontal">
-                                <materialDesign:PackIcon Kind="KeyVariant" Margin="0,0,6,0" />
-                                <TextBlock Text="تفعيل" />
-                            </StackPanel>
-                        </Button>
-                    </WrapPanel>
+                        <WrapPanel DockPanel.Dock="Right"
+                                   HorizontalAlignment="Right">
+                            <Button Style="{StaticResource GhostButton}"
+                                    Width="150"
+                                    Margin="0,0,12,0"
+                                    Click="OnClose">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="CloseCircleOutline" Margin="0,0,6,0" />
+                                    <TextBlock Text="إغلاق" />
+                                </StackPanel>
+                            </Button>
+
+                            <Button Style="{StaticResource PrimaryButton}"
+                                    Width="180"
+                                    Click="OnActivate">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="KeyVariant" Margin="0,0,6,0" />
+                                    <TextBlock Text="تفعيل الآن" />
+                                </StackPanel>
+                            </Button>
+                        </WrapPanel>
+                    </DockPanel>
                 </Border>
             </Grid>
         </Border>

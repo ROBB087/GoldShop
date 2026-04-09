@@ -14,6 +14,9 @@ public class ClientNoteService
         _auditService = auditService;
     }
 
+    public PagedResult<ClientNote> GetNotesPage(string? searchText, int pageNumber, int pageSize)
+        => _clientNoteRepository.GetPaged(searchText, pageNumber, pageSize);
+
     public List<ClientNote> GetNotes() => _clientNoteRepository.GetAll();
 
     public int AddNote(string clientName, string content)
@@ -33,7 +36,7 @@ public class ClientNoteService
 
     public void UpdateNote(int id, string clientName, string content, DateTime createdAt)
     {
-        var existing = _clientNoteRepository.GetAll().FirstOrDefault(note => note.Id == id);
+        var existing = _clientNoteRepository.GetById(id);
         var note = new ClientNote
         {
             Id = id,
@@ -48,7 +51,7 @@ public class ClientNoteService
 
     public void DeleteNote(int id)
     {
-        var existing = _clientNoteRepository.GetAll().FirstOrDefault(note => note.Id == id);
+        var existing = _clientNoteRepository.GetById(id);
         _clientNoteRepository.Delete(id);
         if (existing != null)
         {

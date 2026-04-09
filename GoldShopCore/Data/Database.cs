@@ -5,10 +5,18 @@ namespace GoldShopCore.Data;
 public static class Database
 {
     private const int CurrentSchemaVersion = 4;
+    private static string? _dbFilePathOverride;
 
-    public static string DbFilePath => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "goldshop.db");
+    public static string DbFilePath => _dbFilePathOverride ?? Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "goldshop.db");
 
     public static string ConnectionString => $"Data Source={DbFilePath};Pooling=True;Mode=ReadWriteCreate;Cache=Shared";
+
+    public static void SetDbFilePathOverride(string? dbFilePath)
+    {
+        _dbFilePathOverride = string.IsNullOrWhiteSpace(dbFilePath)
+            ? null
+            : Path.GetFullPath(dbFilePath);
+    }
 
     public static void Initialize()
     {
@@ -382,12 +390,16 @@ CREATE INDEX IF NOT EXISTS IX_SupplierTransactions_IsDeleted ON SupplierTransact
 CREATE INDEX IF NOT EXISTS IX_SupplierTransactions_TxnDate ON SupplierTransactions(TxnDate DESC);
 CREATE INDEX IF NOT EXISTS IX_SupplierTransactions_Type ON SupplierTransactions(Type);
 CREATE INDEX IF NOT EXISTS IX_SupplierTransactions_Category ON SupplierTransactions(Category);
+CREATE INDEX IF NOT EXISTS IX_SupplierTransactions_IsDeleted_TxnDate_Id ON SupplierTransactions(IsDeleted, TxnDate DESC, Id DESC);
 CREATE INDEX IF NOT EXISTS IX_SupplierTransactions_SupplierId_TxnDate ON SupplierTransactions(SupplierId, IsDeleted, TxnDate DESC);
 CREATE INDEX IF NOT EXISTS IX_SupplierTransactions_SupplierId_Type_TxnDate ON SupplierTransactions(SupplierId, IsDeleted, Type, TxnDate DESC);
+CREATE INDEX IF NOT EXISTS IX_SupplierTransactions_IsDeleted_SupplierId_TxnDate_Id ON SupplierTransactions(IsDeleted, SupplierId, TxnDate DESC, Id DESC);
 CREATE INDEX IF NOT EXISTS IX_Discounts_SupplierId ON Discounts(SupplierId);
 CREATE INDEX IF NOT EXISTS IX_Discounts_IsDeleted ON Discounts(IsDeleted);
 CREATE INDEX IF NOT EXISTS IX_Discounts_CreatedAt ON Discounts(CreatedAt DESC);
 CREATE INDEX IF NOT EXISTS IX_Discounts_SupplierId_Type_CreatedAt ON Discounts(SupplierId, IsDeleted, Type, CreatedAt DESC);
+CREATE INDEX IF NOT EXISTS IX_Discounts_IsDeleted_CreatedAt_Id ON Discounts(IsDeleted, CreatedAt DESC, Id DESC);
+CREATE INDEX IF NOT EXISTS IX_Discounts_IsDeleted_SupplierId_CreatedAt_Id ON Discounts(IsDeleted, SupplierId, CreatedAt DESC, Id DESC);
 CREATE INDEX IF NOT EXISTS IX_Suppliers_Name ON Suppliers(Name);
 CREATE INDEX IF NOT EXISTS IX_ClientNotes_ClientName ON ClientNotes(ClientName);
 CREATE INDEX IF NOT EXISTS IX_ClientNotes_CreatedAt ON ClientNotes(CreatedAt DESC);

@@ -3,7 +3,12 @@ using GoldShopWpf.Services;
 
 namespace GoldShopWpf.ViewModels;
 
-public class RelayCommand : ICommand
+public interface INotifiesCanExecuteChanged
+{
+    void RaiseCanExecuteChanged();
+}
+
+public class RelayCommand : ICommand, INotifiesCanExecuteChanged
 {
     private readonly Action<object?> _execute;
     private readonly Func<object?, bool>? _canExecute;

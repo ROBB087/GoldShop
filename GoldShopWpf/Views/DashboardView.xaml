@@ -102,19 +102,9 @@
                                     Padding="14,10">
                                 <StackPanel Orientation="Horizontal">
                                     <materialDesign:PackIcon Kind="AccountGroup" Width="18" Height="18" Foreground="#AF8600" Margin="0,0,8,0" />
-                                    <TextBlock FontWeight="Bold"
-                                               FontSize="16">
-                                        <TextBlock.Style>
-                                            <Style TargetType="TextBlock">
-                                                <Setter Property="Text" Value="{Binding SupplierCount, StringFormat=Active Traders: {0}}" />
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=UserControl}, Path=FlowDirection}" Value="RightToLeft">
-                                                        <Setter Property="Text" Value="{Binding SupplierCount, StringFormat=التجار النشطون: {0}}" />
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </TextBlock.Style>
-                                    </TextBlock>
+                                    <TextBlock Text="{Binding TraderCountLabel}"
+                                               FontWeight="Bold"
+                                               FontSize="16" />
                                 </StackPanel>
                             </Border>
                         </WrapPanel>
@@ -368,45 +358,107 @@
                 <Border Grid.Column="1"
                         Style="{StaticResource DashboardMetricCard}"
                         Margin="12,8,8,8">
-                    <StackPanel>
-                        <TextBlock Text="{DynamicResource LblGoldVsCosts}" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,6" />
-                        <TextBlock Text="{DynamicResource LblGoldVsCostsSub}"
-                                   Foreground="{StaticResource MutedTextBrush}"
-                                   Margin="0,0,0,18" />
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="220" />
-                                <RowDefinition Height="Auto" />
-                            </Grid.RowDefinitions>
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
 
-                            <Border Grid.Row="0"
-                                    Background="#FCFCFD"
-                                    CornerRadius="18"
-                                    BorderBrush="#E9EDF5"
-                                    BorderThickness="1"
-                                    Padding="14">
-                                <Viewbox Stretch="Uniform" Height="190">
-                                    <Canvas Height="200" Width="520">
-                                        <Polyline Points="{Binding GoldLinePoints}" Stroke="#E0AA00" StrokeThickness="3" StrokeLineJoin="Round" />
-                                        <Polyline Points="{Binding PaymentLinePoints}" Stroke="#2E7D32" StrokeThickness="3" StrokeLineJoin="Round" />
-                                    </Canvas>
-                                </Viewbox>
+                        <StackPanel>
+                            <TextBlock Text="{Binding RecentTransactionsTitle}" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,6" />
+                            <TextBlock Text="{Binding RecentTransactionsSub}"
+                                       Foreground="{StaticResource MutedTextBrush}"
+                                       Margin="0,0,0,18" />
+                        </StackPanel>
+
+                        <Grid Grid.Row="1">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto"
+                                          HorizontalScrollBarVisibility="Disabled">
+                                <ItemsControl ItemsSource="{Binding VisibleRecentTransactions}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Margin="0,0,0,10"
+                                                    Padding="14,12"
+                                                    Background="#FCFCFD"
+                                                    BorderBrush="#E9EDF5"
+                                                    BorderThickness="1"
+                                                    CornerRadius="16">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+
+                                                    <StackPanel Grid.Column="0">
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <Border Background="{Binding Type, Converter={StaticResource TransactionTypeToBrushConverter}}"
+                                                                    CornerRadius="999"
+                                                                    Padding="10,4"
+                                                                    Margin="0,0,10,0">
+                                                                <TextBlock Text="{Binding Category, Converter={StaticResource TransactionCategoryToLabelConverter}}"
+                                                                           Foreground="White"
+                                                                           FontSize="11"
+                                                                           FontWeight="SemiBold" />
+                                                            </Border>
+                                                            <TextBlock Text="{Binding TraderName}"
+                                                                       FontWeight="SemiBold"
+                                                                       FontSize="14"
+                                                                       VerticalAlignment="Center" />
+                                                        </StackPanel>
+
+                                                        <TextBlock Text="{Binding ItemName}"
+                                                                   Margin="0,8,0,2"
+                                                                   FontSize="13"
+                                                                   Foreground="#344054"
+                                                                   FontWeight="SemiBold" />
+
+                                                        <TextBlock Text="{Binding DetailsLine}"
+                                                                   FontSize="12"
+                                                                   Foreground="{StaticResource MutedTextBrush}" />
+                                                    </StackPanel>
+
+                                                    <StackPanel Grid.Column="1"
+                                                                HorizontalAlignment="Left"
+                                                                Margin="16,0,0,0">
+                                                        <TextBlock Text="{Binding MetricDisplay}"
+                                                                   FontWeight="Bold"
+                                                                   FontSize="15"
+                                                                   TextAlignment="Center" />
+                                                        <TextBlock Text="{Binding DateDisplay}"
+                                                                   Margin="0,6,0,0"
+                                                                   FontSize="11"
+                                                                   Foreground="{StaticResource MutedTextBrush}"
+                                                                   TextAlignment="Center" />
+                                                    </StackPanel>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+
+                            <Border Background="#F8FAFC"
+                                    Visibility="{Binding VisibleRecentTransactions.Count, Converter={StaticResource ZeroCountToVisibilityConverter}}">
+                                <StackPanel VerticalAlignment="Center"
+                                            HorizontalAlignment="Center">
+                                    <materialDesign:PackIcon Kind="InboxOutline"
+                                                             Width="32"
+                                                             Height="32"
+                                                             Foreground="#98A2B3"
+                                                             HorizontalAlignment="Center" />
+                                    <TextBlock Text="{Binding EmptyRecentTransactionsTitle}"
+                                               FontSize="18"
+                                               FontWeight="SemiBold"
+                                               Margin="0,12,0,6"
+                                               HorizontalAlignment="Center" />
+                                    <TextBlock Text="{Binding EmptyRecentTransactionsSub}"
+                                               Foreground="#667085"
+                                               HorizontalAlignment="Center"
+                                               TextAlignment="Center" />
+                                </StackPanel>
                             </Border>
-
-                            <ItemsControl Grid.Row="1" ItemsSource="{Binding GoldPaymentLabels}" Margin="0,14,0,0">
-                                <ItemsControl.ItemsPanel>
-                                    <ItemsPanelTemplate>
-                                        <UniformGrid Columns="7" />
-                                    </ItemsPanelTemplate>
-                                </ItemsControl.ItemsPanel>
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <TextBlock Text="{Binding}" FontSize="10" TextAlignment="Center" Foreground="{StaticResource MutedTextBrush}" />
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
                         </Grid>
-                    </StackPanel>
+                    </Grid>
                 </Border>
             </Grid>
         </StackPanel>
