@@ -40,10 +40,32 @@ public class TransactionRepository
         using var command = connection.CreateCommand();
         command.CommandText = @"
 SELECT Id, SupplierId, TxnDate, Type, Category, ItemName, Description, OriginalWeight, OriginalKarat, Equivalent21,
-       ManufacturingPerGram, ImprovementPerGram, TotalManufacturing, TotalImprovement, Notes, IsDeleted, DeletedAt, CreatedAt, UpdatedAt
+       ManufacturingPerGram, ImprovementPerGram, TotalManufacturing, TotalImprovement, IdempotencyKey, Notes, IsDeleted, DeletedAt, CreatedAt, UpdatedAt
 FROM SupplierTransactions
 WHERE Id = $id;";
         command.Parameters.AddWithValue("$id", id);
+        using var reader = command.ExecuteReader();
+        return reader.Read() ? MapTransaction(reader) : null;
+    }
+
+    public SupplierTransaction? GetBySupplierAndIdempotencyKey(int supplierId, string idempotencyKey)
+    {
+        using var connection = Database.OpenConnection();
+        return GetBySupplierAndIdempotencyKey(connection, null, supplierId, idempotencyKey);
+    }
+
+    public SupplierTransaction? GetBySupplierAndIdempotencyKey(SqliteConnection connection, SqliteTransaction? transaction, int supplierId, string idempotencyKey)
+    {
+        using var command = connection.CreateCommand();
+        command.Transaction = transaction;
+        command.CommandText = @"
+SELECT Id, SupplierId, TxnDate, Type, Category, ItemName, Description, OriginalWeight, OriginalKarat, Equivalent21,
+       ManufacturingPerGram, ImprovementPerGram, TotalManufacturing, TotalImprovement, IdempotencyKey, Notes, IsDeleted, DeletedAt, CreatedAt, UpdatedAt
+FROM SupplierTransactions
+WHERE SupplierId = $supplierId AND IdempotencyKey = $idempotencyKey
+LIMIT 1;";
+        command.Parameters.AddWithValue("$supplierId", supplierId);
+        command.Parameters.AddWithValue("$idempotencyKey", idempotencyKey);
         using var reader = command.ExecuteReader();
         return reader.Read() ? MapTransaction(reader) : null;
     }
@@ -55,10 +77,10 @@ WHERE Id = $id;";
         command.CommandText = @"
 INSERT INTO SupplierTransactions
     (SupplierId, TxnDate, Type, ItemName, Description, Amount, Weight, Purity, OriginalWeight, OriginalKarat, Equivalent21,
-     ManufacturingPerGram, ImprovementPerGram, TotalManufacturing, TotalImprovement, Category, Notes, IsDeleted, DeletedAt, CreatedAt, UpdatedAt)
+     ManufacturingPerGram, ImprovementPerGram, TotalManufacturing, TotalImprovement, Category, IdempotencyKey, Notes, IsDeleted, DeletedAt, CreatedAt, UpdatedAt)
 VALUES
     ($supplierId, $date, $type, $itemName, $description, $amount, $weight, $purity, $originalWeight, $originalKarat, $equivalent21,
-     $manufacturingPerGram, $improvementPerGram, $totalManufacturing, $totalImprovement, $category, $notes, $isDeleted, $deletedAt, $createdAt, $updatedAt);
+     $manufacturingPerGram, $improvementPerGram, $totalManufacturing, $totalImprovement, $category, $idempotencyKey, $notes, $isDeleted, $deletedAt, $createdAt, $updatedAt);
 SELECT last_insert_rowid();";
 
         BindTransaction(command, transactionModel);
@@ -87,6 +109,7 @@ SET SupplierId = $supplierId,
     TotalManufacturing = $totalManufacturing,
     TotalImprovement = $totalImprovement,
     Category = $category,
+    IdempotencyKey = $idempotencyKey,
     Notes = $notes,
     IsDeleted = $isDeleted,
     DeletedAt = $deletedAt,
@@ -126,6 +149,8 @@ WHERE Id = $id;";
                     TotalGold21 = snapshot.TotalEquivalent21,
                     TotalManufacturing = snapshot.TotalManufacturing,
                     TotalImprovement = snapshot.TotalImprovement,
+                    ManufacturingAdjustments = snapshot.ManufacturingAdjustments,
+                    ImprovementAdjustments = snapshot.ImprovementAdjustments,
                     ManufacturingDiscounts = snapshot.ManufacturingDiscounts,
                     ImprovementDiscounts = snapshot.ImprovementDiscounts
                 };
@@ -152,6 +177,12 @@ FROM SupplierTransactions
             summary.TotalImprovement = ReadDecimal(reader, 2);
         }
 
+        var adjustments = new OpeningBalanceAdjustmentRepository().GetAdjustmentTotals(supplierId, from, to);
+        summary.TotalManufacturing += adjustments.manufacturingAdjustments;
+        summary.TotalImprovement += adjustments.improvementAdjustments;
+        summary.ManufacturingAdjustments = adjustments.manufacturingAdjustments;
+        summary.ImprovementAdjustments = adjustments.improvementAdjustments;
+
         return summary;
     }
 
@@ -165,6 +196,8 @@ FROM SupplierTransactions
                 TotalGold21 = snapshots.Sum(x => x.TotalEquivalent21),
                 TotalManufacturing = snapshots.Sum(x => x.TotalManufacturing),
                 TotalImprovement = snapshots.Sum(x => x.TotalImprovement),
+                ManufacturingAdjustments = snapshots.Sum(x => x.ManufacturingAdjustments),
+                ImprovementAdjustments = snapshots.Sum(x => x.ImprovementAdjustments),
                 ManufacturingDiscounts = snapshots.Sum(x => x.ManufacturingDiscounts),
                 ImprovementDiscounts = snapshots.Sum(x => x.ImprovementDiscounts)
             };
@@ -190,6 +223,12 @@ FROM SupplierTransactions
             summary.TotalImprovement = ReadDecimal(reader, 2);
         }
 
+        var adjustments = new OpeningBalanceAdjustmentRepository().GetAdjustmentTotalsAll(from, to);
+        summary.TotalManufacturing += adjustments.manufacturingAdjustments;
+        summary.TotalImprovement += adjustments.improvementAdjustments;
+        summary.ManufacturingAdjustments = adjustments.manufacturingAdjustments;
+        summary.ImprovementAdjustments = adjustments.improvementAdjustments;
+
         return summary;
     }
 
@@ -210,13 +249,19 @@ GROUP BY SupplierId;";
 
         using var reader = command.ExecuteReader();
         var rows = new List<SupplierSummaryRow>();
+        var adjustmentLookup = new OpeningBalanceAdjustmentRepository()
+            .GetSupplierAdjustmentSummaries(from, to)
+            .ToDictionary(row => row.SupplierId);
+
         while (reader.Read())
         {
+            var supplierId = reader.GetInt32(0);
+            adjustmentLookup.TryGetValue(supplierId, out var adjustment);
             rows.Add(new SupplierSummaryRow(
-                reader.GetInt32(0),
+                supplierId,
                 ReadDecimal(reader, 1),
-                ReadDecimal(reader, 2),
-                ReadDecimal(reader, 3)));
+                ReadDecimal(reader, 2) + (adjustment?.ManufacturingAdjustments ?? 0m),
+                ReadDecimal(reader, 3) + (adjustment?.ImprovementAdjustments ?? 0m)));
         }
 
         return rows;
@@ -293,6 +338,27 @@ ORDER BY TxnDate;";
                 ReadDecimal(reader, 2)));
         }
 
+        var adjustmentTotals = new OpeningBalanceAdjustmentRepository().GetAll(from, to)
+            .GroupBy(item => item.AdjustmentDate.Date)
+            .ToDictionary(
+                group => group.Key,
+                group => group.Sum(item => item.Amount));
+
+        for (var index = 0; index < rows.Count; index++)
+        {
+            if (adjustmentTotals.TryGetValue(rows[index].Date.Date, out var adjustmentAmount))
+            {
+                rows[index] = rows[index] with { TotalCharges = rows[index].TotalCharges + adjustmentAmount };
+            }
+        }
+
+        foreach (var adjustmentOnlyDay in adjustmentTotals.Keys.Where(day => rows.All(row => row.Date.Date != day)).OrderBy(day => day))
+        {
+            rows.Add(new DailyTransactionTotals(adjustmentOnlyDay, 0m, adjustmentTotals[adjustmentOnlyDay]));
+        }
+
+        rows.Sort((left, right) => left.Date.CompareTo(right.Date));
+
         return rows;
     }
 
@@ -325,7 +391,7 @@ ORDER BY TxnDate;";
 
         command.CommandText = $@"
 SELECT Id, SupplierId, TxnDate, Type, Category, ItemName, Description, OriginalWeight, OriginalKarat, Equivalent21,
-       ManufacturingPerGram, ImprovementPerGram, TotalManufacturing, TotalImprovement, Notes, IsDeleted, DeletedAt, CreatedAt, UpdatedAt
+       ManufacturingPerGram, ImprovementPerGram, TotalManufacturing, TotalImprovement, IdempotencyKey, Notes, IsDeleted, DeletedAt, CreatedAt, UpdatedAt
 FROM SupplierTransactions
 {where}
 ORDER BY TxnDate DESC, Id DESC{pagingSql};";
@@ -385,6 +451,7 @@ ORDER BY TxnDate DESC, Id DESC{pagingSql};";
         command.Parameters.AddWithValue("$totalManufacturing", (double)transaction.TotalManufacturing);
         command.Parameters.AddWithValue("$totalImprovement", (double)transaction.TotalImprovement);
         command.Parameters.AddWithValue("$category", transaction.Category);
+        command.Parameters.AddWithValue("$idempotencyKey", (object?)transaction.IdempotencyKey ?? DBNull.Value);
         command.Parameters.AddWithValue("$notes", (object?)transaction.Notes ?? DBNull.Value);
         command.Parameters.AddWithValue("$isDeleted", transaction.IsDeleted ? 1 : 0);
         command.Parameters.AddWithValue("$deletedAt", transaction.DeletedAt?.ToString("yyyy-MM-dd HH:mm:ss") ?? (object)DBNull.Value);
@@ -425,11 +492,12 @@ END";
             ImprovementPerGram = ReadDecimal(reader, 11),
             TotalManufacturing = ReadDecimal(reader, 12),
             TotalImprovement = ReadDecimal(reader, 13),
-            Notes = reader.IsDBNull(14) ? null : reader.GetString(14),
-            IsDeleted = !reader.IsDBNull(15) && reader.GetInt32(15) == 1,
-            DeletedAt = reader.IsDBNull(16) ? null : DateTime.Parse(reader.GetString(16)),
-            CreatedAt = DateTime.Parse(reader.GetString(17)),
-            UpdatedAt = DateTime.Parse(reader.GetString(18))
+            IdempotencyKey = reader.IsDBNull(14) ? null : reader.GetString(14),
+            Notes = reader.IsDBNull(15) ? null : reader.GetString(15),
+            IsDeleted = !reader.IsDBNull(16) && reader.GetInt32(16) == 1,
+            DeletedAt = reader.IsDBNull(17) ? null : DateTime.Parse(reader.GetString(17)),
+            CreatedAt = DateTime.Parse(reader.GetString(18)),
+            UpdatedAt = DateTime.Parse(reader.GetString(19))
         };
     }
 }

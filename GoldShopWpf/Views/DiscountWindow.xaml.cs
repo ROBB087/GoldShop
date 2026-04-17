@@ -17,6 +17,7 @@ public partial class DiscountWindow : Window
     public DiscountWindow()
     {
         InitializeComponent();
+        DialogWindowLayout.Apply(this);
         Title = UiText.L("WindowAddDiscount");
         HeaderTitleText.Text = Title;
         TypeCombo.ItemsSource = new[]

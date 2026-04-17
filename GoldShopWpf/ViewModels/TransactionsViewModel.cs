@@ -10,9 +10,7 @@ public class TransactionsViewModel : ViewModelBase
 {
     private const int AllTradersId = 0;
     private const int PageSize = 50;
-    private static readonly TimeSpan DefaultLookback = TimeSpan.FromDays(30);
-
-    private DateTime? _fromDate = DateTime.Today.AddDays(-30);
+    private DateTime? _fromDate = DateTime.Today;
     private DateTime? _toDate = DateTime.Today;
     private string _searchText = string.Empty;
     private SupplierListItem? _selectedSupplier;
@@ -72,7 +70,8 @@ public class TransactionsViewModel : ViewModelBase
         get => _fromDate;
         set
         {
-            if (SetProperty(ref _fromDate, value))
+            var normalized = value?.Date;
+            if (SetProperty(ref _fromDate, normalized))
             {
                 OnDateFilterChanged();
             }
@@ -84,7 +83,8 @@ public class TransactionsViewModel : ViewModelBase
         get => _toDate;
         set
         {
-            if (SetProperty(ref _toDate, value))
+            var normalized = value?.Date;
+            if (SetProperty(ref _toDate, normalized))
             {
                 OnDateFilterChanged();
             }
@@ -194,6 +194,7 @@ public class TransactionsViewModel : ViewModelBase
     public TransactionsViewModel()
     {
         FilteredTransactions.CollectionChanged += OnTransactionsCollectionChanged;
+        SupplierChangeNotifier.SuppliersChanged += OnSuppliersChanged;
         RefreshCommand = TrackCommand(new AsyncRelayCommand(_ => LoadAsync(), _ => !IsBusy));
         AddCommand = TrackCommand(new AsyncRelayCommand(_ => AddTransactionAsync(), _ => !IsBusy));
         AddTraderCommand = new RelayCommand(_ => AddTrader());
@@ -231,16 +232,18 @@ public class TransactionsViewModel : ViewModelBase
 
         await RunBusyAsync(UiText.L("MsgLoadingTransactions"), async () =>
         {
+            var from = FromDate?.Date;
+            var to = ToDate?.Date;
             var supplierId = SelectedSupplier?.Id > 0 ? SelectedSupplier.Id : (int?)null;
             var requestedPage = CurrentPage;
 
-            var page = await Task.Run(() => AppServices.TransactionService.GetTransactionsPage(supplierId, FromDate, ToDate, requestedPage, PageSize));
+            var page = await Task.Run(() => AppServices.TransactionService.GetTransactionsPage(supplierId, from, to, requestedPage, PageSize));
 
             var effectiveTotalPages = Math.Max(page.TotalPages, 1);
             if (requestedPage > effectiveTotalPages)
             {
                 CurrentPage = effectiveTotalPages;
-                page = await Task.Run(() => AppServices.TransactionService.GetTransactionsPage(supplierId, FromDate, ToDate, CurrentPage, PageSize));
+                page = await Task.Run(() => AppServices.TransactionService.GetTransactionsPage(supplierId, from, to, CurrentPage, PageSize));
             }
 
             TotalRecords = page.TotalCount;
@@ -335,6 +338,7 @@ public class TransactionsViewModel : ViewModelBase
             selectedSupplierId,
             Suppliers.Where(s => s.Id != AllTradersId).ToList(),
             defaults.DefaultManufacturingPerGram,
+            defaults.DefaultManufacturingPerGram24,
             defaults.DefaultImprovementPerGram);
 
         if (dialog.ShowDialog() != true)
@@ -365,7 +369,8 @@ public class TransactionsViewModel : ViewModelBase
                     originalKarat,
                     manufacturingPerGram,
                     improvementPerGram,
-                    notes));
+                    notes,
+                    Guid.NewGuid().ToString("N")));
             }, string.Empty, rethrow: true);
 
             ToastService.ShowSuccess(UiText.L("MsgTransactionSaved"));
@@ -396,8 +401,18 @@ public class TransactionsViewModel : ViewModelBase
             dialog.WorkerPhone,
             dialog.SupplierNotes);
 
+        SupplierChangeNotifier.NotifySuppliersChanged();
         LoadSuppliers();
         ToastService.ShowSuccess(UiText.L("MsgSupplierSaved"));
+    }
+
+    private void OnSuppliersChanged()
+    {
+        System.Windows.Application.Current?.Dispatcher.Invoke(() =>
+        {
+            LoadSuppliers();
+            ObserveBackgroundTask(LoadAsync(), "TransactionsViewModel.OnSuppliersChanged");
+        });
     }
 
     private void ViewTransaction(TransactionListItem? transaction)
@@ -511,7 +526,7 @@ public class TransactionsViewModel : ViewModelBase
     private Task ResetFiltersAsync()
     {
         _suppressDateAutoRefresh = true;
-        FromDate = DateTime.Today.Subtract(DefaultLookback);
+        FromDate = DateTime.Today;
         ToDate = DateTime.Today;
         _suppressDateAutoRefresh = false;
         SearchText = string.Empty;

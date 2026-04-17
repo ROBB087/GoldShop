@@ -21,16 +21,22 @@ public class PricingSettingsService
         return _cacheService.GetPricingSettings(() => _pricingSettingsRepository.GetLatest() ?? new PricingSettings
         {
             DefaultManufacturingPerGram = 0,
+            DefaultManufacturingPerGram24 = 0,
             DefaultImprovementPerGram = 0,
             CreatedAt = DateTime.Now
         });
     }
 
-    public void Save(decimal defaultManufacturingPerGram, decimal defaultImprovementPerGram)
+    public void Save(decimal defaultManufacturingPerGram, decimal defaultManufacturingPerGram24, decimal defaultImprovementPerGram)
     {
         if (defaultManufacturingPerGram < 0)
         {
             throw new ArgumentException("Default manufacturing value must be zero or greater.", nameof(defaultManufacturingPerGram));
+        }
+
+        if (defaultManufacturingPerGram24 < 0)
+        {
+            throw new ArgumentException("Default 24K manufacturing value must be zero or greater.", nameof(defaultManufacturingPerGram24));
         }
 
         if (defaultImprovementPerGram < 0)
@@ -42,6 +48,7 @@ public class PricingSettingsService
         var settings = new PricingSettings
         {
             DefaultManufacturingPerGram = decimal.Round(defaultManufacturingPerGram, 4, MidpointRounding.AwayFromZero),
+            DefaultManufacturingPerGram24 = decimal.Round(defaultManufacturingPerGram24, 4, MidpointRounding.AwayFromZero),
             DefaultImprovementPerGram = decimal.Round(defaultImprovementPerGram, 4, MidpointRounding.AwayFromZero),
             CreatedAt = DateTime.Now
         };

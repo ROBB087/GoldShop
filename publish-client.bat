@@ -6,7 +6,7 @@ set RUNTIME=win-x64
 set OUTDIR=%~dp0publish\client\GoldShop
 
 echo Publishing client package...
-dotnet publish "%PROJECT%" -c Release -r %RUNTIME% --self-contained true -p:PublishSingleFile=true -o "%OUTDIR%"
+dotnet publish "%PROJECT%" -c Release -r %RUNTIME% --self-contained true -p:PublishSingleFile=false -p:PublishReadyToRun=false -p:DebugType=None -p:DebugSymbols=false -o "%OUTDIR%"
 if errorlevel 1 (
     echo.
     echo Client publish failed.

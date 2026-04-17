@@ -3,11 +3,11 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         Title="{DynamicResource WindowAddTransaction}"
-        Height="980"
-        Width="760"
-        MinWidth="620"
+        Height="940"
+        Width="660"
+        MinWidth="580"
         MinHeight="760"
-        WindowStartupLocation="CenterScreen"
+        WindowStartupLocation="CenterOwner"
         ResizeMode="CanResize"
         FlowDirection="{DynamicResource AppFlowDirection}">
     <Grid Background="{DynamicResource AppBackgroundBrush}">

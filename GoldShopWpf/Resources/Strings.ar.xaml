@@ -14,6 +14,7 @@
   <sys:String x:Key="BtnAddTrader">إضافة تاجر</sys:String>
   <sys:String x:Key="BtnAddTransaction">إضافة حركة</sys:String>
   <sys:String x:Key="BtnAddDiscount">إضافة خصم</sys:String>
+  <sys:String x:Key="BtnAddOpeningBalanceAdjustment">إضافة مصنعية / تحسين</sys:String>
   <sys:String x:Key="BtnEdit">تعديل</sys:String>
   <sys:String x:Key="BtnDelete">حذف</sys:String>
   <sys:String x:Key="BtnViewDetails">عرض التفاصيل</sys:String>
@@ -21,7 +22,7 @@
   <sys:String x:Key="BtnAddNote">إضافة ملاحظة</sys:String>
   <sys:String x:Key="BtnPrint">طباعة</sys:String>
   <sys:String x:Key="BtnApply">حفظ</sys:String>
-  <sys:String x:Key="BtnUpdateDates">تحديث التاريخ</sys:String>
+  <sys:String x:Key="BtnUpdateDates">تحديث</sys:String>
   <sys:String x:Key="BtnClear">إلغاء</sys:String>
   <sys:String x:Key="BtnReset">إعادة تعيين</sys:String>
   <sys:String x:Key="BtnBackup">نسخ قاعدة البيانات</sys:String>
@@ -49,6 +50,7 @@
   <sys:String x:Key="LblKarat">العيار</sys:String>
   <sys:String x:Key="LblEquivalent21">المكافئ 21 (جم)</sys:String>
   <sys:String x:Key="LblManufacturingPerGram">المصنعية / جم</sys:String>
+  <sys:String x:Key="LblManufacturingPerGram24">المصنعية / جم (عيار 24)</sys:String>
   <sys:String x:Key="LblImprovementPerGram">التحسين / جم 21</sys:String>
   <sys:String x:Key="LblManufacturingPayment">سداد المصنعية</sys:String>
   <sys:String x:Key="LblRefiningPayment">سداد التحسين</sys:String>
@@ -65,7 +67,14 @@
   <sys:String x:Key="LblFinalImprovement">صافي التحسين</sys:String>
   <sys:String x:Key="LblTraceability">التتبع</sys:String>
   <sys:String x:Key="LblDiscounts">الخصومات</sys:String>
+  <sys:String x:Key="LblTransactionCount">عدد الحركات</sys:String>
+  <sys:String x:Key="LblDiscountCount">عدد الخصومات</sys:String>
   <sys:String x:Key="LblDiscountType">نوع الخصم</sys:String>
+  <sys:String x:Key="LblOpeningBalanceAdjustmentType">نوع التسوية</sys:String>
+  <sys:String x:Key="LblOpeningBalanceManufacturingAdjustment">إضافة مصنعية</sys:String>
+  <sys:String x:Key="LblOpeningBalanceImprovementAdjustment">إضافة تحسين</sys:String>
+  <sys:String x:Key="LblOpeningBalanceAdjustmentsTotal">إجمالي تسويات أول المدة</sys:String>
+  <sys:String x:Key="LblOpeningBalanceAdjustmentEntry">تسوية رصيد أول المدة</sys:String>
   <sys:String x:Key="LblCreatedAt">تاريخ الإنشاء</sys:String>
   <sys:String x:Key="LblUpdatedAt">تاريخ التحديث</sys:String>
   <sys:String x:Key="LblLastUpdated">آخر تحديث</sys:String>
@@ -117,6 +126,7 @@
   <sys:String x:Key="WindowAddTrader">إضافة تاجر</sys:String>
   <sys:String x:Key="WindowEditTrader">تعديل التاجر</sys:String>
   <sys:String x:Key="WindowAddDiscount">إضافة خصم</sys:String>
+  <sys:String x:Key="WindowAddOpeningBalanceAdjustment">إضافة مصنعية / تحسين</sys:String>
   <sys:String x:Key="WindowAddTransaction">إضافة حركة</sys:String>
   <sys:String x:Key="WindowEditTransaction">تعديل الحركة</sys:String>
   <sys:String x:Key="WindowStatementPreview">معاينة الكشف</sys:String>
@@ -124,6 +134,7 @@
   <sys:String x:Key="WindowEditNote">تعديل الملاحظة</sys:String>
   <sys:String x:Key="SubSupplierWindow">إضافة أو تعديل بيانات التاجر ووسائل التواصل والملاحظات.</sys:String>
   <sys:String x:Key="SubDiscountWindow">تسجيل خصم للمصنعية أو التحسين للتاجر المحدد.</sys:String>
+  <sys:String x:Key="SubOpeningBalanceAdjustmentWindow">تسجيل قيمة مصنعية أو تحسين تُضاف إلى رصيد أول المدة للتاجر المحدد.</sys:String>
   <sys:String x:Key="SubTransactionWindow">تسجيل حركة ذهب أو استلام نقدية مع التحقق من صحة البيانات.</sys:String>
   <sys:String x:Key="SubStatementWindow">معاينة كشف التاجر القابل للطباعة قبل الإرسال أو الطباعة.</sys:String>
   <sys:String x:Key="MsgFromBeforeTo">تاريخ البداية يجب أن يكون قبل تاريخ النهاية.</sys:String>
@@ -142,6 +153,9 @@
   <sys:String x:Key="MsgPhoneInvalid">رقم الهاتف طويل جدًا.</sys:String>
   <sys:String x:Key="MsgWorkerPhoneInvalid">رقم هاتف جهة الاتصال طويل جدًا.</sys:String>
   <sys:String x:Key="MsgDiscountGreaterThanZero">قيمة الخصم يجب أن تكون أكبر من صفر.</sys:String>
+  <sys:String x:Key="MsgOpeningBalanceAdjustmentGreaterThanZero">قيمة التسوية يجب أن تكون أكبر من صفر.</sys:String>
+  <sys:String x:Key="MsgAdjustmentDateRequired">يرجى اختيار تاريخ التسوية.</sys:String>
+  <sys:String x:Key="MsgOpeningBalanceAdjustmentSaved">تم حفظ تسوية رصيد أول المدة بنجاح.</sys:String>
   <sys:String x:Key="MsgAmountInvalid">يرجى إدخال قيمة صحيحة.</sys:String>
   <sys:String x:Key="MsgWeightInvalid">يرجى إدخال وزن صحيح.</sys:String>
   <sys:String x:Key="MsgManufacturingInvalid">يرجى إدخال قيمة مصنعية صحيحة.</sys:String>
@@ -211,6 +225,7 @@
   <sys:String x:Key="LblPricingSettingsSub">حدد قيم المصنعية والتحسين الافتراضية التي تُنسخ إلى الحركات الجديدة.</sys:String>
   <sys:String x:Key="MsgPricingSettingsSaved">تم حفظ إعدادات التسعير بنجاح.</sys:String>
   <sys:String x:Key="MsgDefaultManufacturingNonNegative">Default manufacturing value must be zero or greater.</sys:String>
+  <sys:String x:Key="MsgDefaultManufacturing24NonNegative">قيمة المصنعية الافتراضية لعيار 24 يجب أن تكون صفرًا أو أكبر.</sys:String>
   <sys:String x:Key="MsgDefaultRefiningNonNegative">Default refining value must be zero or greater.</sys:String>
   <sys:String x:Key="LblItem">Ø§Ù„ØµÙ†Ù</sys:String>
   <sys:String x:Key="LblSelectAllRecords">ØªØ­Ø¯ÙŠØ¯ ÙƒÙ„ Ø§Ù„Ø³Ø¬Ù„Ø§Øª Ø§Ù„Ø¸Ø§Ù‡Ø±Ø©</sys:String>

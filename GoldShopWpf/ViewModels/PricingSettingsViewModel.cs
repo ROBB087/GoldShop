@@ -6,6 +6,7 @@ namespace GoldShopWpf.ViewModels;
 public class PricingSettingsViewModel : ViewModelBase
 {
     private string _defaultManufacturingPerGram = string.Empty;
+    private string _defaultManufacturingPerGram24 = string.Empty;
     private string _defaultImprovementPerGram = string.Empty;
 
     public string DefaultManufacturingPerGram
@@ -20,6 +21,12 @@ public class PricingSettingsViewModel : ViewModelBase
         set => SetProperty(ref _defaultImprovementPerGram, value);
     }
 
+    public string DefaultManufacturingPerGram24
+    {
+        get => _defaultManufacturingPerGram24;
+        set => SetProperty(ref _defaultManufacturingPerGram24, value);
+    }
+
     public RelayCommand SaveCommand { get; }
 
     public PricingSettingsViewModel()
@@ -32,12 +39,19 @@ public class PricingSettingsViewModel : ViewModelBase
     {
         var settings = AppServices.PricingSettingsService.GetLatest();
         DefaultManufacturingPerGram = settings.DefaultManufacturingPerGram.ToString("0.####", CultureInfo.CurrentCulture);
+        DefaultManufacturingPerGram24 = settings.DefaultManufacturingPerGram24.ToString("0.####", CultureInfo.CurrentCulture);
         DefaultImprovementPerGram = settings.DefaultImprovementPerGram.ToString("0.####", CultureInfo.CurrentCulture);
     }
 
     private void Save()
     {
         if (!TryParse(DefaultManufacturingPerGram, out var manufacturing))
+        {
+            ToastService.ShowWarning(UiText.L("MsgManufacturingInvalid"));
+            return;
+        }
+
+        if (!TryParse(DefaultManufacturingPerGram24, out var manufacturing24))
         {
             ToastService.ShowWarning(UiText.L("MsgManufacturingInvalid"));
             return;
@@ -51,7 +65,7 @@ public class PricingSettingsViewModel : ViewModelBase
 
         try
         {
-            AppServices.PricingSettingsService.Save(manufacturing, improvement);
+            AppServices.PricingSettingsService.Save(manufacturing, manufacturing24, improvement);
             Load();
             ToastService.ShowSuccess(UiText.L("MsgPricingSettingsSaved"));
         }

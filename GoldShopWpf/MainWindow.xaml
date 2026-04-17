@@ -8,7 +8,7 @@
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         mc:Ignorable="d"
         FlowDirection="{DynamicResource AppFlowDirection}"
-        Title="{DynamicResource LblAppTitle}" Height="820" Width="1366" MinWidth="1180" MinHeight="760" WindowStartupLocation="CenterScreen" WindowState="Maximized">
+        Title="{DynamicResource LblAppTitle}" Height="820" Width="1366" MinWidth="1040" MinHeight="760" WindowStartupLocation="CenterScreen" WindowState="Maximized">
     <Window.DataContext>
         <vm:MainViewModel />
     </Window.DataContext>
@@ -40,9 +40,9 @@
         </DataTemplate>
     </Window.Resources>
 
-    <Grid FlowDirection="{DynamicResource AppFlowDirection}">
+        <Grid FlowDirection="{DynamicResource AppFlowDirection}">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="240" />
+            <ColumnDefinition Width="220" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
@@ -175,22 +175,8 @@
             </StackPanel>
         </Border>
 
-        <DockPanel Grid.Column="1" Background="{DynamicResource AppBackgroundBrush}">
-            <Border Background="#FFFFFF" DockPanel.Dock="Top" Padding="20" BorderBrush="#EEE" BorderThickness="0,0,0,1">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Text="{Binding PageTitle}" FontSize="20" FontWeight="SemiBold" />
-                    <WrapPanel Orientation="Horizontal" Grid.Column="1" HorizontalAlignment="Right">
-                        <Button Content="{DynamicResource BtnBackup}" Style="{StaticResource GhostButton}" Margin="0,0,8,0" Command="{Binding BackupCommand}" ToolTip="{DynamicResource BtnBackup}" />
-                        <Button Content="{DynamicResource BtnToggleLang}" Style="{StaticResource GhostButton}" Command="{Binding ToggleLanguageCommand}" ToolTip="{DynamicResource TooltipToggleLanguage}" />
-                    </WrapPanel>
-                </Grid>
-            </Border>
-
-            <Grid Margin="16">
+        <Grid Grid.Column="1" Background="{DynamicResource AppBackgroundBrush}" Margin="12">
+            <Grid>
                 <ContentControl Content="{Binding CurrentPage}" Style="{StaticResource PageTransition}" />
 
                 <ItemsControl ItemsSource="{Binding Toasts}"
@@ -247,6 +233,6 @@
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
             </Grid>
-        </DockPanel>
+        </Grid>
     </Grid>
 </Window>

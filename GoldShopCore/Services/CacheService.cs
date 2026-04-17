@@ -173,6 +173,7 @@ public class CacheService
         {
             Id = settings.Id,
             DefaultManufacturingPerGram = settings.DefaultManufacturingPerGram,
+            DefaultManufacturingPerGram24 = settings.DefaultManufacturingPerGram24,
             DefaultImprovementPerGram = settings.DefaultImprovementPerGram,
             CreatedAt = settings.CreatedAt
         };
@@ -186,6 +187,8 @@ public class CacheService
             TotalEquivalent21 = summary.TotalEquivalent21,
             TotalManufacturing = summary.TotalManufacturing,
             TotalImprovement = summary.TotalImprovement,
+            ManufacturingAdjustments = summary.ManufacturingAdjustments,
+            ImprovementAdjustments = summary.ImprovementAdjustments,
             ManufacturingDiscounts = summary.ManufacturingDiscounts,
             ImprovementDiscounts = summary.ImprovementDiscounts,
             LastUpdated = summary.LastUpdated

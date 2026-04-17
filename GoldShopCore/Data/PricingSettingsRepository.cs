@@ -11,7 +11,7 @@ public class PricingSettingsRepository
 
         using var command = connection.CreateCommand();
         command.CommandText = @"
-SELECT Id, DefaultManufacturingPerGram, DefaultImprovementPerGram, CreatedAt
+SELECT Id, DefaultManufacturingPerGram, DefaultManufacturingPerGram24, DefaultImprovementPerGram, CreatedAt
 FROM PricingSettings
 ORDER BY datetime(CreatedAt) DESC, Id DESC
 LIMIT 1;";
@@ -26,8 +26,9 @@ LIMIT 1;";
         {
             Id = reader.GetInt32(0),
             DefaultManufacturingPerGram = ReadDecimal(reader, 1),
-            DefaultImprovementPerGram = ReadDecimal(reader, 2),
-            CreatedAt = DateTime.Parse(reader.GetString(3))
+            DefaultManufacturingPerGram24 = ReadDecimal(reader, 2),
+            DefaultImprovementPerGram = ReadDecimal(reader, 3),
+            CreatedAt = DateTime.Parse(reader.GetString(4))
         };
     }
 
@@ -38,12 +39,13 @@ LIMIT 1;";
         using var command = connection.CreateCommand();
         command.CommandText = @"
 INSERT INTO PricingSettings
-    (DefaultManufacturingPerGram, DefaultImprovementPerGram, CreatedAt)
+    (DefaultManufacturingPerGram, DefaultManufacturingPerGram24, DefaultImprovementPerGram, CreatedAt)
 VALUES
-    ($defaultManufacturingPerGram, $defaultImprovementPerGram, $createdAt);
+    ($defaultManufacturingPerGram, $defaultManufacturingPerGram24, $defaultImprovementPerGram, $createdAt);
 SELECT last_insert_rowid();";
 
         command.Parameters.AddWithValue("$defaultManufacturingPerGram", (double)settings.DefaultManufacturingPerGram);
+        command.Parameters.AddWithValue("$defaultManufacturingPerGram24", (double)settings.DefaultManufacturingPerGram24);
         command.Parameters.AddWithValue("$defaultImprovementPerGram", (double)settings.DefaultImprovementPerGram);
         command.Parameters.AddWithValue("$createdAt", settings.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss"));
         return (int)(long)command.ExecuteScalar()!;

@@ -184,6 +184,7 @@ public class SuppliersViewModel : ViewModelBase
         if (dialog.ShowDialog() == true)
         {
             AppServices.SupplierService.AddSupplier(dialog.SupplierName, dialog.SupplierPhone, dialog.WorkerName, dialog.WorkerPhone, dialog.SupplierNotes);
+            SupplierChangeNotifier.NotifySuppliersChanged();
             Load();
             ToastService.ShowSuccess(UiText.L("MsgSupplierSaved"));
         }
@@ -207,6 +208,7 @@ public class SuppliersViewModel : ViewModelBase
         if (dialog.ShowDialog() == true)
         {
             AppServices.SupplierService.UpdateSupplier(supplier.Id, dialog.SupplierName, dialog.SupplierPhone, dialog.WorkerName, dialog.WorkerPhone, dialog.SupplierNotes);
+            SupplierChangeNotifier.NotifySuppliersChanged();
             Load();
             ToastService.ShowSuccess(UiText.L("MsgSupplierSaved"));
         }
@@ -234,6 +236,7 @@ public class SuppliersViewModel : ViewModelBase
                 AppServices.SupplierService.DeleteSupplier(supplier.Id);
             }
 
+            SupplierChangeNotifier.NotifySuppliersChanged();
             Load();
             ToastService.ShowSuccess(UiText.L("MsgSupplierDeleted"));
         }

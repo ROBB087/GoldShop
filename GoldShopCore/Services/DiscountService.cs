@@ -6,20 +6,17 @@ namespace GoldShopCore.Services;
 public class DiscountService
 {
     private readonly DiscountRepository _discountRepository;
-    private readonly TransactionRepository _transactionRepository;
     private readonly TraderSummaryRepository _traderSummaryRepository;
     private readonly AuditService _auditService;
     private readonly CacheService _cacheService;
 
     public DiscountService(
         DiscountRepository discountRepository,
-        TransactionRepository transactionRepository,
         TraderSummaryRepository traderSummaryRepository,
         AuditService auditService,
         CacheService cacheService)
     {
         _discountRepository = discountRepository;
-        _transactionRepository = transactionRepository;
         _traderSummaryRepository = traderSummaryRepository;
         _auditService = auditService;
         _cacheService = cacheService;
@@ -42,7 +39,6 @@ public class DiscountService
         }
 
         var roundedAmount = decimal.Round(amount, 4, MidpointRounding.AwayFromZero);
-        ValidateDiscountLimit(supplierId, type, roundedAmount, from, to);
 
         var discount = new DiscountRecord
         {
@@ -88,7 +84,6 @@ public class DiscountService
         }
 
         var roundedAmount = decimal.Round(amount, 4, MidpointRounding.AwayFromZero);
-        ValidateDiscountLimit(supplierId, type, roundedAmount, from, to, existing);
 
         var updated = new DiscountRecord
         {
@@ -167,33 +162,4 @@ public class DiscountService
 
     public List<SupplierDiscountSummaryRow> GetSupplierDiscountSummaries(DateTime? from, DateTime? to)
         => _discountRepository.GetSupplierDiscountSummaries(from, to);
-
-    private void ValidateDiscountLimit(int supplierId, DiscountType type, decimal amount, DateTime? from, DateTime? to, DiscountRecord? existing = null)
-    {
-        var summary = _transactionRepository.GetSummary(supplierId, from, to);
-        var discountTotals = _discountRepository.GetDiscountTotals(supplierId, from, to);
-        if (existing != null && !existing.IsDeleted)
-        {
-            if (existing.Type == DiscountType.Manufacturing)
-            {
-                discountTotals.manufacturingDiscounts -= existing.Amount;
-            }
-            else
-            {
-                discountTotals.improvementDiscounts -= existing.Amount;
-            }
-        }
-
-        var available = type switch
-        {
-            DiscountType.Manufacturing => summary.TotalManufacturing - discountTotals.manufacturingDiscounts,
-            DiscountType.Improvement => summary.TotalImprovement - discountTotals.improvementDiscounts,
-            _ => 0m
-        };
-
-        if (amount > available)
-        {
-            throw new ArgumentException("Discount cannot exceed the available total.", nameof(amount));
-        }
-    }
 }

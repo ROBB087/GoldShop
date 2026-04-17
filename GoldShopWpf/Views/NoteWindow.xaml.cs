@@ -12,6 +12,7 @@ public partial class NoteWindow : Window
     public NoteWindow(ClientNote? note = null)
     {
         InitializeComponent();
+        DialogWindowLayout.Apply(this);
         var isNew = note == null;
         Title = UiText.L(isNew ? "WindowAddNote" : "WindowEditNote");
         HeaderTitleText.Text = Title;

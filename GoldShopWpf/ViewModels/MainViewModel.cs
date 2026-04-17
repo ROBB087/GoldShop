@@ -134,6 +134,17 @@ public class MainViewModel : ViewModelBase
 
     private static string L(string key) => UiText.L(key);
 
+    public void ReloadAfterDatabaseRestore()
+    {
+        Dashboard.Load();
+        Suppliers.Load();
+        SupplierDetails.LoadAll();
+        Transactions.RefreshLocalization();
+        Notes.Load();
+        PricingSettings.Load();
+        Statement.ReloadData();
+    }
+
     private void BackupDatabase()
     {
         var dialog = new Microsoft.Win32.SaveFileDialog

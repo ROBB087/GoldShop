@@ -1,0 +1,31 @@
+Tracing enabled @ Fri Apr 17 02:53:12 2026 GMT
+--- Invoked apphost [version: 8.0.26 @Commit: ace9703c57db8596ccc3e3efdc7e65b6975c0b2d] main = {
+C:\Users\start\OneDrive\Desktop\Gold\publish\client\GoldShop\GoldShopWpf.exe
+}
+Redirecting errors to custom writer.
+The managed DLL bound to this executable is: 'GoldShopWpf.dll'
+Detected Single-File app bundle
+Using internal fxr
+Invoking fx resolver [C:\Users\start\OneDrive\Desktop\Gold\publish\client\GoldShop\] hostfxr_main_bundle_startupinfo
+Host path: [C:\Users\start\OneDrive\Desktop\Gold\publish\client\GoldShop\GoldShopWpf.exe]
+Dotnet path: [C:\Users\start\OneDrive\Desktop\Gold\publish\client\GoldShop\]
+App path: [C:\Users\start\OneDrive\Desktop\Gold\publish\client\GoldShop\GoldShopWpf.dll]
+Bundle Header Offset: [187040920]
+--- Invoked hostfxr_main_bundle_startupinfo [version: 8.0.26 @Commit: ace9703c57db8596ccc3e3efdc7e65b6975c0b2d]
+Mapped application bundle
+Unmapped application bundle
+Single-File bundle details:
+DepsJson Offset:[b256000] Size[a498]
+RuntimeConfigJson Offset:[93aa00] Size[1b7]
+.net core 3 compatibility mode: [No]
+--- Executing in a native executable mode...
+Using dotnet root path [C:\Users\start\OneDrive\Desktop\Gold\publish\client\GoldShop\]
+App runtimeconfig.json from [C:\Users\start\OneDrive\Desktop\Gold\publish\client\GoldShop\GoldShopWpf.dll]
+Runtime config is cfg=C:\Users\start\OneDrive\Desktop\Gold\publish\client\GoldShop\GoldShopWpf.runtimeconfig.json dev=C:\Users\start\OneDrive\Desktop\Gold\publish\client\GoldShop\GoldShopWpf.runtimeconfig.dev.json
+Attempting to read dev runtime config: C:\Users\start\OneDrive\Desktop\Gold\publish\client\GoldShop\GoldShopWpf.runtimeconfig.dev.json
+Attempting to read runtime config: C:\Users\start\OneDrive\Desktop\Gold\publish\client\GoldShop\GoldShopWpf.runtimeconfig.json
+Mapped bundle for [C:\Users\start\OneDrive\Desktop\Gold\publish\client\GoldShop\GoldShopWpf.runtimeconfig.json]
+A JSON parsing exception occurred in [C:\Users\start\OneDrive\Desktop\Gold\publish\client\GoldShop\GoldShopWpf.runtimeconfig.json], offset 0 (line 1, column 1): The document is empty.
+Unmapped application bundle
+Runtime config [C:\Users\start\OneDrive\Desktop\Gold\publish\client\GoldShop\GoldShopWpf.runtimeconfig.json] is valid=[0]
+Invalid runtimeconfig.json [C:\Users\start\OneDrive\Desktop\Gold\publish\client\GoldShop\GoldShopWpf.runtimeconfig.json] [C:\Users\start\OneDrive\Desktop\Gold\publish\client\GoldShop\GoldShopWpf.runtimeconfig.dev.json]

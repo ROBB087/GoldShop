@@ -3,11 +3,11 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         Title="{DynamicResource WindowAddTrader}"
-        Height="760"
-        Width="760"
-        MinWidth="560"
-        MinHeight="620"
-        WindowStartupLocation="CenterScreen"
+        Height="840"
+        Width="620"
+        MinWidth="540"
+        MinHeight="680"
+        WindowStartupLocation="CenterOwner"
         ResizeMode="CanResize"
         FlowDirection="{DynamicResource AppFlowDirection}">
     <Grid Background="{DynamicResource AppBackgroundBrush}">
@@ -42,8 +42,6 @@
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
@@ -56,14 +54,8 @@
                     <TextBlock Text="{DynamicResource LblPhone}" Grid.Row="1" Grid.Column="0" Margin="8,12" />
                     <TextBox x:Name="PhoneText" Grid.Row="1" Grid.Column="1" Margin="0,8" />
 
-                    <TextBlock Text="{DynamicResource LblContactName}" Grid.Row="2" Grid.Column="0" Margin="8,12" />
-                    <TextBox x:Name="WorkerNameText" Grid.Row="2" Grid.Column="1" Margin="0,8" />
-
-                    <TextBlock Text="{DynamicResource LblContactPhone}" Grid.Row="3" Grid.Column="0" Margin="8,12" />
-                    <TextBox x:Name="WorkerPhoneText" Grid.Row="3" Grid.Column="1" Margin="0,8" />
-
-                    <TextBlock Text="{DynamicResource LblNotes}" Grid.Row="4" Grid.Column="0" Margin="8,12" VerticalAlignment="Top" />
-                    <TextBox x:Name="NotesText" Grid.Row="4" Grid.Column="1" Margin="0,8" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="220" VerticalScrollBarVisibility="Auto" />
+                    <TextBlock Text="{DynamicResource LblNotes}" Grid.Row="2" Grid.Column="0" Margin="8,12" VerticalAlignment="Top" />
+                    <TextBox x:Name="NotesText" Grid.Row="2" Grid.Column="1" Margin="0,8" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="220" VerticalScrollBarVisibility="Auto" />
                 </Grid>
             </ScrollViewer>
         </Border>

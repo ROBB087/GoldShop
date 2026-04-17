@@ -17,6 +17,7 @@ public class TraderSummaryRepository
         command.Transaction = transaction;
         command.CommandText = @"
 SELECT TraderId, TotalEquivalent21, TotalManufacturing, TotalImprovement,
+       ManufacturingAdjustments, ImprovementAdjustments,
        ManufacturingDiscounts, ImprovementDiscounts, LastUpdated
 FROM TraderSummaries
 WHERE TraderId = $traderId;";
@@ -38,6 +39,7 @@ WHERE TraderId = $traderId;";
         command.Transaction = transaction;
         command.CommandText = @"
 SELECT TraderId, TotalEquivalent21, TotalManufacturing, TotalImprovement,
+       ManufacturingAdjustments, ImprovementAdjustments,
        ManufacturingDiscounts, ImprovementDiscounts, LastUpdated
 FROM TraderSummaries;";
 
@@ -82,9 +84,9 @@ FROM TraderSummaries;";
         command.Transaction = transaction;
         command.CommandText = @"
 INSERT INTO TraderSummaries
-    (TraderId, TotalEquivalent21, TotalManufacturing, TotalImprovement, ManufacturingDiscounts, ImprovementDiscounts, TotalDiscounts, NetValues, LastUpdated)
+    (TraderId, TotalEquivalent21, TotalManufacturing, TotalImprovement, ManufacturingAdjustments, ImprovementAdjustments, ManufacturingDiscounts, ImprovementDiscounts, TotalDiscounts, NetValues, LastUpdated)
 VALUES
-    ($traderId, 0, 0, 0, 0, 0, 0, 0, $updatedAt)
+    ($traderId, 0, 0, 0, 0, 0, 0, 0, 0, 0, $updatedAt)
 ON CONFLICT(TraderId) DO NOTHING;";
         command.Parameters.AddWithValue("$traderId", traderId);
         command.Parameters.AddWithValue("$updatedAt", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
@@ -115,6 +117,18 @@ ON CONFLICT(TraderId) DO NOTHING;";
         return ApplyDiscountDelta(connection, transaction, newDiscount.SupplierId, newDiscount.Type, newDiscount.Amount);
     }
 
+    public TraderSummarySnapshot ApplyAdjustmentInsert(SqliteConnection connection, SqliteTransaction transaction, OpeningBalanceAdjustment adjustment)
+        => ApplyAdjustmentDelta(connection, transaction, adjustment.SupplierId, adjustment.Type, adjustment.Amount);
+
+    public TraderSummarySnapshot ApplyAdjustmentDelete(SqliteConnection connection, SqliteTransaction transaction, OpeningBalanceAdjustment adjustment)
+        => ApplyAdjustmentDelta(connection, transaction, adjustment.SupplierId, adjustment.Type, -adjustment.Amount);
+
+    public TraderSummarySnapshot ApplyAdjustmentUpdate(SqliteConnection connection, SqliteTransaction transaction, OpeningBalanceAdjustment oldAdjustment, OpeningBalanceAdjustment newAdjustment)
+    {
+        ApplyAdjustmentDelta(connection, transaction, oldAdjustment.SupplierId, oldAdjustment.Type, -oldAdjustment.Amount);
+        return ApplyAdjustmentDelta(connection, transaction, newAdjustment.SupplierId, newAdjustment.Type, newAdjustment.Amount);
+    }
+
     public void RefreshForTrader(SqliteConnection connection, SqliteTransaction transaction, int traderId)
     {
         using var delete = connection.CreateCommand();
@@ -131,7 +145,7 @@ ON CONFLICT(TraderId) DO NOTHING;";
             transactionCommand.Transaction = transaction;
             transactionCommand.CommandText = @"
 SELECT Id, SupplierId, TxnDate, Type, Category, ItemName, Description, OriginalWeight, OriginalKarat, Equivalent21,
-       ManufacturingPerGram, ImprovementPerGram, TotalManufacturing, TotalImprovement, Notes, CreatedAt, UpdatedAt
+       ManufacturingPerGram, ImprovementPerGram, TotalManufacturing, TotalImprovement, IdempotencyKey, Notes, CreatedAt, UpdatedAt
 FROM SupplierTransactions
 WHERE SupplierId = $traderId AND IsDeleted = 0
 ORDER BY Id;";
@@ -156,9 +170,10 @@ ORDER BY Id;";
                     ImprovementPerGram = ReadDecimal(transactionReader, 11),
                     TotalManufacturing = ReadDecimal(transactionReader, 12),
                     TotalImprovement = ReadDecimal(transactionReader, 13),
-                    Notes = transactionReader.IsDBNull(14) ? null : transactionReader.GetString(14),
-                    CreatedAt = DateTime.Parse(transactionReader.GetString(15)),
-                    UpdatedAt = DateTime.Parse(transactionReader.GetString(16))
+                    IdempotencyKey = transactionReader.IsDBNull(14) ? null : transactionReader.GetString(14),
+                    Notes = transactionReader.IsDBNull(15) ? null : transactionReader.GetString(15),
+                    CreatedAt = DateTime.Parse(transactionReader.GetString(16)),
+                    UpdatedAt = DateTime.Parse(transactionReader.GetString(17))
                 });
             }
         }
@@ -198,6 +213,43 @@ ORDER BY Id;";
         {
             ApplyDiscountInsert(connection, transaction, discount);
         }
+
+        var adjustments = new List<OpeningBalanceAdjustment>();
+        using (var adjustmentCommand = connection.CreateCommand())
+        {
+            adjustmentCommand.Transaction = transaction;
+            adjustmentCommand.CommandText = @"
+SELECT Id, SupplierId, Type, Amount, AdjustmentDate, Notes, CreatedAt, UpdatedAt, IsDeleted, DeletedAt
+FROM OpeningBalanceAdjustments
+WHERE SupplierId = $traderId AND IsDeleted = 0
+ORDER BY Id;";
+            adjustmentCommand.Parameters.AddWithValue("$traderId", traderId);
+
+            using var adjustmentReader = adjustmentCommand.ExecuteReader();
+            while (adjustmentReader.Read())
+            {
+                adjustments.Add(new OpeningBalanceAdjustment
+                {
+                    Id = adjustmentReader.GetInt32(0),
+                    SupplierId = adjustmentReader.GetInt32(1),
+                    Type = Enum.TryParse<OpeningBalanceAdjustmentType>(adjustmentReader.GetString(2), out var type)
+                        ? type
+                        : OpeningBalanceAdjustmentType.Manufacturing,
+                    Amount = ReadDecimal(adjustmentReader, 3),
+                    AdjustmentDate = DateTime.Parse(adjustmentReader.GetString(4)),
+                    Notes = adjustmentReader.IsDBNull(5) ? null : adjustmentReader.GetString(5),
+                    CreatedAt = DateTime.Parse(adjustmentReader.GetString(6)),
+                    UpdatedAt = DateTime.Parse(adjustmentReader.GetString(7)),
+                    IsDeleted = !adjustmentReader.IsDBNull(8) && adjustmentReader.GetInt32(8) == 1,
+                    DeletedAt = adjustmentReader.IsDBNull(9) ? null : DateTime.Parse(adjustmentReader.GetString(9))
+                });
+            }
+        }
+
+        foreach (var adjustment in adjustments)
+        {
+            ApplyAdjustmentInsert(connection, transaction, adjustment);
+        }
     }
 
     private TraderSummarySnapshot ApplyTransactionDelta(
@@ -222,6 +274,8 @@ ORDER BY Id;";
             multiplier * transactionModel.TotalManufacturing,
             multiplier * transactionModel.TotalImprovement,
             0m,
+            0m,
+            0m,
             0m);
 
         return GetByTrader(connection, transaction, traderId) ?? CreateEmptySnapshot(traderId);
@@ -241,8 +295,32 @@ ORDER BY Id;";
             0m,
             0m,
             0m,
+            0m,
+            0m,
             type == DiscountType.Manufacturing ? amountDelta : 0m,
             type == DiscountType.Improvement ? amountDelta : 0m);
+
+        return GetByTrader(connection, transaction, traderId) ?? CreateEmptySnapshot(traderId);
+    }
+
+    private TraderSummarySnapshot ApplyAdjustmentDelta(
+        SqliteConnection connection,
+        SqliteTransaction transaction,
+        int traderId,
+        OpeningBalanceAdjustmentType type,
+        decimal amountDelta)
+    {
+        ApplyDelta(
+            connection,
+            transaction,
+            traderId,
+            0m,
+            type == OpeningBalanceAdjustmentType.Manufacturing ? amountDelta : 0m,
+            type == OpeningBalanceAdjustmentType.Improvement ? amountDelta : 0m,
+            type == OpeningBalanceAdjustmentType.Manufacturing ? amountDelta : 0m,
+            type == OpeningBalanceAdjustmentType.Improvement ? amountDelta : 0m,
+            0m,
+            0m);
 
         return GetByTrader(connection, transaction, traderId) ?? CreateEmptySnapshot(traderId);
     }
@@ -254,6 +332,8 @@ ORDER BY Id;";
         decimal equivalent21Delta,
         decimal manufacturingDelta,
         decimal improvementDelta,
+        decimal manufacturingAdjustmentDelta,
+        decimal improvementAdjustmentDelta,
         decimal manufacturingDiscountDelta,
         decimal improvementDiscountDelta)
     {
@@ -267,6 +347,8 @@ SET
     TotalEquivalent21 = ROUND(TotalEquivalent21 + $equivalent21Delta, 4),
     TotalManufacturing = ROUND(TotalManufacturing + $manufacturingDelta, 4),
     TotalImprovement = ROUND(TotalImprovement + $improvementDelta, 4),
+    ManufacturingAdjustments = ROUND(ManufacturingAdjustments + $manufacturingAdjustmentDelta, 4),
+    ImprovementAdjustments = ROUND(ImprovementAdjustments + $improvementAdjustmentDelta, 4),
     ManufacturingDiscounts = ROUND(ManufacturingDiscounts + $manufacturingDiscountDelta, 4),
     ImprovementDiscounts = ROUND(ImprovementDiscounts + $improvementDiscountDelta, 4),
     TotalDiscounts = ROUND((ManufacturingDiscounts + $manufacturingDiscountDelta) + (ImprovementDiscounts + $improvementDiscountDelta), 4),
@@ -280,6 +362,8 @@ WHERE TraderId = $traderId;";
         command.Parameters.AddWithValue("$equivalent21Delta", (double)equivalent21Delta);
         command.Parameters.AddWithValue("$manufacturingDelta", (double)manufacturingDelta);
         command.Parameters.AddWithValue("$improvementDelta", (double)improvementDelta);
+        command.Parameters.AddWithValue("$manufacturingAdjustmentDelta", (double)manufacturingAdjustmentDelta);
+        command.Parameters.AddWithValue("$improvementAdjustmentDelta", (double)improvementAdjustmentDelta);
         command.Parameters.AddWithValue("$manufacturingDiscountDelta", (double)manufacturingDiscountDelta);
         command.Parameters.AddWithValue("$improvementDiscountDelta", (double)improvementDiscountDelta);
         command.Parameters.AddWithValue("$updatedAt", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
@@ -294,9 +378,11 @@ WHERE TraderId = $traderId;";
             TotalEquivalent21 = ReadDecimal(reader, 1),
             TotalManufacturing = ReadDecimal(reader, 2),
             TotalImprovement = ReadDecimal(reader, 3),
-            ManufacturingDiscounts = ReadDecimal(reader, 4),
-            ImprovementDiscounts = ReadDecimal(reader, 5),
-            LastUpdated = DateTime.Parse(reader.GetString(6))
+            ManufacturingAdjustments = ReadDecimal(reader, 4),
+            ImprovementAdjustments = ReadDecimal(reader, 5),
+            ManufacturingDiscounts = ReadDecimal(reader, 6),
+            ImprovementDiscounts = ReadDecimal(reader, 7),
+            LastUpdated = DateTime.Parse(reader.GetString(8))
         };
     }
 

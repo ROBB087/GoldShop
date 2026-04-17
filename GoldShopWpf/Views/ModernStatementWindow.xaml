@@ -3,9 +3,9 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         Title="{DynamicResource WindowStatementPreview}"
-        Height="920"
-        Width="980"
-        MinWidth="760"
+        Height="940"
+        Width="860"
+        MinWidth="720"
         MinHeight="720"
         WindowStartupLocation="CenterOwner"
         ResizeMode="CanResize"
@@ -77,11 +77,11 @@
                 <WrapPanel Margin="0,0,0,18">
                     <StackPanel MinWidth="180" Margin="0,0,16,8">
                         <TextBlock Text="{DynamicResource LblFrom}" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource MutedTextBrush}" Margin="0,0,0,6" />
-                        <DatePicker SelectedDate="{Binding FromDate}" Margin="0" />
+                        <DatePicker x:Name="FromDatePicker" SelectedDate="{Binding FromDate}" Margin="0" SelectedDateChanged="OnDateChanged" />
                     </StackPanel>
                     <StackPanel MinWidth="180" Margin="0,0,16,8">
                         <TextBlock Text="{DynamicResource LblTo}" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource MutedTextBrush}" Margin="0,0,0,6" />
-                        <DatePicker SelectedDate="{Binding ToDate}" Margin="0" />
+                        <DatePicker x:Name="ToDatePicker" SelectedDate="{Binding ToDate}" Margin="0" SelectedDateChanged="OnDateChanged" />
                     </StackPanel>
                     <Button Style="{StaticResource GhostButton}" Margin="0,24,0,0" MinWidth="120" Command="{Binding GenerateCommand}" ToolTip="{DynamicResource BtnUpdateDates}">
                         <StackPanel Orientation="Horizontal">
@@ -195,6 +195,15 @@
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Text="{DynamicResource LblTotalImprovement}" Foreground="{StaticResource MutedTextBrush}" />
                                 <TextBlock Grid.Column="1" Text="{Binding TotalImprovementDisplay}" FontWeight="SemiBold" />
+                            </Grid>
+
+                            <Grid Margin="0,10,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="{DynamicResource LblNetTotalReport}" Foreground="{StaticResource MutedTextBrush}" FontWeight="SemiBold" />
+                                <TextBlock Grid.Column="1" Text="{Binding NetTotalDisplay}" FontWeight="Bold" FontSize="18" />
                             </Grid>
                         </StackPanel>
                     </Border>

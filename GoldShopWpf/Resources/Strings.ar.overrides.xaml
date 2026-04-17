@@ -27,7 +27,8 @@
   <sys:String x:Key="LblChartWeightDistribution">توزيع الأوزان</sys:String>
   <sys:String x:Key="LblChartWeightDistributionSub">أعلى التجار حسب وزن الذهب خلال الفترة المحددة.</sys:String>
   <sys:String x:Key="LblGoldOutboundReport">صرف ذهب</sys:String>
-  <sys:String x:Key="LblGoldReceiptReport">استلام ذهب</sys:String>
+  <sys:String x:Key="LblGoldReceiptReport">استلام ذهب كسر</sys:String>
+  <sys:String x:Key="LblFinishedGoldReceiptReport">استلام مشغولات</sys:String>
   <sys:String x:Key="LblCashPaymentReport">استلام نقدية</sys:String>
   <sys:String x:Key="LblTraderDetailsSub">ملخص فوري مع صفحات للحركات والخصومات للتاجر المحدد.</sys:String>
   <sys:String x:Key="LblTransactionsTab">الحركات</sys:String>
@@ -82,4 +83,12 @@
   <sys:String x:Key="BtnMore">المزيد</sys:String>
   <sys:String x:Key="MsgTransactionsDeleted">تم حذف {0} حركة بنجاح.</sys:String>
   <sys:String x:Key="MsgDiscountsDeleted">تم حذف {0} خصم بنجاح.</sys:String>
+  <sys:String x:Key="BtnUpdateDates">تحديث</sys:String>
+  <sys:String x:Key="MsgGoldReceiptPreview">استلام ذهب الكسر يحدّث رصيد الذهب فقط، وتبقى المصنعية والتحسين صفراً.</sys:String>
+  <sys:String x:Key="MsgFinishedGoldReceiptPreview">استلام المشغولات يزيد رصيد الذهب ويخصم المصنعية والتحسين من حساب التاجر.</sys:String>
+  <sys:String x:Key="MsgShareFileMissing">لم يتم العثور على ملف المشاركة المحدد.</sys:String>
+  <sys:String x:Key="MsgShareFileCopied">تم تجهيز الملف المصدّر للمشاركة.</sys:String>
+  <sys:String x:Key="MsgWhatsAppMissingPhone">لا يوجد رقم هاتف صالح للمشاركة عبر WhatsApp لهذا التاجر.</sys:String>
+  <sys:String x:Key="MsgWhatsAppOpenFailed">تعذر فتح WhatsApp بشكل مباشر. تم تحديد الملف المصدّر للمشاركة يدويًا.</sys:String>
+  <sys:String x:Key="MsgWhatsAppReadyToPaste">تم فتح محادثة WhatsApp. ملف الكشف جاهز للإلصاق (Ctrl+V) للإرفاق.</sys:String>
 </ResourceDictionary>

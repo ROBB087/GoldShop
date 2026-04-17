@@ -24,8 +24,11 @@ public class TraderSummary
     public decimal TotalGold21 { get; set; }
     public decimal TotalManufacturing { get; set; }
     public decimal TotalImprovement { get; set; }
+    public decimal ManufacturingAdjustments { get; set; }
+    public decimal ImprovementAdjustments { get; set; }
     public decimal ManufacturingDiscounts { get; set; }
     public decimal ImprovementDiscounts { get; set; }
+    public decimal TotalAdjustments => ManufacturingAdjustments + ImprovementAdjustments;
     public decimal FinalManufacturing => TotalManufacturing - ManufacturingDiscounts;
     public decimal FinalImprovement => TotalImprovement - ImprovementDiscounts;
 }

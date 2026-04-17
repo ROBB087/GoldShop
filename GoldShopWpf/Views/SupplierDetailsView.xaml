@@ -33,9 +33,9 @@
             <Setter Property="BorderBrush" Value="#D9E2F0" />
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="CornerRadius" Value="16" />
-            <Setter Property="Padding" Value="16,12" />
+            <Setter Property="Padding" Value="14,10" />
             <Setter Property="Margin" Value="0" />
-            <Setter Property="MinHeight" Value="108" />
+            <Setter Property="MinHeight" Value="84" />
             <Setter Property="RenderTransformOrigin" Value="0.5,0.5" />
             <Setter Property="RenderTransform">
                 <Setter.Value>
@@ -90,7 +90,7 @@
             <Setter Property="Foreground" Value="#2457C5" />
         </Style>
     </UserControl.Resources>
-    <Grid Margin="24">
+    <Grid Margin="12">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
@@ -98,7 +98,7 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <Border Grid.Row="0" Style="{StaticResource CardContainer}" Padding="24" BorderBrush="#C9D5E6" Margin="0,0,0,12">
+        <Border Grid.Row="0" Style="{StaticResource CardContainer}" Padding="18" BorderBrush="#C9D5E6" Margin="0,0,0,10">
             <Border.Background>
                 <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
                     <GradientStop Color="#F5F8FC" Offset="0" />
@@ -111,7 +111,6 @@
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="12" />
                     <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                 <Border Grid.Column="0"
                         Width="48"
@@ -132,54 +131,43 @@
                     <TextBlock Text="{Binding SupplierDisplayName}" FontSize="24" FontWeight="SemiBold" Foreground="#0F172A" />
                     <TextBlock Text="{DynamicResource LblTraderDetailsSub}" FontSize="13" Foreground="#475467" Margin="0,4,0,0" />
                 </StackPanel>
-                <Button Grid.Column="3" Command="{Binding AddTransactionCommand}" Style="{StaticResource PrimaryButton}" Height="46" MinWidth="168" Padding="18,10">
-                    <StackPanel Orientation="Horizontal">
-                        <materialDesign:PackIcon Kind="Plus" Margin="0,0,6,0" />
-                        <TextBlock Text="{DynamicResource BtnAddTransaction}" />
-                    </StackPanel>
-                </Button>
             </Grid>
         </Border>
 
-        <Border Grid.Row="1" Style="{StaticResource CardContainer}" Padding="14" BorderBrush="#E4E8F1" Margin="0,0,0,12">
+        <Border Grid.Row="1" Style="{StaticResource CardContainer}" Padding="10,8" BorderBrush="#E4E8F1" Margin="0,0,0,8">
             <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="240" />
-                        <ColumnDefinition Width="12" />
-                        <ColumnDefinition Width="220" />
-                        <ColumnDefinition Width="12" />
-                        <ColumnDefinition Width="220" />
-                    </Grid.ColumnDefinitions>
-                    <StackPanel Grid.Column="0">
+                <WrapPanel VerticalAlignment="Center" ItemHeight="Auto" Orientation="Horizontal">
+                    <StackPanel Width="260" MinWidth="220" Margin="0,0,10,0">
                         <TextBlock Text="{DynamicResource LblTrader}" Margin="0,0,0,4" Foreground="{StaticResource MutedTextBrush}" FontSize="12" />
-                        <ComboBox Style="{StaticResource SearchableTraderComboBox}" ItemsSource="{Binding SupplierOptions}" SelectedItem="{Binding SelectedTrader}" DisplayMemberPath="Name" />
+                        <ComboBox Style="{StaticResource SearchableTraderComboBox}"
+                                  MinWidth="220"
+                                  MaxDropDownHeight="360"
+                                  HorizontalAlignment="Stretch"
+                                  ItemsSource="{Binding SupplierOptions}"
+                                  SelectedItem="{Binding SelectedTrader}"
+                                  DisplayMemberPath="Name" />
                     </StackPanel>
-                    <StackPanel Grid.Column="2">
+                    <StackPanel Width="220" MinWidth="190" Margin="0,0,10,0">
                         <TextBlock Text="{DynamicResource LblFrom}" Margin="0,0,0,4" Foreground="{StaticResource MutedTextBrush}" FontSize="12" />
                         <DatePicker SelectedDate="{Binding FromDate}" />
                     </StackPanel>
-                    <StackPanel Grid.Column="4">
+                    <StackPanel Width="220" MinWidth="190" Margin="0,0,10,0">
                         <TextBlock Text="{DynamicResource LblTo}" Margin="0,0,0,4" Foreground="{StaticResource MutedTextBrush}" FontSize="12" />
                         <DatePicker SelectedDate="{Binding ToDate}" />
                     </StackPanel>
-                </Grid>
-                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Bottom">
-                    <Button Command="{Binding ApplyFilterCommand}" Style="{StaticResource CompactPrimaryToolbarButton}">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,20,0,0">
+                        <Button Command="{Binding ApplyFilterCommand}" Style="{StaticResource CompactPrimaryToolbarButton}">
                         <TextBlock Text="{DynamicResource BtnRefresh}" />
-                    </Button>
-                    <Button Command="{Binding ClearFilterCommand}" Style="{StaticResource CompactToolbarButton}" Margin="0">
+                        </Button>
+                        <Button Command="{Binding ClearFilterCommand}" Style="{StaticResource CompactToolbarButton}" Margin="0">
                         <TextBlock Text="{DynamicResource BtnReset}" />
-                    </Button>
-                </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </WrapPanel>
             </Grid>
         </Border>
 
-        <Grid Grid.Row="2" Margin="0,0,0,12">
+        <Grid Grid.Row="2" Margin="0,0,0,6">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="12" />
@@ -195,10 +183,10 @@
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
-                    <Border Width="42" Height="42" CornerRadius="14" Background="#EEF4FF" BorderBrush="#D6E4FF" BorderThickness="1" HorizontalAlignment="Center">
-                        <materialDesign:PackIcon Kind="Gold" Width="20" Height="20" Foreground="#2457C5" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    <Border Width="38" Height="38" CornerRadius="12" Background="#EEF4FF" BorderBrush="#D6E4FF" BorderThickness="1" HorizontalAlignment="Center">
+                        <materialDesign:PackIcon Kind="Gold" Width="18" Height="18" Foreground="#2457C5" HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </Border>
-                    <Viewbox Grid.Row="1" Stretch="Uniform" StretchDirection="DownOnly" Margin="0,10,0,0">
+                    <Viewbox Grid.Row="1" Stretch="Uniform" StretchDirection="DownOnly" Margin="0,8,0,0" MaxHeight="42">
                         <StackPanel>
                             <TextBlock Text="{DynamicResource LblTotalGold21}" Foreground="#667085" FontWeight="SemiBold" HorizontalAlignment="Center" />
                             <TextBlock Text="{Binding TotalGold21, Converter={StaticResource MoneyFormatConverter}, ConverterParameter='g'}" FontSize="20" FontWeight="Bold" Foreground="#101828" Margin="0,6,0,0" HorizontalAlignment="Center" />
@@ -212,10 +200,10 @@
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
-                    <Border Width="42" Height="42" CornerRadius="14" Background="#FDF2FA" BorderBrush="#F4D5EA" BorderThickness="1" HorizontalAlignment="Center">
-                        <materialDesign:PackIcon Kind="Factory" Width="20" Height="20" Foreground="#C11574" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    <Border Width="38" Height="38" CornerRadius="12" Background="#FDF2FA" BorderBrush="#F4D5EA" BorderThickness="1" HorizontalAlignment="Center">
+                        <materialDesign:PackIcon Kind="Factory" Width="18" Height="18" Foreground="#C11574" HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </Border>
-                    <Viewbox Grid.Row="1" Stretch="Uniform" StretchDirection="DownOnly" Margin="0,10,0,0">
+                    <Viewbox Grid.Row="1" Stretch="Uniform" StretchDirection="DownOnly" Margin="0,8,0,0" MaxHeight="42">
                         <StackPanel>
                             <TextBlock Text="{DynamicResource LblFinalManufacturing}" Foreground="#667085" FontWeight="SemiBold" HorizontalAlignment="Center" />
                             <TextBlock Text="{Binding FinalManufacturing, Converter={StaticResource MoneyFormatConverter}, ConverterParameter='EGP'}" FontSize="20" FontWeight="Bold" Foreground="#101828" Margin="0,6,0,0" HorizontalAlignment="Center" />
@@ -229,10 +217,10 @@
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
-                    <Border Width="42" Height="42" CornerRadius="14" Background="#ECFDF3" BorderBrush="#ABEFC6" BorderThickness="1" HorizontalAlignment="Center">
-                        <materialDesign:PackIcon Kind="TrendingUp" Width="20" Height="20" Foreground="#067647" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    <Border Width="38" Height="38" CornerRadius="12" Background="#ECFDF3" BorderBrush="#ABEFC6" BorderThickness="1" HorizontalAlignment="Center">
+                        <materialDesign:PackIcon Kind="TrendingUp" Width="18" Height="18" Foreground="#067647" HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </Border>
-                    <Viewbox Grid.Row="1" Stretch="Uniform" StretchDirection="DownOnly" Margin="0,10,0,0">
+                    <Viewbox Grid.Row="1" Stretch="Uniform" StretchDirection="DownOnly" Margin="0,8,0,0" MaxHeight="42">
                         <StackPanel>
                             <TextBlock Text="{DynamicResource LblFinalImprovement}" Foreground="#667085" FontWeight="SemiBold" HorizontalAlignment="Center" />
                             <TextBlock Text="{Binding FinalImprovement, Converter={StaticResource MoneyFormatConverter}, ConverterParameter='EGP'}" FontSize="20" FontWeight="Bold" Foreground="#101828" Margin="0,6,0,0" HorizontalAlignment="Center" />
@@ -246,10 +234,10 @@
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
-                    <Border Width="42" Height="42" CornerRadius="14" Background="#FFF7E2" BorderBrush="#F0DFA7" BorderThickness="1" HorizontalAlignment="Center">
-                        <materialDesign:PackIcon Kind="PercentBoxOutline" Width="20" Height="20" Foreground="#B54708" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    <Border Width="38" Height="38" CornerRadius="12" Background="#FFF7E2" BorderBrush="#F0DFA7" BorderThickness="1" HorizontalAlignment="Center">
+                        <materialDesign:PackIcon Kind="PercentBoxOutline" Width="18" Height="18" Foreground="#B54708" HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </Border>
-                    <Viewbox Grid.Row="1" Stretch="Uniform" StretchDirection="DownOnly" Margin="0,10,0,0">
+                    <Viewbox Grid.Row="1" Stretch="Uniform" StretchDirection="DownOnly" Margin="0,8,0,0" MaxHeight="42">
                         <StackPanel>
                             <TextBlock Text="{DynamicResource LblDiscounts}" Foreground="#8A6C00" FontWeight="SemiBold" HorizontalAlignment="Center" />
                             <TextBlock Text="{Binding TotalDiscounts, Converter={StaticResource MoneyFormatConverter}, ConverterParameter='EGP'}" FontSize="20" FontWeight="Bold" Foreground="#B54708" Margin="0,6,0,0" HorizontalAlignment="Center" />
@@ -259,9 +247,56 @@
             </Border>
         </Grid>
 
-        <Border Grid.Row="3" Style="{StaticResource CardContainer}" Padding="0" BorderBrush="#E5EAF1" Margin="0,0,0,12">
+        <Border Grid.Row="3" Style="{StaticResource CardContainer}" Padding="0" BorderBrush="#E5EAF1" Margin="0">
             <Grid>
-                <TabControl BorderThickness="0" Background="Transparent" IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBooleanConverter}}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <Border Grid.Row="0" Background="#F8FAFC" BorderBrush="#E2E8F0" BorderThickness="0,0,0,1" Padding="12,10">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <WrapPanel>
+                            <Button Command="{Binding AddTransactionCommand}" Style="{StaticResource CompactPrimaryToolbarButton}" MinWidth="150" Height="38" Margin="0,0,8,0">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="Plus" Margin="0,0,6,0" />
+                                    <TextBlock Text="{DynamicResource BtnAddTransaction}" />
+                                </StackPanel>
+                            </Button>
+                            <Button Command="{Binding AddDiscountCommand}" Style="{StaticResource CompactToolbarButton}" MinWidth="150" Height="38" Margin="0">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="PercentBoxOutline" Margin="0,0,6,0" />
+                                    <TextBlock Text="{DynamicResource BtnAddDiscount}" />
+                                </StackPanel>
+                            </Button>
+                            <Button Command="{Binding AddOpeningBalanceAdjustmentCommand}" Style="{StaticResource CompactToolbarButton}" MinWidth="200" Height="38" Margin="8,0,0,0">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="CalculatorVariantOutline" Margin="0,0,6,0" />
+                                    <TextBlock Text="{DynamicResource BtnAddOpeningBalanceAdjustment}" />
+                                </StackPanel>
+                            </Button>
+                        </WrapPanel>
+                        <Menu Grid.Column="1" Style="{StaticResource GridActionMenu}" HorizontalAlignment="Left">
+                            <MenuItem Header="{DynamicResource BtnMore}" Style="{StaticResource GridActionMenuItem}">
+                                <MenuItem Header="{DynamicResource BtnEdit}" Command="{Binding EditTransactionCommand}" />
+                                <MenuItem Header="{DynamicResource BtnDelete}" Command="{Binding DeleteTransactionCommand}" />
+                                <MenuItem Header="{DynamicResource BtnClearSelection}" Command="{Binding ClearTransactionSelectionCommand}" />
+                                <Separator />
+                                <MenuItem Header="{DynamicResource BtnEdit}" Command="{Binding EditDiscountCommand}" />
+                                <MenuItem Header="{DynamicResource BtnDelete}" Command="{Binding DeleteDiscountCommand}" />
+                                <MenuItem Header="{DynamicResource BtnClearSelection}" Command="{Binding ClearDiscountSelectionCommand}" />
+                                <Separator />
+                                <MenuItem Header="{DynamicResource BtnRefresh}" Command="{Binding RefreshCommand}" />
+                            </MenuItem>
+                        </Menu>
+                    </Grid>
+                </Border>
+
+                <TabControl Grid.Row="1" BorderThickness="0" Background="Transparent" IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBooleanConverter}}">
                 <TabItem Header="{DynamicResource LblTransactionsTab}">
                     <Grid Margin="12">
                         <Grid.RowDefinitions>
@@ -270,44 +305,27 @@
                         </Grid.RowDefinitions>
                         <Grid Grid.Row="0">
                             <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
                                 <RowDefinition Height="*" />
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
-                            <Border Grid.Row="0" Style="{StaticResource CompactCommandBar}">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-                                    <WrapPanel>
-                                    <Button Command="{Binding AddTransactionCommand}" Style="{StaticResource CompactPrimaryToolbarButton}">
-                                        <StackPanel Orientation="Horizontal">
-                                            <materialDesign:PackIcon Kind="Plus" Margin="0,0,6,0" />
-                                            <TextBlock Text="{DynamicResource BtnAdd}" />
-                                        </StackPanel>
-                                    </Button>
-                                    </WrapPanel>
-                                    <Menu Grid.Column="1" Style="{StaticResource GridActionMenu}">
-                                        <MenuItem Header="{DynamicResource BtnMore}" Style="{StaticResource GridActionMenuItem}">
-                                            <MenuItem Header="{DynamicResource BtnEdit}" Command="{Binding EditTransactionCommand}" />
-                                            <MenuItem Header="{DynamicResource BtnDelete}" Command="{Binding DeleteTransactionCommand}" />
-                                            <MenuItem Header="{DynamicResource BtnClearSelection}" Command="{Binding ClearTransactionSelectionCommand}" />
-                                            <Separator />
-                                            <MenuItem Header="{DynamicResource BtnRefresh}" Command="{Binding RefreshCommand}" />
-                                        </MenuItem>
-                                    </Menu>
-                                </Grid>
-                            </Border>
-                            <DataGrid Grid.Row="1" ItemsSource="{Binding Transactions}" SelectedItem="{Binding SelectedTransaction}" AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True" SelectionMode="Extended" SelectionUnit="FullRow">
+                            <DataGrid Grid.Row="0"
+                                      ItemsSource="{Binding Transactions}"
+                                      SelectedItem="{Binding SelectedTransaction}"
+                                      AutoGenerateColumns="False"
+                                      CanUserAddRows="False"
+                                      IsReadOnly="True"
+                                      SelectionMode="Extended"
+                                      SelectionUnit="FullRow"
+                                      ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                                 <DataGrid.Columns>
-                                    <DataGridTemplateColumn Width="56" CanUserSort="False">
+                                    <DataGridTemplateColumn Width="64" CanUserSort="False">
                                         <DataGridTemplateColumn.HeaderTemplate>
                                             <DataTemplate>
                                                 <CheckBox IsThreeState="False"
                                                           IsChecked="{Binding DataContext.AreAllVisibleTransactionsSelected, RelativeSource={RelativeSource AncestorType=DataGrid}, Mode=OneWay}"
                                                           Click="OnSelectAllTransactionsClicked"
                                                           ToolTip="{DynamicResource LblSelectAllRecords}"
+                                                          Margin="0,0,4,0"
                                                           HorizontalAlignment="Center"
                                                           VerticalAlignment="Center" />
                                             </DataTemplate>
@@ -315,6 +333,7 @@
                                         <DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate>
                                                 <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                          Margin="0,0,4,0"
                                                           HorizontalAlignment="Center"
                                                           VerticalAlignment="Center" />
                                             </DataTemplate>
@@ -333,6 +352,9 @@
                                                     </DataTrigger>
                                                     <DataTrigger Binding="{Binding Category}" Value="GoldReceipt">
                                                         <Setter TargetName="TransactionTypeText" Property="Foreground" Value="#067647" />
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Category}" Value="FinishedGoldReceipt">
+                                                        <Setter TargetName="TransactionTypeText" Property="Foreground" Value="#2457C5" />
                                                     </DataTrigger>
                                                     <DataTrigger Binding="{Binding Category}" Value="CashPayment">
                                                         <Setter TargetName="TransactionTypeText" Property="Foreground" Value="#B54708" />
@@ -364,36 +386,36 @@
                                     </DataGridTemplateColumn>
                                 </DataGrid.Columns>
                             </DataGrid>
-                            <Border Grid.Row="1" Background="#F8FAFC" Visibility="{Binding Transactions.Count, Converter={StaticResource ZeroCountToVisibilityConverter}}">
+                            <Border Grid.Row="0" Background="#F8FAFC" Visibility="{Binding Transactions.Count, Converter={StaticResource ZeroCountToVisibilityConverter}}">
                                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                                     <materialDesign:PackIcon Kind="FileDocumentOutline" Width="42" Height="42" Foreground="#98A2B3" HorizontalAlignment="Center" />
                                     <TextBlock Text="{DynamicResource LblEmptyTransactionsTitle}" FontSize="18" FontWeight="SemiBold" Margin="0,12,0,6" HorizontalAlignment="Center" />
                                     <TextBlock Text="{DynamicResource LblEmptyTraderTransactionsSub}" Foreground="#667085" HorizontalAlignment="Center" />
                                 </StackPanel>
                             </Border>
-                            <Border Grid.Row="2" Background="#F8FAFC" BorderBrush="#E2E8F0" BorderThickness="1,1,1,0" Padding="10,8">
+                            <Border Grid.Row="1" Background="#F8FAFC" BorderBrush="#E2E8F0" BorderThickness="1,1,1,0" Padding="8,6">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition Width="*" />
                                     </Grid.ColumnDefinitions>
-                                    <Border Grid.Column="0" Padding="12,8" Background="#FFFFFF" BorderBrush="#D0D5DD" BorderThickness="1" CornerRadius="12" Margin="0,0,12,0" HorizontalAlignment="Right">
-                                        <TextBlock Text="{Binding TransactionsRowsCountLabel}" FontWeight="SemiBold" Foreground="#344054" />
+                                    <Border Grid.Column="0" Padding="10,6" Background="#FFFFFF" BorderBrush="#D0D5DD" BorderThickness="1" CornerRadius="10" Margin="0,0,10,0" HorizontalAlignment="Right">
+                                        <TextBlock Text="{Binding TransactionsRowsCountLabel}" FontWeight="SemiBold" Foreground="#344054" FontSize="12" />
                                     </Border>
                                     <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center">
-                                        <Border Padding="12,8" Background="#FFFFFF" BorderBrush="#D0D5DD" BorderThickness="1" CornerRadius="12" Margin="0,0,8,0">
-                                            <TextBlock Text="{Binding TransactionsPageSummary}" FontWeight="SemiBold" Foreground="#344054" />
+                                        <Border Padding="10,6" Background="#FFFFFF" BorderBrush="#D0D5DD" BorderThickness="1" CornerRadius="10" Margin="0,0,6,0">
+                                            <TextBlock Text="{Binding TransactionsPageSummary}" FontWeight="SemiBold" Foreground="#344054" FontSize="12" />
                                         </Border>
-                                        <Border Padding="12,8" Background="#FFF7E2" BorderBrush="#F0DFA7" BorderThickness="1" CornerRadius="12">
-                                            <TextBlock Text="{Binding TransactionsSelectedCountLabel}" FontWeight="SemiBold" Foreground="#8A6C00" />
+                                        <Border Padding="10,6" Background="#FFF7E2" BorderBrush="#F0DFA7" BorderThickness="1" CornerRadius="10">
+                                            <TextBlock Text="{Binding TransactionsSelectedCountLabel}" FontWeight="SemiBold" Foreground="#8A6C00" FontSize="12" />
                                         </Border>
                                     </StackPanel>
                                     <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Left">
-                                        <Button Command="{Binding PreviousTransactionsPageCommand}" Style="{StaticResource CompactToolbarButton}" MinWidth="74" Margin="0,0,8,0">
+                                        <Button Command="{Binding PreviousTransactionsPageCommand}" Style="{StaticResource CompactToolbarButton}" MinWidth="68" Height="34" Margin="0,0,6,0">
                                             <TextBlock Text="{DynamicResource BtnPreviousPage}" />
                                         </Button>
-                                        <Button Command="{Binding NextTransactionsPageCommand}" Style="{StaticResource CompactToolbarButton}" MinWidth="74" Margin="0">
+                                        <Button Command="{Binding NextTransactionsPageCommand}" Style="{StaticResource CompactToolbarButton}" MinWidth="68" Height="34" Margin="0">
                                             <TextBlock Text="{DynamicResource BtnNextPage}" />
                                         </Button>
                                     </StackPanel>
@@ -411,44 +433,27 @@
                         </Grid.RowDefinitions>
                         <Grid Grid.Row="0">
                             <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
                                 <RowDefinition Height="*" />
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
-                            <Border Grid.Row="0" Style="{StaticResource CompactCommandBar}">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-                                    <WrapPanel>
-                                    <Button Command="{Binding AddDiscountCommand}" Style="{StaticResource CompactPrimaryToolbarButton}">
-                                        <StackPanel Orientation="Horizontal">
-                                            <materialDesign:PackIcon Kind="Plus" Margin="0,0,6,0" />
-                                            <TextBlock Text="{DynamicResource BtnAdd}" />
-                                        </StackPanel>
-                                    </Button>
-                                    </WrapPanel>
-                                    <Menu Grid.Column="1" Style="{StaticResource GridActionMenu}">
-                                        <MenuItem Header="{DynamicResource BtnMore}" Style="{StaticResource GridActionMenuItem}">
-                                            <MenuItem Header="{DynamicResource BtnEdit}" Command="{Binding EditDiscountCommand}" />
-                                            <MenuItem Header="{DynamicResource BtnDelete}" Command="{Binding DeleteDiscountCommand}" />
-                                            <MenuItem Header="{DynamicResource BtnClearSelection}" Command="{Binding ClearDiscountSelectionCommand}" />
-                                            <Separator />
-                                            <MenuItem Header="{DynamicResource BtnRefresh}" Command="{Binding RefreshCommand}" />
-                                        </MenuItem>
-                                    </Menu>
-                                </Grid>
-                            </Border>
-                            <DataGrid Grid.Row="1" ItemsSource="{Binding Discounts}" SelectedItem="{Binding SelectedDiscount}" AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True" SelectionMode="Extended" SelectionUnit="FullRow">
+                            <DataGrid Grid.Row="0"
+                                      ItemsSource="{Binding Discounts}"
+                                      SelectedItem="{Binding SelectedDiscount}"
+                                      AutoGenerateColumns="False"
+                                      CanUserAddRows="False"
+                                      IsReadOnly="True"
+                                      SelectionMode="Extended"
+                                      SelectionUnit="FullRow"
+                                      ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                                 <DataGrid.Columns>
-                                    <DataGridTemplateColumn Width="56" CanUserSort="False">
+                                    <DataGridTemplateColumn Width="64" CanUserSort="False">
                                         <DataGridTemplateColumn.HeaderTemplate>
                                             <DataTemplate>
                                                 <CheckBox IsThreeState="False"
                                                           IsChecked="{Binding DataContext.AreAllVisibleDiscountsSelected, RelativeSource={RelativeSource AncestorType=DataGrid}, Mode=OneWay}"
                                                           Click="OnSelectAllDiscountsClicked"
                                                           ToolTip="{DynamicResource LblSelectAllRecords}"
+                                                          Margin="0,0,4,0"
                                                           HorizontalAlignment="Center"
                                                           VerticalAlignment="Center" />
                                             </DataTemplate>
@@ -456,6 +461,7 @@
                                         <DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate>
                                                 <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                          Margin="0,0,4,0"
                                                           HorizontalAlignment="Center"
                                                           VerticalAlignment="Center" />
                                             </DataTemplate>
@@ -503,36 +509,36 @@
                                     </DataGridTemplateColumn>
                                 </DataGrid.Columns>
                             </DataGrid>
-                            <Border Grid.Row="1" Background="#F8FAFC" Visibility="{Binding Discounts.Count, Converter={StaticResource ZeroCountToVisibilityConverter}}">
+                            <Border Grid.Row="0" Background="#F8FAFC" Visibility="{Binding Discounts.Count, Converter={StaticResource ZeroCountToVisibilityConverter}}">
                                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                                     <materialDesign:PackIcon Kind="PercentBoxOutline" Width="42" Height="42" Foreground="#98A2B3" HorizontalAlignment="Center" />
                                     <TextBlock Text="{DynamicResource LblEmptyDiscountsTitle}" FontSize="18" FontWeight="SemiBold" Margin="0,12,0,6" HorizontalAlignment="Center" />
                                     <TextBlock Text="{DynamicResource LblEmptyDiscountsSub}" Foreground="#667085" HorizontalAlignment="Center" />
                                 </StackPanel>
                             </Border>
-                            <Border Grid.Row="2" Background="#F8FAFC" BorderBrush="#E2E8F0" BorderThickness="1,1,1,0" Padding="10,8">
+                            <Border Grid.Row="1" Background="#F8FAFC" BorderBrush="#E2E8F0" BorderThickness="1,1,1,0" Padding="8,6">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition Width="*" />
                                     </Grid.ColumnDefinitions>
-                                    <Border Grid.Column="0" Padding="12,8" Background="#FFFFFF" BorderBrush="#D0D5DD" BorderThickness="1" CornerRadius="12" Margin="0,0,12,0" HorizontalAlignment="Right">
-                                        <TextBlock Text="{Binding DiscountsRowsCountLabel}" FontWeight="SemiBold" Foreground="#344054" />
+                                    <Border Grid.Column="0" Padding="10,6" Background="#FFFFFF" BorderBrush="#D0D5DD" BorderThickness="1" CornerRadius="10" Margin="0,0,10,0" HorizontalAlignment="Right">
+                                        <TextBlock Text="{Binding DiscountsRowsCountLabel}" FontWeight="SemiBold" Foreground="#344054" FontSize="12" />
                                     </Border>
                                     <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center">
-                                        <Border Padding="12,8" Background="#FFFFFF" BorderBrush="#D0D5DD" BorderThickness="1" CornerRadius="12" Margin="0,0,8,0">
-                                            <TextBlock Text="{Binding DiscountsPageSummary}" FontWeight="SemiBold" Foreground="#344054" />
+                                        <Border Padding="10,6" Background="#FFFFFF" BorderBrush="#D0D5DD" BorderThickness="1" CornerRadius="10" Margin="0,0,6,0">
+                                            <TextBlock Text="{Binding DiscountsPageSummary}" FontWeight="SemiBold" Foreground="#344054" FontSize="12" />
                                         </Border>
-                                        <Border Padding="12,8" Background="#FFF7E2" BorderBrush="#F0DFA7" BorderThickness="1" CornerRadius="12">
-                                            <TextBlock Text="{Binding DiscountsSelectedCountLabel}" FontWeight="SemiBold" Foreground="#8A6C00" />
+                                        <Border Padding="10,6" Background="#FFF7E2" BorderBrush="#F0DFA7" BorderThickness="1" CornerRadius="10">
+                                            <TextBlock Text="{Binding DiscountsSelectedCountLabel}" FontWeight="SemiBold" Foreground="#8A6C00" FontSize="12" />
                                         </Border>
                                     </StackPanel>
                                     <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Left">
-                                        <Button Command="{Binding PreviousDiscountsPageCommand}" Style="{StaticResource CompactToolbarButton}" MinWidth="74" Margin="0,0,8,0">
+                                        <Button Command="{Binding PreviousDiscountsPageCommand}" Style="{StaticResource CompactToolbarButton}" MinWidth="68" Height="34" Margin="0,0,6,0">
                                             <TextBlock Text="{DynamicResource BtnPreviousPage}" />
                                         </Button>
-                                        <Button Command="{Binding NextDiscountsPageCommand}" Style="{StaticResource CompactToolbarButton}" MinWidth="74" Margin="0">
+                                        <Button Command="{Binding NextDiscountsPageCommand}" Style="{StaticResource CompactToolbarButton}" MinWidth="68" Height="34" Margin="0">
                                             <TextBlock Text="{DynamicResource BtnNextPage}" />
                                         </Button>
                                     </StackPanel>

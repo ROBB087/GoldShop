@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Windows.Data;
 using GoldShopCore.Models;
+using GoldShopWpf.Services;
 
 namespace GoldShopWpf.Converters;
 
@@ -10,13 +11,12 @@ public class TransactionCategoryToLabelConverter : IValueConverter
     {
         var category = value as string;
         var normalized = TransactionCategories.Normalize(category, TransactionType.Out);
-        var isArabic = Services.LocalizationService.CurrentLanguage == "ar";
-
         return normalized switch
         {
-            TransactionCategories.GoldOutbound => isArabic ? "صرف ذهب" : "Gold Out",
-            TransactionCategories.GoldReceipt => isArabic ? "استلام ذهب" : "Gold Receipt",
-            TransactionCategories.CashPayment => isArabic ? "استلام نقدية" : "Cash Payment",
+            TransactionCategories.GoldOutbound => UiText.L("LblGoldOutboundReport"),
+            TransactionCategories.GoldReceipt => UiText.L("LblGoldReceiptReport"),
+            TransactionCategories.FinishedGoldReceipt => UiText.L("LblFinishedGoldReceiptReport"),
+            TransactionCategories.CashPayment => UiText.L("LblCashPaymentReport"),
             _ => string.Empty
         };
     }

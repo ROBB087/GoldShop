@@ -1,4 +1,5 @@
 using System.IO;
+using GoldShopCore;
 using GoldShopCore.Data;
 
 namespace GoldShopWpf.Services;
@@ -9,7 +10,7 @@ public class BackupService
 
     public BackupService()
     {
-        _backupDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Backups");
+        _backupDirectory = AppStoragePaths.BackupDirectory;
     }
 
     public void EnsureAutomaticBackup()
@@ -36,6 +37,9 @@ public class BackupService
 
     public void RestoreBackup(string sourcePath)
     {
+        Directory.CreateDirectory(_backupDirectory);
+        Database.FlushAndReleaseFileHandles();
+
         var restoreBackupPath = Path.Combine(_backupDirectory, $"goldshop-pre-restore-{DateTime.Now:yyyyMMdd-HHmmss}.db");
         if (File.Exists(Database.DbFilePath))
         {
@@ -43,6 +47,8 @@ public class BackupService
         }
 
         File.Copy(sourcePath, Database.DbFilePath, true);
+        Database.FlushAndReleaseFileHandles();
+        Database.Initialize();
     }
 
     public string BackupDirectory => _backupDirectory;

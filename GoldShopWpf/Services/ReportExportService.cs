@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.IO;
+using System.Collections.Specialized;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -60,31 +61,86 @@ public static class ReportExportService
 
     public static void ShareFile(string filePath)
     {
-        var message = UiText.L("MsgWhatsAppManualShare");
-        var url = $"https://wa.me/?text={Uri.EscapeDataString(message)}";
-
-        if (File.Exists(filePath))
+        if (!File.Exists(filePath))
         {
-            System.Windows.Clipboard.SetText(filePath);
+            MessageBox.Show(
+                UiText.L("MsgShareFileMissing"),
+                UiText.L("BtnShare"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+            return;
+        }
+
+        CopyFileToClipboard(filePath);
+
+        Process.Start(new ProcessStartInfo
+        {
+            FileName = "explorer.exe",
+            Arguments = $"/select,\"{filePath}\"",
+            UseShellExecute = true
+        });
+
+        MessageBox.Show(
+            $"{UiText.L("MsgShareReport")}{Environment.NewLine}{filePath}{Environment.NewLine}{Environment.NewLine}{UiText.L("MsgShareFileCopied")}",
+            UiText.L("BtnShare"),
+            MessageBoxButton.OK,
+            MessageBoxImage.Information);
+    }
+
+    public static void ShareFileViaWhatsApp(string filePath, string? targetPhone)
+    {
+        if (!File.Exists(filePath))
+        {
+            MessageBox.Show(
+                UiText.L("MsgShareFileMissing"),
+                UiText.L("BtnShare"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+            return;
+        }
+
+        var normalizedPhone = NormalizePhone(targetPhone);
+        if (string.IsNullOrWhiteSpace(normalizedPhone))
+        {
             Process.Start(new ProcessStartInfo
             {
                 FileName = "explorer.exe",
                 Arguments = $"/select,\"{filePath}\"",
                 UseShellExecute = true
             });
+
+            MessageBox.Show(
+                UiText.L("MsgWhatsAppMissingPhone"),
+                UiText.L("BtnShare"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+            return;
         }
 
-        Process.Start(new ProcessStartInfo
-        {
-            FileName = url,
-            UseShellExecute = true
-        });
+        CopyFileToClipboard(filePath);
 
-        MessageBox.Show(
-            $"{UiText.L("MsgWhatsAppManualShare")}{Environment.NewLine}{Environment.NewLine}{filePath}",
-            UiText.L("BtnShare"),
-            MessageBoxButton.OK,
-            MessageBoxImage.Information);
+        var opened =
+            (HasUriSchemeHandler("whatsapp") && TryOpenUri($"whatsapp://send?phone={normalizedPhone}")) ||
+            TryOpenUri($"https://web.whatsapp.com/send?phone={normalizedPhone}") ||
+            TryOpenUri($"https://api.whatsapp.com/send?phone={normalizedPhone}");
+
+        if (!opened)
+        {
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = "explorer.exe",
+                Arguments = $"/select,\"{filePath}\"",
+                UseShellExecute = true
+            });
+
+            MessageBox.Show(
+                UiText.L("MsgWhatsAppOpenFailed"),
+                UiText.L("BtnShare"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+            return;
+        }
+
     }
 
     private static void SaveElementAsPng(FrameworkElement element, string filePath)
@@ -236,6 +292,84 @@ public static class ReportExportService
                 column.Item().Text(label).FontColor(QuestPDF.Helpers.Colors.Grey.Darken2).FontSize(10);
                 column.Item().PaddingTop(8).Text(value).FontSize(20).Bold();
             });
+    }
+
+    private static bool TryOpenUri(string uri)
+    {
+        try
+        {
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = uri,
+                UseShellExecute = true
+            });
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static bool HasUriSchemeHandler(string scheme)
+    {
+        try
+        {
+            using var key = Registry.ClassesRoot.OpenSubKey($@"{scheme}\shell\open\command");
+            return key != null;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static void CopyFileToClipboard(string filePath)
+    {
+        var files = new StringCollection
+        {
+            filePath
+        };
+        Clipboard.SetFileDropList(files);
+    }
+
+    private static string? NormalizePhone(string? rawPhone)
+    {
+        if (string.IsNullOrWhiteSpace(rawPhone))
+        {
+            return null;
+        }
+
+        var trimmed = rawPhone.Trim();
+        var hasPlusPrefix = trimmed.StartsWith("+", StringComparison.Ordinal);
+        var digits = new string(trimmed.Where(char.IsDigit).ToArray());
+
+        if (string.IsNullOrWhiteSpace(digits))
+        {
+            return null;
+        }
+
+        if (digits.StartsWith("00", StringComparison.Ordinal))
+        {
+            digits = digits[2..];
+        }
+
+        // Egypt local mobile formats (01xxxxxxxxx or 1xxxxxxxxx) -> country code 20.
+        if (digits.Length == 11 && digits.StartsWith("0", StringComparison.Ordinal))
+        {
+            digits = $"2{digits}";
+        }
+        else if (digits.Length == 10 && digits.StartsWith("1", StringComparison.Ordinal))
+        {
+            digits = $"20{digits}";
+        }
+
+        if (hasPlusPrefix && digits.StartsWith("0", StringComparison.Ordinal))
+        {
+            digits = digits.TrimStart('0');
+        }
+
+        return digits;
     }
 
 }

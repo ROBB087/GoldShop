@@ -22,6 +22,7 @@ public static class UiText
             "Manufacturing value must be zero or greater." => L("MsgManufacturingValueNonNegative"),
             "Refining value must be zero or greater." => L("MsgRefiningValueNonNegative"),
             "Default manufacturing value must be zero or greater." => L("MsgDefaultManufacturingNonNegative"),
+            "Default 24K manufacturing value must be zero or greater." => L("MsgDefaultManufacturing24NonNegative"),
             "Default refining value must be zero or greater." => L("MsgDefaultRefiningNonNegative"),
             "Gold receipt cannot include manufacturing or refining values." => L("MsgGoldReceiptNoCharges"),
             "Discount amount must be greater than zero." => L("MsgDiscountGreaterThanZero"),

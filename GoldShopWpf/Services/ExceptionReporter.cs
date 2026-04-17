@@ -1,6 +1,7 @@
 using System.IO;
 using System.Text;
 using System.Windows;
+using GoldShopCore;
 
 namespace GoldShopWpf.Services;
 
@@ -12,7 +13,8 @@ public static class ExceptionReporter
     {
         try
         {
-            var logPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "app-errors.log");
+            AppStoragePaths.EnsureDirectories();
+            var logPath = Path.Combine(AppStoragePaths.LogDirectory, "app-errors.log");
             var text = new StringBuilder()
                 .AppendLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {context}")
                 .AppendLine(ex.ToString())

@@ -1,5 +1,7 @@
 using GoldShopCore.Data;
 using GoldShopCore.Models;
+using Microsoft.Data.Sqlite;
+using System.Data;
 
 namespace GoldShopCore.Services;
 
@@ -58,6 +60,8 @@ public class TransactionService
                 TotalGold21 = snapshots.Sum(item => item.TotalEquivalent21),
                 TotalManufacturing = snapshots.Sum(item => item.TotalManufacturing),
                 TotalImprovement = snapshots.Sum(item => item.TotalImprovement),
+                ManufacturingAdjustments = snapshots.Sum(item => item.ManufacturingAdjustments),
+                ImprovementAdjustments = snapshots.Sum(item => item.ImprovementAdjustments),
                 ManufacturingDiscounts = snapshots.Sum(item => item.ManufacturingDiscounts),
                 ImprovementDiscounts = snapshots.Sum(item => item.ImprovementDiscounts)
             };
@@ -91,8 +95,10 @@ public class TransactionService
         int originalKarat,
         decimal manufacturingValue,
         decimal improvementValue,
-        string? notes)
+        string? notes,
+        string idempotencyKey)
     {
+        var normalizedIdempotencyKey = NormalizeIdempotencyKey(idempotencyKey);
         var now = DateTime.Now;
         var transaction = CreateTransaction(
             supplierId,
@@ -105,20 +111,42 @@ public class TransactionService
             improvementValue,
             notes,
             now,
-            now);
+            now,
+            normalizedIdempotencyKey);
 
         try
         {
             using var connection = Database.OpenConnection();
-            using var sqliteTransaction = connection.BeginTransaction();
-            var id = _transactionRepository.Add(connection, sqliteTransaction, transaction);
-            var summarySnapshot = _traderSummaryRepository.ApplyTransactionInsert(connection, sqliteTransaction, transaction);
-            sqliteTransaction.Commit();
-            _cacheService.SetTraderSummary(summarySnapshot);
+            using var sqliteTransaction = connection.BeginTransaction(IsolationLevel.Serializable);
 
-            transaction.Id = id;
-            _auditService.Log("SupplierTransaction", id, "Create", null, transaction);
-            return id;
+            var existing = _transactionRepository.GetBySupplierAndIdempotencyKey(connection, sqliteTransaction, supplierId, normalizedIdempotencyKey);
+            if (existing != null)
+            {
+                return HandleIdempotentReplay(existing, transaction, normalizedIdempotencyKey);
+            }
+
+            try
+            {
+                var id = _transactionRepository.Add(connection, sqliteTransaction, transaction);
+                var summarySnapshot = _traderSummaryRepository.ApplyTransactionInsert(connection, sqliteTransaction, transaction);
+                sqliteTransaction.Commit();
+                _cacheService.SetTraderSummary(summarySnapshot);
+
+                transaction.Id = id;
+                _auditService.Log("SupplierTransaction", id, "Create", null, transaction);
+                return id;
+            }
+            catch (SqliteException ex) when (IsIdempotencyConstraintViolation(ex))
+            {
+                sqliteTransaction.Rollback();
+                var winner = _transactionRepository.GetBySupplierAndIdempotencyKey(supplierId, normalizedIdempotencyKey);
+                if (winner != null)
+                {
+                    return HandleIdempotentReplay(winner, transaction, normalizedIdempotencyKey);
+                }
+
+                throw;
+            }
         }
         catch (Exception ex)
         {
@@ -156,14 +184,15 @@ public class TransactionService
             improvementValue,
             notes,
             existing.CreatedAt,
-            DateTime.Now);
+            DateTime.Now,
+            existing.IdempotencyKey);
         updated.Id = id;
         updated.IsDeleted = false;
 
         try
         {
             using var connection = Database.OpenConnection();
-            using var sqliteTransaction = connection.BeginTransaction();
+            using var sqliteTransaction = connection.BeginTransaction(IsolationLevel.Serializable);
             _transactionRepository.Update(connection, sqliteTransaction, updated);
             var affectedTraderIds = new HashSet<int> { existing.SupplierId, updated.SupplierId };
             foreach (var traderId in affectedTraderIds)
@@ -209,7 +238,7 @@ public class TransactionService
         try
         {
             using var connection = Database.OpenConnection();
-            using var sqliteTransaction = connection.BeginTransaction();
+            using var sqliteTransaction = connection.BeginTransaction(IsolationLevel.Serializable);
             _transactionRepository.SoftDelete(connection, sqliteTransaction, id, deletedAt);
             existing.IsDeleted = true;
             existing.DeletedAt = deletedAt;
@@ -237,12 +266,13 @@ public class TransactionService
         decimal improvementValue,
         string? notes,
         DateTime createdAt,
-        DateTime updatedAt)
+        DateTime updatedAt,
+        string? idempotencyKey)
     {
         category = TransactionCategories.Normalize(category, TransactionType.Out);
         Validate(category, originalWeight, originalKarat, manufacturingValue, improvementValue);
 
-        var type = category == TransactionCategories.GoldOutbound ? TransactionType.Out : TransactionType.In;
+        var type = TransactionCategories.ResolveType(category);
         var roundedWeight = 0m;
         var roundedManufacturing = 0m;
         var roundedImprovement = 0m;
@@ -266,12 +296,18 @@ public class TransactionService
             equivalent21 = CalculateEquivalent21(roundedWeight, originalKarat);
             description = BuildTraceabilityText(roundedWeight, originalKarat, equivalent21);
 
-            if (category == TransactionCategories.GoldOutbound)
+            if (TransactionCategories.SupportsCharges(category) && category != TransactionCategories.CashPayment)
             {
                 roundedManufacturing = decimal.Round(manufacturingValue, 4, MidpointRounding.AwayFromZero);
                 roundedImprovement = decimal.Round(improvementValue, 4, MidpointRounding.AwayFromZero);
                 totalManufacturing = decimal.Round(roundedWeight * roundedManufacturing, 4, MidpointRounding.AwayFromZero);
                 totalImprovement = decimal.Round(equivalent21 * roundedImprovement, 4, MidpointRounding.AwayFromZero);
+
+                if (category == TransactionCategories.FinishedGoldReceipt)
+                {
+                    totalManufacturing = -totalManufacturing;
+                    totalImprovement = -totalImprovement;
+                }
             }
         }
 
@@ -290,11 +326,62 @@ public class TransactionService
             ImprovementPerGram = roundedImprovement,
             TotalManufacturing = totalManufacturing,
             TotalImprovement = totalImprovement,
+            IdempotencyKey = idempotencyKey,
             Notes = string.IsNullOrWhiteSpace(notes) ? null : notes.Trim(),
             IsDeleted = false,
             CreatedAt = createdAt,
             UpdatedAt = updatedAt
         };
+    }
+
+    private static string NormalizeIdempotencyKey(string idempotencyKey)
+    {
+        if (string.IsNullOrWhiteSpace(idempotencyKey))
+        {
+            throw new ArgumentException("Idempotency key is required.", nameof(idempotencyKey));
+        }
+
+        return idempotencyKey.Trim();
+    }
+
+    private static bool IsEquivalentPayload(SupplierTransaction existing, SupplierTransaction candidate)
+    {
+        return existing.SupplierId == candidate.SupplierId
+            && existing.Date == candidate.Date
+            && existing.Type == candidate.Type
+            && string.Equals(existing.Category, candidate.Category, StringComparison.Ordinal)
+            && string.Equals(existing.ItemName ?? string.Empty, candidate.ItemName ?? string.Empty, StringComparison.Ordinal)
+            && existing.OriginalWeight == candidate.OriginalWeight
+            && existing.OriginalKarat == candidate.OriginalKarat
+            && existing.Equivalent21 == candidate.Equivalent21
+            && existing.ManufacturingPerGram == candidate.ManufacturingPerGram
+            && existing.ImprovementPerGram == candidate.ImprovementPerGram
+            && existing.TotalManufacturing == candidate.TotalManufacturing
+            && existing.TotalImprovement == candidate.TotalImprovement
+            && string.Equals(existing.Notes ?? string.Empty, candidate.Notes ?? string.Empty, StringComparison.Ordinal);
+    }
+
+    private static bool IsIdempotencyConstraintViolation(SqliteException exception)
+        => exception.SqliteErrorCode == 19
+           && (exception.Message.Contains("UX_SupplierTransactions_SupplierId_IdempotencyKey", StringComparison.Ordinal)
+               || exception.Message.Contains("SupplierTransactions.SupplierId, SupplierTransactions.IdempotencyKey", StringComparison.Ordinal));
+
+    private static int HandleIdempotentReplay(SupplierTransaction existing, SupplierTransaction candidate, string idempotencyKey)
+    {
+        if (!IsEquivalentPayload(existing, candidate))
+        {
+            FinancialMetricsService.Increment("duplicate_attempt_count");
+            FileLogService.LogWarning(
+                "TransactionService.IdempotencyConflict",
+                $"Conflict for supplier {candidate.SupplierId} and key {idempotencyKey}. Existing transaction {existing.Id} has different payload.");
+            throw new InvalidOperationException("Idempotency key conflict: the same key was already used with a different payload.");
+        }
+
+        FinancialMetricsService.Increment("idempotent_replay_success");
+        FileLogService.LogInfo(
+            "TransactionService.IdempotencyHit",
+            $"Replayed request for supplier {candidate.SupplierId} with idempotency key {idempotencyKey}. Returning existing transaction {existing.Id}.");
+        return existing.Id;
     }
 
     public static decimal CalculateEquivalent21(decimal originalWeight, int originalKarat)
@@ -363,6 +450,8 @@ public class TransactionService
             TotalGold21 = snapshot.TotalEquivalent21,
             TotalManufacturing = snapshot.TotalManufacturing,
             TotalImprovement = snapshot.TotalImprovement,
+            ManufacturingAdjustments = snapshot.ManufacturingAdjustments,
+            ImprovementAdjustments = snapshot.ImprovementAdjustments,
             ManufacturingDiscounts = snapshot.ManufacturingDiscounts,
             ImprovementDiscounts = snapshot.ImprovementDiscounts
         };

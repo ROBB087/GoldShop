@@ -6,7 +6,7 @@ set RUNTIME=win-x64
 set OUTDIR=%~dp0publish\GoldShopWpf
 
 echo Publishing GoldShop WPF app...
-dotnet publish "%PROJECT%" -c Release -r %RUNTIME% --self-contained true -p:PublishSingleFile=true -o "%OUTDIR%"
+dotnet publish "%PROJECT%" -c Release -r %RUNTIME% --self-contained true -p:PublishSingleFile=true -p:PublishReadyToRun=true -p:DebugType=None -p:DebugSymbols=false -o "%OUTDIR%"
 if errorlevel 1 (
     echo.
     echo Publish failed.

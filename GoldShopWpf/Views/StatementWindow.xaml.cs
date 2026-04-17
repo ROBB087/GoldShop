@@ -16,10 +16,11 @@ public partial class StatementWindow : Window
     public StatementWindow(int supplierId, string supplierName, DateTime? fromDate, DateTime? toDate)
     {
         InitializeComponent();
+        DialogWindowLayout.Apply(this);
         _supplierId = supplierId;
         _supplierName = supplierName;
 
-        FromDate.SelectedDate = fromDate ?? DateTime.Today.AddMonths(-1);
+        FromDate.SelectedDate = fromDate ?? DateTime.Today;
         ToDate.SelectedDate = toDate ?? DateTime.Today;
         LoadLogo();
         GenerateStatement();
@@ -37,9 +38,19 @@ public partial class StatementWindow : Window
         GenerateStatement();
     }
 
+    private void OnDateChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (!IsLoaded)
+        {
+            return;
+        }
+
+        GenerateStatement();
+    }
+
     private void GenerateStatement()
     {
-        var from = FromDate.SelectedDate ?? DateTime.Today.AddMonths(-1);
+        var from = FromDate.SelectedDate ?? DateTime.Today;
         var to = ToDate.SelectedDate ?? DateTime.Today;
         if (from > to)
         {
@@ -53,7 +64,11 @@ public partial class StatementWindow : Window
         PreviewViewer.Document = _document;
     }
 
-    private FlowDocument BuildDocument(DateTime from, DateTime to, IReadOnlyList<SupplierTransaction> transactions, TraderSummary summary)
+    private FlowDocument BuildDocument(
+        DateTime from,
+        DateTime to,
+        IReadOnlyList<SupplierTransaction> transactions,
+        TraderSummary summary)
     {
         var isArabic = LocalizationService.CurrentLanguage == "ar";
         var font = (FontFamily)(Application.Current.TryFindResource("AppFontFamily") ?? new FontFamily("Tahoma"));
@@ -139,16 +154,15 @@ public partial class StatementWindow : Window
         {
             CellSpacing = 0
         };
+        var transactionManufacturingTotal = transactions.Sum(transaction => transaction.TotalManufacturing);
+        var transactionImprovementTotal = transactions.Sum(transaction => transaction.TotalImprovement);
         AddColumns(summaryTable, 250, 180);
         summaryTable.RowGroups.Add(new TableRowGroup());
         summaryTable.RowGroups[0].Rows.Add(CreateHeaderRow(UiText.L("LblDescription"), UiText.L("LblAmount")));
         summaryTable.RowGroups[0].Rows.Add(CreateDataRow(UiText.L("LblTotalGold21"), FormatNumber(summary.TotalGold21, UiText.L("LblWeightUnit"))));
-        summaryTable.RowGroups[0].Rows.Add(CreateDataRow(UiText.L("LblTotalManufacturing"), FormatNumber(summary.TotalManufacturing, string.Empty)));
-        summaryTable.RowGroups[0].Rows.Add(CreateDataRow(UiText.L("LblTotalImprovement"), FormatNumber(summary.TotalImprovement, string.Empty)));
-        summaryTable.RowGroups[0].Rows.Add(CreateDataRow(UiText.L("LblManufacturingDiscounts"), FormatNumber(summary.ManufacturingDiscounts, string.Empty)));
-        summaryTable.RowGroups[0].Rows.Add(CreateDataRow(UiText.L("LblImprovementDiscounts"), FormatNumber(summary.ImprovementDiscounts, string.Empty)));
-        summaryTable.RowGroups[0].Rows.Add(CreateDataRow(UiText.L("LblFinalManufacturing"), FormatNumber(summary.FinalManufacturing, string.Empty)));
-        summaryTable.RowGroups[0].Rows.Add(CreateDataRow(UiText.L("LblFinalImprovement"), FormatNumber(summary.FinalImprovement, string.Empty)));
+        summaryTable.RowGroups[0].Rows.Add(CreateDataRow(UiText.L("LblTotalManufacturing"), FormatNumber(transactionManufacturingTotal, string.Empty)));
+        summaryTable.RowGroups[0].Rows.Add(CreateDataRow(UiText.L("LblTotalImprovement"), FormatNumber(transactionImprovementTotal, string.Empty)));
+        summaryTable.RowGroups[0].Rows.Add(CreateDataRow(UiText.L("LblNetTotalReport"), FormatNumber(summary.FinalManufacturing + summary.FinalImprovement, string.Empty)));
         doc.Blocks.Add(summaryTable);
 
         return doc;
@@ -207,9 +221,10 @@ public partial class StatementWindow : Window
     {
         return transaction.Category switch
         {
-            TransactionCategories.GoldOutbound => LocalizationService.CurrentLanguage == "ar" ? "صرف ذهب" : "Gold Out",
-            TransactionCategories.GoldReceipt => LocalizationService.CurrentLanguage == "ar" ? "استلام ذهب" : "Gold Receipt",
-            TransactionCategories.CashPayment => LocalizationService.CurrentLanguage == "ar" ? "استلام نقدية" : "Cash Payment",
+            TransactionCategories.GoldOutbound => UiText.L("LblGoldOutboundReport"),
+            TransactionCategories.GoldReceipt => UiText.L("LblGoldReceiptReport"),
+            TransactionCategories.FinishedGoldReceipt => UiText.L("LblFinishedGoldReceiptReport"),
+            TransactionCategories.CashPayment => UiText.L("LblCashPaymentReport"),
             _ => transaction.Type.ToString()
         };
     }

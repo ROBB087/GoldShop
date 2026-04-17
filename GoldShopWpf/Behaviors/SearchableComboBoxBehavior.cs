@@ -3,6 +3,7 @@ using System.Linq;
 using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Threading;
 
@@ -269,9 +270,10 @@ public static class SearchableComboBoxBehavior
         var state = GetOrCreateState(comboBox);
         comboBox.Dispatcher.BeginInvoke(() =>
         {
+            RefreshPopupLayout(comboBox);
             state.SearchTextBox?.Focus();
             state.SearchTextBox?.SelectAll();
-        }, DispatcherPriority.Input);
+        }, DispatcherPriority.Loaded);
     }
 
     private static void OnDropDownClosed(object? sender, EventArgs e)
@@ -459,5 +461,24 @@ public static class SearchableComboBoxBehavior
             : Math.Clamp(currentIndex + offset, 0, visibleItems.Count - 1);
 
         comboBox.SelectedItem = visibleItems[nextIndex];
+    }
+
+    private static void RefreshPopupLayout(ComboBox comboBox)
+    {
+        comboBox.ApplyTemplate();
+        comboBox.UpdateLayout();
+
+        if (comboBox.Template.FindName("PART_Popup", comboBox) is not Popup popup ||
+            popup.Child is not FrameworkElement popupChild)
+        {
+            return;
+        }
+
+        var width = Math.Max(comboBox.ActualWidth, comboBox.MinWidth);
+        popupChild.Width = width;
+        popupChild.MinWidth = width;
+        popupChild.InvalidateMeasure();
+        popupChild.InvalidateArrange();
+        popupChild.UpdateLayout();
     }
 }

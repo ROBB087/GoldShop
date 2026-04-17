@@ -1,4 +1,5 @@
 using GoldShopWpf.Services;
+using System.Windows;
 
 namespace GoldShopWpf.ViewModels;
 
@@ -55,7 +56,25 @@ public class BackupViewModel : ViewModelBase
             return;
         }
 
-        AppServices.BackupService.RestoreBackup(dialog.FileName);
-        System.Windows.MessageBox.Show(UiText.L("MsgBackupRestored"), UiText.L("TitleBackup"), System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+        try
+        {
+            AppServices.RestoreDatabase(dialog.FileName);
+
+            if (Application.Current?.MainWindow?.DataContext is MainViewModel mainViewModel)
+            {
+                mainViewModel.ReloadAfterDatabaseRestore();
+            }
+
+            System.Windows.MessageBox.Show(UiText.L("MsgBackupRestored"), UiText.L("TitleBackup"), System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+        }
+        catch (Exception ex)
+        {
+            ExceptionReporter.Report(ex, "Restore backup failed");
+            System.Windows.MessageBox.Show(
+                UiText.LocalizeException(ex.Message),
+                UiText.L("TitleBackup"),
+                System.Windows.MessageBoxButton.OK,
+                System.Windows.MessageBoxImage.Error);
+        }
     }
 }

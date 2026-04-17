@@ -17,15 +17,18 @@ public class ReportService
     private readonly SupplierRepository _supplierRepository;
     private readonly TransactionRepository _transactionRepository;
     private readonly DiscountRepository _discountRepository;
+    private readonly OpeningBalanceAdjustmentRepository _openingBalanceAdjustmentRepository;
 
     public ReportService(
         SupplierRepository supplierRepository,
         TransactionRepository transactionRepository,
-        DiscountRepository discountRepository)
+        DiscountRepository discountRepository,
+        OpeningBalanceAdjustmentRepository openingBalanceAdjustmentRepository)
     {
         _supplierRepository = supplierRepository;
         _transactionRepository = transactionRepository;
         _discountRepository = discountRepository;
+        _openingBalanceAdjustmentRepository = openingBalanceAdjustmentRepository;
     }
 
     public List<SupplierWeeklyReport> GetWeeklyReport(DateTime from, DateTime to)
@@ -35,7 +38,6 @@ public class ReportService
             .ToDictionary(r => r.SupplierId);
         var discountSummaries = _discountRepository.GetSupplierDiscountSummaries(from, to)
             .ToDictionary(r => r.SupplierId);
-
         return suppliers.Values
             .Select(supplier =>
             {

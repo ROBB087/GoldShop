@@ -9,6 +9,27 @@
         <Style x:Key="NotesCellTextStyle" TargetType="TextBlock" BasedOn="{StaticResource GridCellTextStyle}">
             <Setter Property="ToolTip" Value="{Binding Content}" />
         </Style>
+        <Style x:Key="GridActionMenu" TargetType="Menu">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Margin" Value="0" />
+            <Setter Property="HorizontalAlignment" Value="Left" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="FlowDirection" Value="LeftToRight" />
+        </Style>
+        <Style x:Key="GridActionMenuItem" TargetType="MenuItem">
+            <Setter Property="Padding" Value="10,4" />
+            <Setter Property="Margin" Value="0" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="#344054" />
+            <Setter Property="Background" Value="#FFFFFF" />
+            <Setter Property="BorderBrush" Value="#D0D5DD" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
     </UserControl.Resources>
 
     <Grid Margin="8">
@@ -18,9 +39,9 @@
         </Grid.RowDefinitions>
 
         <Border Grid.Row="0"
-                Margin="0,0,0,18"
-                Padding="28"
-                CornerRadius="28"
+                Margin="0,0,0,8"
+                Padding="12,10"
+                CornerRadius="18"
                 BorderBrush="#D8E5FF"
                 BorderThickness="1">
             <Border.Background>
@@ -30,78 +51,65 @@
                 </LinearGradientBrush>
             </Border.Background>
             <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="12" />
                     <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="12" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <StackPanel Grid.Row="0" Grid.Column="0">
-                    <TextBlock Text="{DynamicResource NavNotes}" FontSize="28" FontWeight="SemiBold" Margin="0,0,0,8" />
-                    <TextBlock Text="{DynamicResource LblNotesPageSub}"
-                               FontSize="15"
-                               Foreground="#53647F"
-                               Margin="0,0,0,18" />
-                </StackPanel>
+                <TextBlock Grid.Column="0"
+                           Text="{DynamicResource NavNotes}"
+                           FontSize="22"
+                           FontWeight="SemiBold"
+                           VerticalAlignment="Center" />
 
-                <Button Grid.Row="0"
-                        Grid.Column="1"
-                        Command="{Binding AddCommand}"
-                        Style="{StaticResource PrimaryButton}"
-                        MinWidth="164"
-                        HorizontalAlignment="Right">
-                    <StackPanel Orientation="Horizontal">
-                        <materialDesign:PackIcon Kind="Plus" Width="18" Height="18" Margin="0,0,6,0" />
-                        <TextBlock Text="{DynamicResource BtnAddNote}" />
-                    </StackPanel>
-                </Button>
+                <Border Grid.Column="2"
+                        MaxWidth="560"
+                        MinWidth="300"
+                        Background="#FFFFFF"
+                        BorderBrush="#D8E5FF"
+                        BorderThickness="1"
+                        CornerRadius="14"
+                        Padding="12,8"
+                        VerticalAlignment="Center">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBox Grid.Column="0"
+                                 Margin="0"
+                                 MinHeight="38"
+                                 Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                 ToolTip="{DynamicResource LblSearch}"
+                                 materialDesign:HintAssist.Hint="{DynamicResource LblSearch}" />
+                        <materialDesign:PackIcon Grid.Column="1"
+                                                 Kind="Magnify"
+                                                 Width="20"
+                                                 Height="20"
+                                                 VerticalAlignment="Center"
+                                                 HorizontalAlignment="Center"
+                                                 Margin="10,0,0,0" />
+                    </Grid>
+                </Border>
 
-                <Grid Grid.Row="1" Grid.ColumnSpan="2">
-                    <Border MaxWidth="520"
-                            MinWidth="320"
-                            Background="#FFFFFF"
-                            BorderBrush="#D8E5FF"
-                            BorderThickness="1"
-                            CornerRadius="18"
-                            Padding="16,12">
-                        <Border.Style>
-                            <Style TargetType="Border">
-                                <Setter Property="HorizontalAlignment" Value="Right" />
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=UserControl}, Path=FlowDirection}" Value="LeftToRight">
-                                        <Setter Property="HorizontalAlignment" Value="Left" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Border.Style>
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <TextBox Grid.Column="0"
-                                     Margin="0"
-                                     MinHeight="44"
-                                     Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                                     ToolTip="{DynamicResource LblSearch}"
-                                     materialDesign:HintAssist.Hint="{DynamicResource LblSearch}" />
-                            <materialDesign:PackIcon Grid.Column="1"
-                                                     Kind="Magnify"
-                                                     Width="22"
-                                                     Height="22"
-                                                     VerticalAlignment="Center"
-                                                     HorizontalAlignment="Center"
-                                                     Margin="12,0,0,0" />
-                        </Grid>
-                    </Border>
-                </Grid>
+                <WrapPanel Grid.Column="4" VerticalAlignment="Center">
+                    <Button Command="{Binding AddCommand}"
+                            Style="{StaticResource PrimaryButton}"
+                            MinWidth="132"
+                            Margin="0">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="Plus" Width="18" Height="18" Margin="0,0,6,0" />
+                            <TextBlock Text="{DynamicResource BtnAddNote}" />
+                        </StackPanel>
+                    </Button>
+                </WrapPanel>
             </Grid>
         </Border>
 
-        <Border Grid.Row="1" Style="{StaticResource CardContainer}" BorderBrush="#E7ECF2">
+        <Border Grid.Row="1" Style="{StaticResource CardContainer}" BorderBrush="#E7ECF2" Padding="8">
             <Grid IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBooleanConverter}}">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
@@ -109,40 +117,31 @@
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
-                <Grid Grid.Row="0" Margin="0,0,0,16">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-
-                    <StackPanel>
-                        <TextBlock Text="{DynamicResource LblNotesRegister}" FontSize="18" FontWeight="SemiBold" />
-                        <TextBlock Text="{Binding TotalRecords, StringFormat=عدد الملاحظات: {0}}"
-                                   Foreground="{StaticResource MutedTextBrush}"
-                                   Margin="0,6,0,0" />
-                    </StackPanel>
-
-                    <WrapPanel Grid.Column="1" HorizontalAlignment="Right">
-                        <Button Command="{Binding RefreshCommand}" Style="{StaticResource GhostButton}" Margin="0,0,10,0">
-                            <StackPanel Orientation="Horizontal">
-                                <materialDesign:PackIcon Kind="Refresh" Width="18" Height="18" Margin="0,0,6,0" />
-                                <TextBlock Text="{DynamicResource BtnRefresh}" />
-                            </StackPanel>
-                        </Button>
-                        <Button Command="{Binding EditCommand}" Style="{StaticResource GhostButton}" Margin="0,0,10,0" MinWidth="118">
-                            <StackPanel Orientation="Horizontal">
-                                <materialDesign:PackIcon Kind="Pencil" Width="18" Height="18" Margin="0,0,6,0" />
-                                <TextBlock Text="{DynamicResource BtnEdit}" />
-                            </StackPanel>
-                        </Button>
-                        <Button Command="{Binding DeleteCommand}" Style="{StaticResource GhostButton}" MinWidth="156">
-                            <StackPanel Orientation="Horizontal">
-                                <materialDesign:PackIcon Kind="Delete" Width="18" Height="18" Margin="0,0,6,0" Foreground="#D32F2F" />
-                                <TextBlock Text="{DynamicResource BtnDeleteMultiple}" />
-                            </StackPanel>
-                        </Button>
-                    </WrapPanel>
-                </Grid>
+                <Border Grid.Row="0" Style="{StaticResource CompactCommandBar}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <WrapPanel>
+                            <Button Command="{Binding AddCommand}" Style="{StaticResource CompactPrimaryToolbarButton}" MinWidth="132" Height="38">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="Plus" Margin="0,0,6,0" />
+                                    <TextBlock Text="{DynamicResource BtnAdd}" />
+                                </StackPanel>
+                            </Button>
+                        </WrapPanel>
+                        <Menu Grid.Column="1" Style="{StaticResource GridActionMenu}">
+                            <MenuItem Header="{DynamicResource BtnMore}" Style="{StaticResource GridActionMenuItem}">
+                                <MenuItem Header="{DynamicResource BtnEdit}" Command="{Binding EditCommand}" />
+                                <MenuItem Header="{DynamicResource BtnDeleteMultiple}" Command="{Binding DeleteCommand}" />
+                                <MenuItem Header="{DynamicResource BtnClearSelection}" Command="{Binding ClearSelectionCommand}" />
+                                <Separator />
+                                <MenuItem Header="{DynamicResource BtnRefresh}" Command="{Binding RefreshCommand}" />
+                            </MenuItem>
+                        </Menu>
+                    </Grid>
+                </Border>
 
                 <Grid Grid.Row="1">
                     <DataGrid ItemsSource="{Binding Notes}"
@@ -165,8 +164,9 @@
                             <DataGridTemplateColumn Width="68" MinWidth="68" SortMemberPath="IsSelected">
                                 <DataGridTemplateColumn.HeaderTemplate>
                                     <DataTemplate>
-                                        <CheckBox IsThreeState="True"
-                                                  IsChecked="{Binding DataContext.AreAllVisibleSelected, RelativeSource={RelativeSource AncestorType=UserControl}, Mode=TwoWay}"
+                                        <CheckBox IsThreeState="False"
+                                                  IsChecked="{Binding DataContext.AreAllVisibleSelected, RelativeSource={RelativeSource AncestorType=DataGrid}, Mode=OneWay}"
+                                                  Click="OnSelectAllClicked"
                                                   HorizontalAlignment="Center"
                                                   VerticalAlignment="Center"
                                                   ToolTip="{DynamicResource LblSelectAll}" />
@@ -208,8 +208,8 @@
                     <Border Background="#FAFBFE"
                             BorderBrush="#E7ECF2"
                             BorderThickness="1"
-                            CornerRadius="18"
-                            Padding="32"
+                            CornerRadius="14"
+                            Padding="24"
                             HorizontalAlignment="Center"
                             VerticalAlignment="Center">
                         <Border.Style>
@@ -230,23 +230,33 @@
                     </Border>
                 </Grid>
 
-                <Border Grid.Row="2" Background="#F8FAFC" BorderBrush="#E2E8F0" BorderThickness="1,1,1,0" Padding="10,8">
-                    <WrapPanel>
-                        <Border Padding="12,8" Background="#FFFFFF" BorderBrush="#D0D5DD" BorderThickness="1" CornerRadius="12" Margin="0,0,12,8">
+                <Border Grid.Row="2" Background="#F8FAFC" BorderBrush="#E2E8F0" BorderThickness="1,1,1,0" Padding="10,8" Margin="0,6,0,0">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Border Grid.Column="0" Padding="12,8" Background="#FFFFFF" BorderBrush="#D0D5DD" BorderThickness="1" CornerRadius="12" Margin="0,0,12,0" HorizontalAlignment="Right">
                             <TextBlock Text="{Binding RowsCountLabel}" FontWeight="SemiBold" Foreground="#344054" />
                         </Border>
-                        <Border Padding="12,8" Background="#FFFFFF" BorderBrush="#D0D5DD" BorderThickness="1" CornerRadius="12" Margin="0,0,8,8">
-                            <TextBlock Text="{Binding PageSummary}" FontWeight="SemiBold" Foreground="#344054" />
-                        </Border>
-                        <WrapPanel>
-                            <Button Command="{Binding PreviousPageCommand}" Style="{StaticResource CompactToolbarButton}" MinWidth="74" Margin="0,0,8,8">
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center">
+                            <Border Padding="12,8" Background="#FFFFFF" BorderBrush="#D0D5DD" BorderThickness="1" CornerRadius="12" Margin="0,0,8,0">
+                                <TextBlock Text="{Binding PageSummary}" FontWeight="SemiBold" Foreground="#344054" />
+                            </Border>
+                            <Border Padding="12,8" Background="#FFF7E2" BorderBrush="#F0DFA7" BorderThickness="1" CornerRadius="12">
+                                <TextBlock Text="{Binding SelectedCountLabel}" FontWeight="SemiBold" Foreground="#8A6C00" />
+                            </Border>
+                        </StackPanel>
+                        <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Left">
+                            <Button Command="{Binding PreviousPageCommand}" Style="{StaticResource CompactToolbarButton}" MinWidth="74" Margin="0,0,8,0">
                                 <TextBlock Text="{DynamicResource BtnPreviousPage}" />
                             </Button>
-                            <Button Command="{Binding NextPageCommand}" Style="{StaticResource CompactToolbarButton}" MinWidth="74" Margin="0,0,0,8">
+                            <Button Command="{Binding NextPageCommand}" Style="{StaticResource CompactToolbarButton}" MinWidth="74" Margin="0">
                                 <TextBlock Text="{DynamicResource BtnNextPage}" />
                             </Button>
-                        </WrapPanel>
-                    </WrapPanel>
+                        </StackPanel>
+                    </Grid>
                 </Border>
 
                 <Border Grid.RowSpan="3" Visibility="{Binding IsBusyVisible, Converter={StaticResource BooleanToVisibilityConverter}}" Background="#B3FFFFFF">

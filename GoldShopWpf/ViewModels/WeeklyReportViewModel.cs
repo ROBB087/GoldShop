@@ -101,6 +101,7 @@ public class WeeklyReportViewModel : ViewModelBase
         var reports = reportService.GetWeeklyReport(FromDate.Date, ToDate.Date);
         var suppliers = AppServices.SupplierService.GetSuppliers().ToDictionary(supplier => supplier.Id, supplier => supplier.Name);
         var transactions = AppServices.TransactionService.GetTransactions(FromDate.Date, ToDate.Date);
+        var adjustments = AppServices.OpeningBalanceAdjustmentService.GetAdjustments(FromDate.Date, ToDate.Date);
 
         foreach (var report in reports)
         {
@@ -122,6 +123,7 @@ public class WeeklyReportViewModel : ViewModelBase
             {
                 GoldShopCore.Models.TransactionCategories.GoldOutbound => UiText.L("LblGoldOutboundReport"),
                 GoldShopCore.Models.TransactionCategories.GoldReceipt => UiText.L("LblGoldReceiptReport"),
+                GoldShopCore.Models.TransactionCategories.FinishedGoldReceipt => UiText.L("LblFinishedGoldReceiptReport"),
                 GoldShopCore.Models.TransactionCategories.CashPayment => UiText.L("LblCashPaymentReport"),
                 _ => transaction.Category
             };
@@ -134,6 +136,21 @@ public class WeeklyReportViewModel : ViewModelBase
                 Item = transaction.ItemName ?? string.Empty,
                 Value = transaction.TotalManufacturing + transaction.TotalImprovement,
                 SupplierName = suppliers.TryGetValue(transaction.SupplierId, out var supplierName) ? supplierName : string.Empty
+            });
+        }
+
+        foreach (var adjustment in adjustments.OrderByDescending(item => item.AdjustmentDate).ThenByDescending(item => item.Id))
+        {
+            ReportRows.Add(new ModernReportRow
+            {
+                Date = adjustment.AdjustmentDate,
+                Type = adjustment.Type == GoldShopCore.Models.OpeningBalanceAdjustmentType.Manufacturing
+                    ? UiText.L("LblOpeningBalanceManufacturingAdjustment")
+                    : UiText.L("LblOpeningBalanceImprovementAdjustment"),
+                Weight = 0m,
+                Item = string.IsNullOrWhiteSpace(adjustment.Notes) ? UiText.L("LblOpeningBalanceAdjustmentEntry") : adjustment.Notes!,
+                Value = adjustment.Amount,
+                SupplierName = suppliers.TryGetValue(adjustment.SupplierId, out var supplierName) ? supplierName : string.Empty
             });
         }
 

@@ -2,19 +2,39 @@
 
 ## Client Package
 
-Publish a client-only package with:
+Build the full production release with:
 
 ```powershell
-.\publish-client.bat
+.\build-release.ps1
 ```
 
-Deliver only this folder to the client:
+This produces:
 
 ```text
 publish\client\GoldShop
+publish\installer\GoldShop-Setup.exe
 ```
 
-Do not deliver `GoldShopLicenseTool` to the client.
+Deliver `publish\installer\GoldShop-Setup.exe` to the client.
+
+Do not deliver `GoldShopLicenseTool` or `GoldShopStressTool` to the client.
+
+## Runtime Layout
+
+The installed application stores writable data here:
+
+```text
+%LocalAppData%\GoldShop
+```
+
+That folder contains:
+
+- `Data\goldshop.db`
+- `Backups\`
+- `Logs\system.log`
+- `Logs\app-errors.log`
+- `Security\license.bin`
+- `Security\used-tokens.bin`
 
 ## Activation Workflow
 
@@ -24,25 +44,11 @@ On the client machine:
 2. Copy the `Machine ID` from the activation window
 3. Send that ID to you
 
-On your machine:
-
-```powershell
-.\generate-license.bat MACHINE-ID "Abo Emad"
-```
-
-Or directly:
-
-```powershell
-dotnet run --project GoldShopLicenseTool -- "MACHINE-ID" "Abo Emad"
-```
-
-Send the generated key back to the client.
+Send the client one of the pre-approved offline activation tokens managed outside the application source.
 
 ## Security Note
 
-`GoldShopLicenseTool` contains the private signing key and must remain owner-only.
-
-If this repository is public or shared, you should rotate the key pair and keep the private key outside the client repository. The current setup is suitable only if the private key never leaves your control after this point.
+Offline activation data must remain owner-only and should never be bundled with the client release package.
 
 ## Optional Obfuscation
 

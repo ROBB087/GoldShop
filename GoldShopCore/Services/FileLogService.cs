@@ -25,7 +25,8 @@ public static class FileLogService
     {
         try
         {
-            var logPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "system.log");
+            AppStoragePaths.EnsureDirectories();
+            var logPath = Path.Combine(AppStoragePaths.LogDirectory, "system.log");
             var text = new StringBuilder()
                 .Append('[').Append(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")).Append("] ")
                 .Append(level).Append(' ')

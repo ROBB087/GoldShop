@@ -7,10 +7,14 @@ namespace GoldShopWpf.ViewModels;
 public class StatementViewModel : ViewModelBase
 {
     private SupplierListItem? _selectedSupplier;
-    private DateTime _fromDate = DateTime.Today.AddMonths(-1);
+    private DateTime _fromDate = DateTime.Today;
     private DateTime _toDate = DateTime.Today;
     private string _statementText = string.Empty;
     private TraderSummary _summary = new();
+    private int _transactionCount;
+    private int _discountCount;
+    private decimal _transactionsManufacturingTotal;
+    private decimal _transactionsImprovementTotal;
 
     public ObservableCollection<SupplierListItem> Suppliers { get; } = new();
     public ObservableCollection<StatementPreviewRow> Rows { get; } = new();
@@ -30,13 +34,25 @@ public class StatementViewModel : ViewModelBase
     public DateTime FromDate
     {
         get => _fromDate;
-        set => SetProperty(ref _fromDate, value);
+        set
+        {
+            if (SetProperty(ref _fromDate, value.Date))
+            {
+                GenerateStatement();
+            }
+        }
     }
 
     public DateTime ToDate
     {
         get => _toDate;
-        set => SetProperty(ref _toDate, value);
+        set
+        {
+            if (SetProperty(ref _toDate, value.Date))
+            {
+                GenerateStatement();
+            }
+        }
     }
 
     public string StatementText
@@ -49,21 +65,31 @@ public class StatementViewModel : ViewModelBase
     public string CurrentDateDisplay => DateTime.Now.ToString("yyyy/MM/dd hh:mm tt");
     public string TotalWeightDisplay => $"{_summary.TotalGold21:0.####} {UiText.L("LblWeightUnit")}";
     public string TotalGoldDisplay => $"{_summary.TotalGold21:0.####} {UiText.L("LblWeightUnit")}";
-    public string TotalManufacturingDisplay => $"{_summary.TotalManufacturing:0.##}";
-    public string TotalImprovementDisplay => $"{_summary.TotalImprovement:0.##}";
+    public string TransactionCountDisplay => _transactionCount.ToString("0");
+    public string DiscountCountDisplay => _discountCount.ToString("0");
+    public string TotalManufacturingDisplay => $"{_transactionsManufacturingTotal:0.##}";
+    public string TotalImprovementDisplay => $"{_transactionsImprovementTotal:0.##}";
+    public string NetTotalDisplay => $"{(_summary.FinalManufacturing + _summary.FinalImprovement):0.##}";
 
     public RelayCommand GenerateCommand { get; }
     public RelayCommand PrintCommand { get; }
 
     public StatementViewModel()
     {
+        SupplierChangeNotifier.SuppliersChanged += OnSuppliersChanged;
         GenerateCommand = new RelayCommand(_ => GenerateStatement());
         PrintCommand = new RelayCommand(_ => PrintStatement());
         LoadSuppliers();
     }
 
+    public void ReloadData()
+    {
+        LoadSuppliers();
+    }
+
     private void LoadSuppliers()
     {
+        var selectedSupplierId = SelectedSupplier?.Id;
         Suppliers.Clear();
         foreach (var supplier in AppServices.SupplierService.GetSuppliers())
         {
@@ -77,8 +103,15 @@ public class StatementViewModel : ViewModelBase
             });
         }
 
-        SelectedSupplier ??= Suppliers.FirstOrDefault();
+        SelectedSupplier = selectedSupplierId.HasValue
+            ? Suppliers.FirstOrDefault(supplier => supplier.Id == selectedSupplierId.Value) ?? Suppliers.FirstOrDefault()
+            : Suppliers.FirstOrDefault();
         GenerateStatement();
+    }
+
+    private void OnSuppliersChanged()
+    {
+        System.Windows.Application.Current?.Dispatcher.Invoke(LoadSuppliers);
     }
 
     private void GenerateStatement()
@@ -98,8 +131,15 @@ public class StatementViewModel : ViewModelBase
             return;
         }
 
-        var transactions = AppServices.TransactionService.GetTransactions(SelectedSupplier.Id, FromDate.Date, ToDate.Date);
-        _summary = AppServices.TransactionService.GetSummary(SelectedSupplier.Id, FromDate.Date, ToDate.Date);
+        var from = FromDate.Date;
+        var to = ToDate.Date;
+        var transactions = AppServices.TransactionService.GetTransactions(SelectedSupplier.Id, from, to);
+        var discounts = AppServices.DiscountService.GetDiscounts(SelectedSupplier.Id, from, to);
+        _summary = AppServices.TransactionService.GetSummary(SelectedSupplier.Id, from, to);
+        _transactionCount = transactions.Count;
+        _discountCount = discounts.Count;
+        _transactionsManufacturingTotal = transactions.Sum(transaction => transaction.TotalManufacturing);
+        _transactionsImprovementTotal = transactions.Sum(transaction => transaction.TotalImprovement);
         Rows.Clear();
 
         foreach (var transaction in transactions.OrderByDescending(t => t.Date).ThenByDescending(t => t.Id))
@@ -134,10 +174,9 @@ public class StatementViewModel : ViewModelBase
         lines.Add(new string('=', 72));
         lines.Add(UiText.L("ReceiptSummary"));
         lines.Add($"{UiText.L("LblTotalGold21")}: {FormatNumber(_summary.TotalGold21, UiText.L("LblWeightUnit"))}");
-        lines.Add($"{UiText.L("LblTotalManufacturing")}: {FormatNumber(_summary.TotalManufacturing, string.Empty)}");
-        lines.Add($"{UiText.L("LblTotalImprovement")}: {FormatNumber(_summary.TotalImprovement, string.Empty)}");
-        lines.Add($"{UiText.L("LblManufacturingDiscounts")}: {FormatNumber(_summary.ManufacturingDiscounts, string.Empty)}");
-        lines.Add($"{UiText.L("LblImprovementDiscounts")}: {FormatNumber(_summary.ImprovementDiscounts, string.Empty)}");
+        lines.Add($"{UiText.L("LblTotalManufacturing")}: {FormatNumber(_transactionsManufacturingTotal, string.Empty)}");
+        lines.Add($"{UiText.L("LblTotalImprovement")}: {FormatNumber(_transactionsImprovementTotal, string.Empty)}");
+        lines.Add($"{UiText.L("LblNetTotalReport")}: {FormatNumber(_summary.FinalManufacturing + _summary.FinalImprovement, string.Empty)}");
         StatementText = string.Join(Environment.NewLine, lines);
         RefreshPreview();
     }
@@ -149,8 +188,9 @@ public class StatementViewModel : ViewModelBase
     {
         return transaction.Category switch
         {
-            TransactionCategories.GoldOutbound => UiText.L("LblDebit"),
-            TransactionCategories.GoldReceipt => UiText.L("LblCredit"),
+            TransactionCategories.GoldOutbound => UiText.L("LblGoldOutboundReport"),
+            TransactionCategories.GoldReceipt => UiText.L("LblGoldReceiptReport"),
+            TransactionCategories.FinishedGoldReceipt => UiText.L("LblFinishedGoldReceiptReport"),
             TransactionCategories.CashPayment => UiText.L("LblCashPaymentReport"),
             _ => transaction.Type.ToString()
         };
@@ -172,7 +212,10 @@ public class StatementViewModel : ViewModelBase
         OnPropertyChanged(nameof(CurrentDateDisplay));
         OnPropertyChanged(nameof(TotalWeightDisplay));
         OnPropertyChanged(nameof(TotalGoldDisplay));
+        OnPropertyChanged(nameof(TransactionCountDisplay));
+        OnPropertyChanged(nameof(DiscountCountDisplay));
         OnPropertyChanged(nameof(TotalManufacturingDisplay));
         OnPropertyChanged(nameof(TotalImprovementDisplay));
+        OnPropertyChanged(nameof(NetTotalDisplay));
     }
 }

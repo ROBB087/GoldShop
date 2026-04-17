@@ -11,29 +11,49 @@ public class ModernStatementPreviewViewModel : ViewModelBase
     private DateTime _fromDate;
     private DateTime _toDate;
     private TraderSummary _summary = new();
+    private int _transactionCount;
+    private int _discountCount;
+    private decimal _transactionsManufacturingTotal;
+    private decimal _transactionsImprovementTotal;
 
     public string SupplierName { get; }
+    public string? SupplierPhone { get; }
     public string ReportTitle => UiText.L("ReceiptTitle");
     public string CurrentDateDisplay => DateTime.Now.ToString("yyyy/MM/dd hh:mm tt");
 
     public DateTime FromDate
     {
         get => _fromDate;
-        set => SetProperty(ref _fromDate, value);
+        set
+        {
+            if (SetProperty(ref _fromDate, value.Date))
+            {
+                Load();
+            }
+        }
     }
 
     public DateTime ToDate
     {
         get => _toDate;
-        set => SetProperty(ref _toDate, value);
+        set
+        {
+            if (SetProperty(ref _toDate, value.Date))
+            {
+                Load();
+            }
+        }
     }
 
     public ObservableCollection<StatementPreviewRow> Rows { get; } = new();
 
     public string TotalWeightDisplay => $"{_summary.TotalGold21:0.####} {UiText.L("LblWeightUnit")}";
     public string TotalGoldDisplay => $"{_summary.TotalGold21:0.####} {UiText.L("LblWeightUnit")}";
-    public string TotalManufacturingDisplay => $"{_summary.TotalManufacturing:0.##}";
-    public string TotalImprovementDisplay => $"{_summary.TotalImprovement:0.##}";
+    public string TransactionCountDisplay => _transactionCount.ToString("0");
+    public string DiscountCountDisplay => _discountCount.ToString("0");
+    public string TotalManufacturingDisplay => $"{_transactionsManufacturingTotal:0.##}";
+    public string TotalImprovementDisplay => $"{_transactionsImprovementTotal:0.##}";
+    public string NetTotalDisplay => $"{(_summary.FinalManufacturing + _summary.FinalImprovement):0.##}";
 
     public RelayCommand GenerateCommand { get; }
 
@@ -41,7 +61,11 @@ public class ModernStatementPreviewViewModel : ViewModelBase
     {
         _supplierId = supplierId;
         SupplierName = supplierName;
-        _fromDate = fromDate ?? DateTime.Today.AddMonths(-1);
+        var supplier = AppServices.SupplierService.GetSupplier(supplierId);
+        SupplierPhone = !string.IsNullOrWhiteSpace(supplier?.Phone)
+            ? supplier.Phone
+            : supplier?.WorkerPhone;
+        _fromDate = fromDate ?? DateTime.Today;
         _toDate = toDate ?? DateTime.Today;
         GenerateCommand = new RelayCommand(_ => Load());
         Load();
@@ -57,8 +81,15 @@ public class ModernStatementPreviewViewModel : ViewModelBase
 
         Rows.Clear();
 
-        var transactions = AppServices.TransactionService.GetTransactions(_supplierId, FromDate.Date, ToDate.Date);
-        _summary = AppServices.TransactionService.GetSummary(_supplierId, FromDate.Date, ToDate.Date);
+        var from = FromDate.Date;
+        var to = ToDate.Date;
+        var transactions = AppServices.TransactionService.GetTransactions(_supplierId, from, to);
+        var discounts = AppServices.DiscountService.GetDiscounts(_supplierId, from, to);
+        _summary = AppServices.TransactionService.GetSummary(_supplierId, from, to);
+        _transactionCount = transactions.Count;
+        _discountCount = discounts.Count;
+        _transactionsManufacturingTotal = transactions.Sum(transaction => transaction.TotalManufacturing);
+        _transactionsImprovementTotal = transactions.Sum(transaction => transaction.TotalImprovement);
 
         foreach (var transaction in transactions.OrderByDescending(t => t.Date).ThenByDescending(t => t.Id))
         {
@@ -76,8 +107,11 @@ public class ModernStatementPreviewViewModel : ViewModelBase
         OnPropertyChanged(nameof(CurrentDateDisplay));
         OnPropertyChanged(nameof(TotalWeightDisplay));
         OnPropertyChanged(nameof(TotalGoldDisplay));
+        OnPropertyChanged(nameof(TransactionCountDisplay));
+        OnPropertyChanged(nameof(DiscountCountDisplay));
         OnPropertyChanged(nameof(TotalManufacturingDisplay));
         OnPropertyChanged(nameof(TotalImprovementDisplay));
+        OnPropertyChanged(nameof(NetTotalDisplay));
     }
 
     public IReadOnlyList<SupplierTransaction> GetTransactions()
@@ -91,6 +125,7 @@ public class ModernStatementPreviewViewModel : ViewModelBase
         {
             TransactionCategories.GoldOutbound => UiText.L("LblGoldOutboundReport"),
             TransactionCategories.GoldReceipt => UiText.L("LblGoldReceiptReport"),
+            TransactionCategories.FinishedGoldReceipt => UiText.L("LblFinishedGoldReceiptReport"),
             TransactionCategories.CashPayment => UiText.L("LblCashPaymentReport"),
             _ => transaction.Type.ToString()
         };

@@ -8,6 +8,7 @@ public partial class ActivationWindow : Window
     public ActivationWindow()
     {
         InitializeComponent();
+        DialogWindowLayout.Apply(this);
         MachineIdTextBox.Text = LicenseService.GetMachineId();
     }
 

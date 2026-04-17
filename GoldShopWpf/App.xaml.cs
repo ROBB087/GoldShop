@@ -11,6 +11,7 @@ public partial class App : Application
         DispatcherUnhandledException += OnDispatcherUnhandledException;
         AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
         TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
+        ShutdownMode = ShutdownMode.OnExplicitShutdown;
 
         base.OnStartup(e);
         LocalizationService.SetLanguage("ar");
@@ -26,6 +27,7 @@ public partial class App : Application
         var mainWindow = new MainWindow();
         mainWindow.WindowState = WindowState.Maximized;
         MainWindow = mainWindow;
+        ShutdownMode = ShutdownMode.OnMainWindowClose;
         mainWindow.Show();
     }
 

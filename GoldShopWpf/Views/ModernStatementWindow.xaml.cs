@@ -21,6 +21,7 @@ public partial class ModernStatementWindow : Window
     public ModernStatementWindow(int supplierId, string supplierName, DateTime? fromDate, DateTime? toDate)
     {
         InitializeComponent();
+        DialogWindowLayout.Apply(this);
         _viewModel = new ModernStatementPreviewViewModel(supplierId, supplierName, fromDate, toDate);
         DataContext = _viewModel;
         RefreshPrintDocument();
@@ -32,7 +33,19 @@ public partial class ModernStatementWindow : Window
         _printDocument = BuildDocument(_viewModel.GetTransactions(), _viewModel.GetSummary());
     }
 
-    private FlowDocument BuildDocument(IReadOnlyList<SupplierTransaction> transactions, TraderSummary summary)
+    private void OnDateChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (!IsLoaded)
+        {
+            return;
+        }
+
+        _printDocument = BuildDocument(_viewModel.GetTransactions(), _viewModel.GetSummary());
+    }
+
+    private FlowDocument BuildDocument(
+        IReadOnlyList<SupplierTransaction> transactions,
+        TraderSummary summary)
     {
         var font = (System.Windows.Media.FontFamily)(Application.Current.TryFindResource("AppFontFamily") ?? new System.Windows.Media.FontFamily("Segoe UI"));
         var doc = new FlowDocument
@@ -103,6 +116,7 @@ public partial class ModernStatementWindow : Window
         totals.RowGroups[0].Rows.Add(CreateRow(UiText.L("LblTotalGoldReport"), _viewModel.TotalGoldDisplay));
         totals.RowGroups[0].Rows.Add(CreateRow(UiText.L("LblTotalManufacturingReport"), _viewModel.TotalManufacturingDisplay));
         totals.RowGroups[0].Rows.Add(CreateRow(UiText.L("LblTotalImprovement"), _viewModel.TotalImprovementDisplay));
+        totals.RowGroups[0].Rows.Add(CreateRow(UiText.L("LblNetTotalReport"), _viewModel.NetTotalDisplay));
         doc.Blocks.Add(new Paragraph(new Run(UiText.L("LblReportTotals"))) { FontSize = 18, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 20, 0, 10) });
         doc.Blocks.Add(totals);
 
@@ -148,6 +162,7 @@ public partial class ModernStatementWindow : Window
         {
             TransactionCategories.GoldOutbound => UiText.L("LblGoldOutboundReport"),
             TransactionCategories.GoldReceipt => UiText.L("LblGoldReceiptReport"),
+            TransactionCategories.FinishedGoldReceipt => UiText.L("LblFinishedGoldReceiptReport"),
             TransactionCategories.CashPayment => UiText.L("LblCashPaymentReport"),
             _ => transaction.Type.ToString()
         };
@@ -246,6 +261,8 @@ public partial class ModernStatementWindow : Window
                         table.Cell().Padding(8).Text(_viewModel.TotalManufacturingDisplay);
                         table.Cell().Padding(8).Text(UiText.L("LblTotalImprovement"));
                         table.Cell().Padding(8).Text(_viewModel.TotalImprovementDisplay);
+                        table.Cell().Padding(8).Text(UiText.L("LblNetTotalReport"));
+                        table.Cell().Padding(8).Text(_viewModel.NetTotalDisplay);
                     });
                 });
             });
@@ -257,7 +274,7 @@ public partial class ModernStatementWindow : Window
     private void OnShare(object sender, RoutedEventArgs e)
     {
         var path = ReportExportService.ExportVisualAsShareImage(CaptureSurface, $"statement-share-{DateTime.Now:yyyyMMdd-HHmm}");
-        ReportExportService.ShareFile(path);
+        ReportExportService.ShareFileViaWhatsApp(path, _viewModel.SupplierPhone);
     }
 
     private void OnPrint(object sender, RoutedEventArgs e)

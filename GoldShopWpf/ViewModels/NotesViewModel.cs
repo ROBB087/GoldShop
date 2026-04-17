@@ -86,6 +86,9 @@ public class NotesViewModel : ViewModelBase
 
     public string PageSummary => UiText.Format("LblPageSummary", CurrentPage, TotalPages, TotalRecords);
     public string RowsCountLabel => UiText.Format("LblRows", Notes.Count);
+    public int EffectiveSelectedCount => CheckedCount > 0 ? CheckedCount : SelectedNote == null ? 0 : 1;
+    public string SelectedCountLabel => UiText.Format("LblSelectedCount", EffectiveSelectedCount);
+    public bool HasSelection => CheckedCount > 0 || SelectedNote != null;
     public bool HasPreviousPage => CurrentPage > 1;
     public bool HasNextPage => CurrentPage < TotalPages;
 
@@ -130,6 +133,7 @@ public class NotesViewModel : ViewModelBase
     public AsyncRelayCommand RefreshCommand { get; }
     public AsyncRelayCommand PreviousPageCommand { get; }
     public AsyncRelayCommand NextPageCommand { get; }
+    public RelayCommand ClearSelectionCommand { get; }
 
     public NotesViewModel()
     {
@@ -141,6 +145,7 @@ public class NotesViewModel : ViewModelBase
         RefreshCommand = TrackCommand(new AsyncRelayCommand(_ => LoadAsync(), _ => !IsBusy));
         PreviousPageCommand = TrackCommand(new AsyncRelayCommand(_ => ChangePageAsync(-1), _ => !IsBusy && HasPreviousPage));
         NextPageCommand = TrackCommand(new AsyncRelayCommand(_ => ChangePageAsync(1), _ => !IsBusy && HasNextPage));
+        ClearSelectionCommand = new RelayCommand(_ => ClearSelection(), _ => HasSelection);
 
         Load();
     }
@@ -192,9 +197,12 @@ public class NotesViewModel : ViewModelBase
             return;
         }
 
+        var clientName = window.ClientName;
+        var noteContent = window.NoteContent;
+
         await RunBusyAsync("Saving note...", async () =>
         {
-            await Task.Run(() => AppServices.ClientNoteService.AddNote(window.ClientName, window.NoteContent));
+            await Task.Run(() => AppServices.ClientNoteService.AddNote(clientName, noteContent));
         }, string.Empty, rethrow: true);
 
         CurrentPage = 1;
@@ -220,9 +228,12 @@ public class NotesViewModel : ViewModelBase
             return;
         }
 
+        var clientName = window.ClientName;
+        var noteContent = window.NoteContent;
+
         await RunBusyAsync("Saving note...", async () =>
         {
-            await Task.Run(() => AppServices.ClientNoteService.UpdateNote(editable.Id, window.ClientName, window.NoteContent, editable.CreatedAt));
+            await Task.Run(() => AppServices.ClientNoteService.UpdateNote(editable.Id, clientName, noteContent, editable.CreatedAt));
         }, string.Empty, rethrow: true);
 
         await LoadAsync();
@@ -291,6 +302,27 @@ public class NotesViewModel : ViewModelBase
         return LoadAsync();
     }
 
+    public void SetVisibleSelection(bool isSelected)
+    {
+        foreach (var note in Notes)
+        {
+            note.IsSelected = isSelected;
+        }
+
+        RefreshSelectionState();
+    }
+
+    private void ClearSelection()
+    {
+        foreach (var note in Notes)
+        {
+            note.IsSelected = false;
+        }
+
+        SelectedNote = null;
+        RefreshSelectionState();
+    }
+
     private void OnNotesCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
         if (e.OldItems != null)
@@ -354,8 +386,12 @@ public class NotesViewModel : ViewModelBase
     {
         OnPropertyChanged(nameof(AreAllVisibleSelected));
         OnPropertyChanged(nameof(CheckedCount));
+        OnPropertyChanged(nameof(EffectiveSelectedCount));
+        OnPropertyChanged(nameof(SelectedCountLabel));
+        OnPropertyChanged(nameof(HasSelection));
         OnPropertyChanged(nameof(RowsCountLabel));
         EditCommand.RaiseCanExecuteChanged();
         DeleteCommand.RaiseCanExecuteChanged();
+        ClearSelectionCommand.RaiseCanExecuteChanged();
     }
 }

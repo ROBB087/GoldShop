@@ -3,10 +3,10 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         Title="{DynamicResource WindowStatementPreview}"
-        Height="900"
-        Width="1100"
-        MinWidth="700"
-        MinHeight="680"
+        Height="920"
+        Width="860"
+        MinWidth="720"
+        MinHeight="700"
         WindowStartupLocation="CenterOwner"
         ResizeMode="CanResize"
         FlowDirection="{DynamicResource AppFlowDirection}">
@@ -40,11 +40,11 @@
                 <WrapPanel Grid.Column="1" HorizontalAlignment="Right">
                     <StackPanel MinWidth="180" Margin="0,0,16,8">
                         <TextBlock Text="{DynamicResource LblFrom}" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource MutedTextBrush}" Margin="0,0,0,6" />
-                        <DatePicker x:Name="FromDate" Margin="0" />
+                        <DatePicker x:Name="FromDate" Margin="0" SelectedDateChanged="OnDateChanged" />
                     </StackPanel>
                     <StackPanel MinWidth="180" Margin="0,0,16,8">
                         <TextBlock Text="{DynamicResource LblTo}" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource MutedTextBrush}" Margin="0,0,0,6" />
-                        <DatePicker x:Name="ToDate" Margin="0" />
+                        <DatePicker x:Name="ToDate" Margin="0" SelectedDateChanged="OnDateChanged" />
                     </StackPanel>
                     <Button Style="{StaticResource PrimaryButton}" Margin="0,18,12,0" Click="OnGenerate" ToolTip="{DynamicResource BtnUpdateDates}">
                         <StackPanel Orientation="Horizontal">

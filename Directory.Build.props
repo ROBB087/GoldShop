@@ -1,0 +1,18 @@
+<Project>
+  <PropertyGroup>
+    <Company>GoldShop</Company>
+    <Product>GoldShop</Product>
+    <Authors>GoldShop</Authors>
+    <VersionPrefix>2026.4.16</VersionPrefix>
+    <AssemblyVersion>2026.4.0.0</AssemblyVersion>
+    <FileVersion>2026.4.16.0</FileVersion>
+    <InformationalVersion>2026.4.16</InformationalVersion>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+    <Optimize>true</Optimize>
+  </PropertyGroup>
+</Project>

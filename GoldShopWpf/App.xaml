@@ -482,12 +482,14 @@
 
                                 <Popup x:Name="PART_Popup"
                                        Placement="Bottom"
+                                       PlacementTarget="{Binding RelativeSource={RelativeSource TemplatedParent}}"
                                        AllowsTransparency="True"
                                        Focusable="False"
                                        PopupAnimation="Fade"
                                        IsOpen="{TemplateBinding IsDropDownOpen}">
                                     <Border Margin="0,6,0,0"
                                             MinWidth="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}"
+                                            Width="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}"
                                             MaxHeight="{TemplateBinding MaxDropDownHeight}"
                                             Background="#FFFFFF"
                                             BorderBrush="#E5E7EB"
@@ -534,12 +536,12 @@
                                             </Grid.RowDefinitions>
 
                                             <Border Grid.Row="0"
-                                                    Margin="12,12,12,8"
+                                                    Margin="10,10,10,6"
                                                     Background="#F8FAFC"
                                                     BorderBrush="#DCE6F5"
                                                     BorderThickness="1"
                                                     CornerRadius="12"
-                                                    Padding="10,6">
+                                                    Padding="10,5">
                                                 <Grid>
                                                     <Grid.ColumnDefinitions>
                                                         <ColumnDefinition Width="Auto" />
@@ -556,7 +558,7 @@
                                                     <TextBox x:Name="PART_SearchTextBox"
                                                              Grid.Column="1"
                                                              Margin="0"
-                                                             MinHeight="28"
+                                                             MinHeight="26"
                                                              Padding="0"
                                                              Background="Transparent"
                                                              BorderThickness="0"
@@ -569,8 +571,9 @@
                                             </Border>
 
                                             <ScrollViewer Grid.Row="1"
-                                                          Margin="8,0,8,8"
+                                                          Margin="6,0,6,6"
                                                           CanContentScroll="True"
+                                                          HorizontalScrollBarVisibility="Disabled"
                                                           VerticalScrollBarVisibility="Auto">
                                                 <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Contained" />
                                             </ScrollViewer>
@@ -626,6 +629,9 @@
                 <Setter Property="SelectionUnit" Value="FullRow" />
                 <Setter Property="CanUserResizeRows" Value="False" />
                 <Setter Property="FlowDirection" Value="{DynamicResource AppFlowDirection}" />
+                <Setter Property="HorizontalAlignment" Value="Stretch" />
+                <Setter Property="VerticalAlignment" Value="Stretch" />
+                <Setter Property="MinWidth" Value="0" />
                 <Setter Property="EnableRowVirtualization" Value="True" />
                 <Setter Property="EnableColumnVirtualization" Value="True" />
                 <Setter Property="VirtualizingPanel.IsVirtualizing" Value="True" />
@@ -635,7 +641,7 @@
                 <Setter Property="VirtualizingPanel.CacheLengthUnit" Value="Page" />
                 <Setter Property="ScrollViewer.CanContentScroll" Value="True" />
                 <Setter Property="ScrollViewer.IsDeferredScrollingEnabled" Value="True" />
-                <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled" />
+                <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Auto" />
                 <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />
             </Style>
 
