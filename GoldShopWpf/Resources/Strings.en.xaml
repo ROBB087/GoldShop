@@ -207,6 +207,7 @@
   <sys:String x:Key="WindowEditTrader">Edit Trader</sys:String>
   <sys:String x:Key="WindowAddDiscount">Add Discount</sys:String>
   <sys:String x:Key="WindowAddOpeningBalanceAdjustment">Add Manufacturing / Improvement</sys:String>
+  <sys:String x:Key="WindowEditOpeningBalanceAdjustment">Edit Manufacturing / Improvement</sys:String>
   <sys:String x:Key="WindowAddTransaction">Add Transaction</sys:String>
   <sys:String x:Key="WindowEditTransaction">Edit Transaction</sys:String>
   <sys:String x:Key="WindowStatementPreview">Statement Preview</sys:String>
@@ -295,6 +296,7 @@
   <sys:String x:Key="MsgTransactionSaved">Transaction saved successfully.</sys:String>
   <sys:String x:Key="MsgDiscountSaved">Discount saved successfully.</sys:String>
   <sys:String x:Key="MsgOpeningBalanceAdjustmentSaved">Opening balance adjustment saved successfully.</sys:String>
+  <sys:String x:Key="MsgOpeningBalanceAdjustmentNotFound">Opening balance adjustment was not found.</sys:String>
   <sys:String x:Key="MsgSupplierSaved">Trader saved successfully.</sys:String>
   <sys:String x:Key="MsgSupplierDeleted">Trader deleted successfully.</sys:String>
   <sys:String x:Key="MsgFinancialTotalsWarning">This action affects financial totals.</sys:String>

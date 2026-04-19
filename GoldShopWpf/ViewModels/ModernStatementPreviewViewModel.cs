@@ -13,8 +13,6 @@ public class ModernStatementPreviewViewModel : ViewModelBase
     private TraderSummary _summary = new();
     private int _transactionCount;
     private int _discountCount;
-    private decimal _transactionsManufacturingTotal;
-    private decimal _transactionsImprovementTotal;
 
     public string SupplierName { get; }
     public string? SupplierPhone { get; }
@@ -51,8 +49,8 @@ public class ModernStatementPreviewViewModel : ViewModelBase
     public string TotalGoldDisplay => $"{_summary.TotalGold21:0.####} {UiText.L("LblWeightUnit")}";
     public string TransactionCountDisplay => _transactionCount.ToString("0");
     public string DiscountCountDisplay => _discountCount.ToString("0");
-    public string TotalManufacturingDisplay => $"{_transactionsManufacturingTotal:0.##}";
-    public string TotalImprovementDisplay => $"{_transactionsImprovementTotal:0.##}";
+    public string TotalManufacturingDisplay => $"{_summary.FinalManufacturing:0.##}";
+    public string TotalImprovementDisplay => $"{_summary.FinalImprovement:0.##}";
     public string NetTotalDisplay => $"{(_summary.FinalManufacturing + _summary.FinalImprovement):0.##}";
 
     public RelayCommand GenerateCommand { get; }
@@ -88,8 +86,6 @@ public class ModernStatementPreviewViewModel : ViewModelBase
         _summary = AppServices.TransactionService.GetSummary(_supplierId, from, to);
         _transactionCount = transactions.Count;
         _discountCount = discounts.Count;
-        _transactionsManufacturingTotal = transactions.Sum(transaction => transaction.TotalManufacturing);
-        _transactionsImprovementTotal = transactions.Sum(transaction => transaction.TotalImprovement);
 
         foreach (var transaction in transactions.OrderByDescending(t => t.Date).ThenByDescending(t => t.Id))
         {

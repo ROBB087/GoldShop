@@ -32,6 +32,7 @@ public static class UiText
             "Discount records are immutable and cannot be deleted." => L("MsgDiscountsImmutable"),
             "Transaction was not found." => L("MsgTransactionNotFound", "Transaction was not found."),
             "Discount was not found." => L("MsgDiscountNotFound", "Discount was not found."),
+            "Opening balance adjustment was not found." => L("MsgOpeningBalanceAdjustmentNotFound", "Opening balance adjustment was not found."),
             _ => message
         };
     }

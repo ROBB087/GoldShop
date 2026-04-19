@@ -154,14 +154,12 @@ public partial class StatementWindow : Window
         {
             CellSpacing = 0
         };
-        var transactionManufacturingTotal = transactions.Sum(transaction => transaction.TotalManufacturing);
-        var transactionImprovementTotal = transactions.Sum(transaction => transaction.TotalImprovement);
         AddColumns(summaryTable, 250, 180);
         summaryTable.RowGroups.Add(new TableRowGroup());
         summaryTable.RowGroups[0].Rows.Add(CreateHeaderRow(UiText.L("LblDescription"), UiText.L("LblAmount")));
         summaryTable.RowGroups[0].Rows.Add(CreateDataRow(UiText.L("LblTotalGold21"), FormatNumber(summary.TotalGold21, UiText.L("LblWeightUnit"))));
-        summaryTable.RowGroups[0].Rows.Add(CreateDataRow(UiText.L("LblTotalManufacturing"), FormatNumber(transactionManufacturingTotal, string.Empty)));
-        summaryTable.RowGroups[0].Rows.Add(CreateDataRow(UiText.L("LblTotalImprovement"), FormatNumber(transactionImprovementTotal, string.Empty)));
+        summaryTable.RowGroups[0].Rows.Add(CreateDataRow(UiText.L("LblTotalManufacturing"), FormatNumber(summary.FinalManufacturing, string.Empty)));
+        summaryTable.RowGroups[0].Rows.Add(CreateDataRow(UiText.L("LblTotalImprovement"), FormatNumber(summary.FinalImprovement, string.Empty)));
         summaryTable.RowGroups[0].Rows.Add(CreateDataRow(UiText.L("LblNetTotalReport"), FormatNumber(summary.FinalManufacturing + summary.FinalImprovement, string.Empty)));
         doc.Blocks.Add(summaryTable);
 

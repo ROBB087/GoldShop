@@ -15,18 +15,27 @@ public partial class OpeningBalanceAdjustmentWindow : Window
     public string? Notes => string.IsNullOrWhiteSpace(NotesText.Text) ? null : NotesText.Text.Trim();
 
     public OpeningBalanceAdjustmentWindow()
+        : this(null)
+    {
+    }
+
+    public OpeningBalanceAdjustmentWindow(OpeningBalanceAdjustment? adjustment)
     {
         InitializeComponent();
         DialogWindowLayout.Apply(this);
-        Title = UiText.L("WindowAddOpeningBalanceAdjustment");
+        Title = adjustment == null
+            ? UiText.L("WindowAddOpeningBalanceAdjustment")
+            : UiText.L("WindowEditOpeningBalanceAdjustment", UiText.L("WindowAddOpeningBalanceAdjustment"));
         HeaderTitleText.Text = Title;
         TypeCombo.ItemsSource = new[]
         {
             new AdjustmentOption(UiText.L("LblOpeningBalanceManufacturingAdjustment"), OpeningBalanceAdjustmentType.Manufacturing),
             new AdjustmentOption(UiText.L("LblOpeningBalanceImprovementAdjustment"), OpeningBalanceAdjustmentType.Improvement)
         };
-        TypeCombo.SelectedIndex = 0;
-        AdjustmentDatePicker.SelectedDate = DateTime.Today;
+        TypeCombo.SelectedValue = adjustment?.Type ?? OpeningBalanceAdjustmentType.Manufacturing;
+        AdjustmentDatePicker.SelectedDate = adjustment?.AdjustmentDate ?? DateTime.Today;
+        AmountText.Text = adjustment?.Amount.ToString("0.####", CultureInfo.CurrentCulture) ?? string.Empty;
+        NotesText.Text = adjustment?.Notes ?? string.Empty;
     }
 
     private void OnSave(object sender, RoutedEventArgs e)

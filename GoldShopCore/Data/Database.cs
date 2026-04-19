@@ -119,6 +119,8 @@ PRAGMA busy_timeout = 5000;
 PRAGMA temp_store = MEMORY;";
         pragma.ExecuteNonQuery();
 
+        EnsureCriticalSchema(connection);
+
         return connection;
     }
 
@@ -676,6 +678,11 @@ END;";
 
     private static void EnsureCriticalSchema(SqliteConnection connection)
     {
+        if (!TableExists(connection, "SupplierTransactions"))
+        {
+            return;
+        }
+
         using var transaction = connection.BeginTransaction();
         EnsureColumn(connection, transaction, "SupplierTransactions", "IdempotencyKey", "TEXT");
         transaction.Commit();

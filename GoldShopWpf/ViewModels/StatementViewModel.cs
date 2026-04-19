@@ -13,8 +13,6 @@ public class StatementViewModel : ViewModelBase
     private TraderSummary _summary = new();
     private int _transactionCount;
     private int _discountCount;
-    private decimal _transactionsManufacturingTotal;
-    private decimal _transactionsImprovementTotal;
 
     public ObservableCollection<SupplierListItem> Suppliers { get; } = new();
     public ObservableCollection<StatementPreviewRow> Rows { get; } = new();
@@ -67,8 +65,8 @@ public class StatementViewModel : ViewModelBase
     public string TotalGoldDisplay => $"{_summary.TotalGold21:0.####} {UiText.L("LblWeightUnit")}";
     public string TransactionCountDisplay => _transactionCount.ToString("0");
     public string DiscountCountDisplay => _discountCount.ToString("0");
-    public string TotalManufacturingDisplay => $"{_transactionsManufacturingTotal:0.##}";
-    public string TotalImprovementDisplay => $"{_transactionsImprovementTotal:0.##}";
+    public string TotalManufacturingDisplay => $"{_summary.FinalManufacturing:0.##}";
+    public string TotalImprovementDisplay => $"{_summary.FinalImprovement:0.##}";
     public string NetTotalDisplay => $"{(_summary.FinalManufacturing + _summary.FinalImprovement):0.##}";
 
     public RelayCommand GenerateCommand { get; }
@@ -138,8 +136,6 @@ public class StatementViewModel : ViewModelBase
         _summary = AppServices.TransactionService.GetSummary(SelectedSupplier.Id, from, to);
         _transactionCount = transactions.Count;
         _discountCount = discounts.Count;
-        _transactionsManufacturingTotal = transactions.Sum(transaction => transaction.TotalManufacturing);
-        _transactionsImprovementTotal = transactions.Sum(transaction => transaction.TotalImprovement);
         Rows.Clear();
 
         foreach (var transaction in transactions.OrderByDescending(t => t.Date).ThenByDescending(t => t.Id))
@@ -174,8 +170,8 @@ public class StatementViewModel : ViewModelBase
         lines.Add(new string('=', 72));
         lines.Add(UiText.L("ReceiptSummary"));
         lines.Add($"{UiText.L("LblTotalGold21")}: {FormatNumber(_summary.TotalGold21, UiText.L("LblWeightUnit"))}");
-        lines.Add($"{UiText.L("LblTotalManufacturing")}: {FormatNumber(_transactionsManufacturingTotal, string.Empty)}");
-        lines.Add($"{UiText.L("LblTotalImprovement")}: {FormatNumber(_transactionsImprovementTotal, string.Empty)}");
+        lines.Add($"{UiText.L("LblTotalManufacturing")}: {FormatNumber(_summary.FinalManufacturing, string.Empty)}");
+        lines.Add($"{UiText.L("LblTotalImprovement")}: {FormatNumber(_summary.FinalImprovement, string.Empty)}");
         lines.Add($"{UiText.L("LblNetTotalReport")}: {FormatNumber(_summary.FinalManufacturing + _summary.FinalImprovement, string.Empty)}");
         StatementText = string.Join(Environment.NewLine, lines);
         RefreshPreview();

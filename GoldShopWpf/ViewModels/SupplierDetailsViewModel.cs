@@ -592,22 +592,34 @@ public class SupplierDetailsViewModel : ViewModelBase
                 var from = FromDate?.Date;
                 var to = ToDate?.Date;
                 int? supplierId = traderId == AllTradersId ? null : traderId;
-                var transactionsPage = AppServices.TransactionService.GetTransactionsPage(supplierId, from, to, requestedTransactionsPage, PageSize);
+                var transactions = supplierId.HasValue
+                    ? AppServices.TransactionService.GetTransactions(supplierId.Value, from, to)
+                    : AppServices.TransactionService.GetTransactions(from, to);
+                var adjustments = supplierId.HasValue
+                    ? AppServices.OpeningBalanceAdjustmentService.GetAdjustments(supplierId.Value, from, to)
+                    : AppServices.OpeningBalanceAdjustmentService.GetAdjustments(from, to);
                 var discountsPage = AppServices.DiscountService.GetDiscountsPage(supplierId, from, to, requestedDiscountsPage, PageSize);
                 var summary = supplierId.HasValue
                     ? AppServices.TransactionService.GetSummary(supplierId.Value, from, to)
                     : AppServices.TransactionService.GetSummaryAll(from, to);
-                return (transactionsPage, discountsPage, summary);
+                return (transactions, adjustments, discountsPage, summary);
             });
 
             int? supplierId = traderId == AllTradersId ? null : traderId;
 
-            var effectiveTransactionsPage = pageData.transactionsPage;
-            var transactionsTotalPages = Math.Max(effectiveTransactionsPage.TotalPages, 1);
+            var combinedTransactions = pageData.transactions
+                .Select(CreateTransactionRow)
+                .Concat(pageData.adjustments.Select(CreateAdjustmentRow))
+                .OrderByDescending(row => row.Date)
+                .ThenByDescending(row => row.UpdatedAt)
+                .ThenByDescending(row => row.Id)
+                .ToList();
+
+            var transactionsTotalCount = combinedTransactions.Count;
+            var transactionsTotalPages = Math.Max((int)Math.Ceiling((double)transactionsTotalCount / PageSize), 1);
             if (requestedTransactionsPage > transactionsTotalPages)
             {
                 TransactionsCurrentPage = transactionsTotalPages;
-                effectiveTransactionsPage = await Task.Run(() => AppServices.TransactionService.GetTransactionsPage(supplierId, FromDate?.Date, ToDate?.Date, TransactionsCurrentPage, PageSize));
             }
 
             var effectiveDiscountsPage = pageData.discountsPage;
@@ -621,35 +633,17 @@ public class SupplierDetailsViewModel : ViewModelBase
             Supplier = selectedTrader;
             SelectedTransaction = null;
 
-            TransactionsTotalCount = effectiveTransactionsPage.TotalCount;
-            TransactionsTotalPages = Math.Max(effectiveTransactionsPage.TotalPages, 1);
+            TransactionsTotalCount = transactionsTotalCount;
+            TransactionsTotalPages = transactionsTotalPages;
             DiscountsTotalCount = effectiveDiscountsPage.TotalCount;
             DiscountsTotalPages = Math.Max(effectiveDiscountsPage.TotalPages, 1);
 
             Transactions.Clear();
-            foreach (var transaction in effectiveTransactionsPage.Items)
+            foreach (var transaction in combinedTransactions
+                .Skip((TransactionsCurrentPage - 1) * PageSize)
+                .Take(PageSize))
             {
-                Transactions.Add(new TransactionRow
-                {
-                    Id = transaction.Id,
-                    SupplierId = transaction.SupplierId,
-                    SupplierName = _supplierLookup.TryGetValue(transaction.SupplierId, out var supplierName) ? supplierName : string.Empty,
-                    Date = transaction.Date,
-                    Type = transaction.Type,
-                    Category = transaction.Category,
-                    OriginalWeight = transaction.OriginalWeight,
-                    ItemName = transaction.ItemName ?? string.Empty,
-                    OriginalKarat = transaction.OriginalKarat,
-                    Equivalent21 = transaction.Equivalent21,
-                    ManufacturingPerGram = transaction.ManufacturingPerGram,
-                    ImprovementPerGram = transaction.ImprovementPerGram,
-                    TotalManufacturing = transaction.TotalManufacturing,
-                    TotalImprovement = transaction.TotalImprovement,
-                    Traceability = transaction.Description ?? string.Empty,
-                    Notes = transaction.Notes ?? string.Empty,
-                    CreatedAt = transaction.CreatedAt,
-                    UpdatedAt = transaction.UpdatedAt
-                });
+                Transactions.Add(transaction);
             }
 
             Discounts.Clear();
@@ -840,6 +834,17 @@ public class SupplierDetailsViewModel : ViewModelBase
             return;
         }
 
+        if (transaction.IsOpeningBalanceAdjustment)
+        {
+            var notes = string.IsNullOrWhiteSpace(transaction.Notes) ? "-" : transaction.Notes;
+            System.Windows.MessageBox.Show(
+                $"{UiText.L("LblDate")}: {transaction.Date:yyyy/MM/dd}{Environment.NewLine}{UiText.L("LblType")}: {transaction.TypeLabel}{Environment.NewLine}{UiText.L("LblAmount")}: {(transaction.TotalManufacturing + transaction.TotalImprovement):0.####}{Environment.NewLine}{UiText.L("LblNotes")}: {notes}",
+                transaction.TypeLabel,
+                System.Windows.MessageBoxButton.OK,
+                System.Windows.MessageBoxImage.Information);
+            return;
+        }
+
         var dialog = new Views.TransactionWindow(CreateTransactionListItem(transaction), GetDialogSupplierOptions(), isReadOnly: true);
         dialog.ShowDialog();
     }
@@ -849,6 +854,12 @@ public class SupplierDetailsViewModel : ViewModelBase
         var transaction = GetEditableTransaction(parameter);
         if (transaction == null)
         {
+            return;
+        }
+
+        if (transaction.IsOpeningBalanceAdjustment)
+        {
+            await EditOpeningBalanceAdjustmentAsync(transaction);
             return;
         }
 
@@ -897,6 +908,54 @@ public class SupplierDetailsViewModel : ViewModelBase
         }
     }
 
+    private async Task EditOpeningBalanceAdjustmentAsync(TransactionRow transaction)
+    {
+        var activeTraderId = SelectedTrader?.Id ?? Supplier?.Id ?? transaction.SupplierId;
+        var adjustmentType = transaction.AdjustmentType ?? OpeningBalanceAdjustmentType.Manufacturing;
+        var adjustment = new OpeningBalanceAdjustment
+        {
+            Id = transaction.Id,
+            SupplierId = transaction.SupplierId,
+            Type = adjustmentType,
+            Amount = adjustmentType == OpeningBalanceAdjustmentType.Manufacturing
+                ? transaction.TotalManufacturing
+                : transaction.TotalImprovement,
+            AdjustmentDate = transaction.Date,
+            Notes = transaction.Notes,
+            CreatedAt = transaction.CreatedAt,
+            UpdatedAt = transaction.UpdatedAt
+        };
+
+        var dialog = new Views.OpeningBalanceAdjustmentWindow(adjustment);
+        dialog.Owner = Application.Current?.MainWindow;
+        if (dialog.ShowDialog() != true)
+        {
+            await RequestTraderDataLoadAsync(activeTraderId);
+            return;
+        }
+
+        try
+        {
+            await RunBusyAsync(UiText.L("MsgSavingDiscount", "Saving adjustment..."), async () =>
+            {
+                await Task.Run(() => AppServices.OpeningBalanceAdjustmentService.UpdateAdjustment(
+                    transaction.Id,
+                    transaction.SupplierId,
+                    dialog.AdjustmentType,
+                    dialog.Amount,
+                    dialog.AdjustmentDate,
+                    dialog.Notes));
+            }, string.Empty, rethrow: true);
+
+            ToastService.ShowSuccess(UiText.L("MsgOpeningBalanceAdjustmentSaved"));
+            await RequestTraderDataLoadAsync(SelectedTrader?.Id ?? Supplier?.Id ?? activeTraderId);
+        }
+        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
+        {
+            ToastService.ShowWarning(UiText.LocalizeException(ex.Message));
+        }
+    }
+
     private async Task DeleteTransactionsAsync(object? parameter)
     {
         var deleteTargets = GetTransactionDeleteTargets(parameter);
@@ -927,7 +986,14 @@ public class SupplierDetailsViewModel : ViewModelBase
                 {
                     foreach (var target in deleteTargets)
                     {
-                        AppServices.TransactionService.DeleteTransaction(target.Id);
+                        if (target.IsOpeningBalanceAdjustment)
+                        {
+                            AppServices.OpeningBalanceAdjustmentService.DeleteAdjustment(target.Id);
+                        }
+                        else
+                        {
+                            AppServices.TransactionService.DeleteTransaction(target.Id);
+                        }
                     }
                 });
             }, string.Empty, rethrow: true);
@@ -1166,6 +1232,72 @@ public class SupplierDetailsViewModel : ViewModelBase
             Notes = transaction.Notes,
             CreatedAt = transaction.CreatedAt,
             UpdatedAt = transaction.UpdatedAt
+        };
+    }
+
+    private TransactionRow CreateTransactionRow(SupplierTransaction transaction)
+    {
+        return new TransactionRow
+        {
+            Id = transaction.Id,
+            SupplierId = transaction.SupplierId,
+            SupplierName = _supplierLookup.TryGetValue(transaction.SupplierId, out var supplierName) ? supplierName : string.Empty,
+            Date = transaction.Date,
+            Type = transaction.Type,
+            Category = transaction.Category,
+            TypeLabel = FormatTransactionType(transaction.Category, transaction.Type),
+            OriginalWeight = transaction.OriginalWeight,
+            ItemName = transaction.ItemName ?? string.Empty,
+            OriginalKarat = transaction.OriginalKarat,
+            Equivalent21 = transaction.Equivalent21,
+            ManufacturingPerGram = transaction.ManufacturingPerGram,
+            ImprovementPerGram = transaction.ImprovementPerGram,
+            TotalManufacturing = transaction.TotalManufacturing,
+            TotalImprovement = transaction.TotalImprovement,
+            Traceability = transaction.Description ?? string.Empty,
+            Notes = transaction.Notes ?? string.Empty,
+            CreatedAt = transaction.CreatedAt,
+            UpdatedAt = transaction.UpdatedAt
+        };
+    }
+
+    private TransactionRow CreateAdjustmentRow(OpeningBalanceAdjustment adjustment)
+    {
+        var isManufacturing = adjustment.Type == OpeningBalanceAdjustmentType.Manufacturing;
+        return new TransactionRow
+        {
+            Id = adjustment.Id,
+            SupplierId = adjustment.SupplierId,
+            SupplierName = _supplierLookup.TryGetValue(adjustment.SupplierId, out var supplierName) ? supplierName : string.Empty,
+            Date = adjustment.AdjustmentDate,
+            IsOpeningBalanceAdjustment = true,
+            AdjustmentType = adjustment.Type,
+            Type = TransactionType.In,
+            Category = isManufacturing ? "OpeningBalanceManufacturingAdjustment" : "OpeningBalanceImprovementAdjustment",
+            TypeLabel = isManufacturing
+                ? UiText.L("LblOpeningBalanceManufacturingAdjustment")
+                : UiText.L("LblOpeningBalanceImprovementAdjustment"),
+            ItemName = isManufacturing
+                ? UiText.L("LblOpeningBalanceManufacturingAdjustment")
+                : UiText.L("LblOpeningBalanceImprovementAdjustment"),
+            TotalManufacturing = isManufacturing ? adjustment.Amount : 0m,
+            TotalImprovement = isManufacturing ? 0m : adjustment.Amount,
+            Traceability = UiText.L("LblOpeningBalanceAdjustmentEntry"),
+            Notes = adjustment.Notes ?? string.Empty,
+            CreatedAt = adjustment.CreatedAt,
+            UpdatedAt = adjustment.UpdatedAt
+        };
+    }
+
+    private static string FormatTransactionType(string category, TransactionType type)
+    {
+        return category switch
+        {
+            TransactionCategories.GoldOutbound => UiText.L("LblGoldOutboundReport"),
+            TransactionCategories.GoldReceipt => UiText.L("LblGoldReceiptReport"),
+            TransactionCategories.FinishedGoldReceipt => UiText.L("LblFinishedGoldReceiptReport"),
+            TransactionCategories.CashPayment => UiText.L("LblCashPaymentReport"),
+            _ => type.ToString()
         };
     }
 

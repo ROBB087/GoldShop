@@ -127,6 +127,7 @@
   <sys:String x:Key="WindowEditTrader">تعديل التاجر</sys:String>
   <sys:String x:Key="WindowAddDiscount">إضافة خصم</sys:String>
   <sys:String x:Key="WindowAddOpeningBalanceAdjustment">إضافة مصنعية / تحسين</sys:String>
+  <sys:String x:Key="WindowEditOpeningBalanceAdjustment">تعديل مصنعية / تحسين</sys:String>
   <sys:String x:Key="WindowAddTransaction">إضافة حركة</sys:String>
   <sys:String x:Key="WindowEditTransaction">تعديل الحركة</sys:String>
   <sys:String x:Key="WindowStatementPreview">معاينة الكشف</sys:String>
@@ -156,6 +157,7 @@
   <sys:String x:Key="MsgOpeningBalanceAdjustmentGreaterThanZero">قيمة التسوية يجب أن تكون أكبر من صفر.</sys:String>
   <sys:String x:Key="MsgAdjustmentDateRequired">يرجى اختيار تاريخ التسوية.</sys:String>
   <sys:String x:Key="MsgOpeningBalanceAdjustmentSaved">تم حفظ تسوية رصيد أول المدة بنجاح.</sys:String>
+  <sys:String x:Key="MsgOpeningBalanceAdjustmentNotFound">لم يتم العثور على تسوية رصيد أول المدة.</sys:String>
   <sys:String x:Key="MsgAmountInvalid">يرجى إدخال قيمة صحيحة.</sys:String>
   <sys:String x:Key="MsgWeightInvalid">يرجى إدخال وزن صحيح.</sys:String>
   <sys:String x:Key="MsgManufacturingInvalid">يرجى إدخال قيمة مصنعية صحيحة.</sys:String>

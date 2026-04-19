@@ -8,8 +8,11 @@ public class TransactionListItem : SelectableViewModel
     public int SupplierId { get; init; }
     public string SupplierName { get; init; } = string.Empty;
     public DateTime Date { get; init; }
+    public bool IsOpeningBalanceAdjustment { get; init; }
+    public OpeningBalanceAdjustmentType? AdjustmentType { get; init; }
     public TransactionType Type { get; init; }
     public string Category { get; init; } = TransactionCategories.GoldOutbound;
+    public string TypeLabel { get; init; } = string.Empty;
     public decimal OriginalWeight { get; init; }
     public string ItemName { get; init; } = string.Empty;
     public int OriginalKarat { get; init; }

@@ -183,10 +183,10 @@
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
                         <DataGridTemplateColumn Header="{DynamicResource LblType}" Width="1.2*" MinWidth="96">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <TextBlock x:Name="TransactionTypeText"
-                                               Text="{Binding Category, Converter={StaticResource TransactionCategoryToLabelConverter}}"
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock x:Name="TransactionTypeText"
+                                               Text="{Binding TypeLabel}"
                                                Style="{StaticResource TransactionTypeTextStyle}" />
                                     <DataTemplate.Triggers>
                                         <DataTrigger Binding="{Binding Category}" Value="GoldOutbound">
@@ -201,6 +201,12 @@
                                         <DataTrigger Binding="{Binding Category}" Value="CashPayment">
                                             <Setter TargetName="TransactionTypeText" Property="Foreground" Value="#B54708" />
                                         </DataTrigger>
+                                        <DataTrigger Binding="{Binding Category}" Value="OpeningBalanceManufacturingAdjustment">
+                                            <Setter TargetName="TransactionTypeText" Property="Foreground" Value="#7A003C" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding Category}" Value="OpeningBalanceImprovementAdjustment">
+                                            <Setter TargetName="TransactionTypeText" Property="Foreground" Value="#005E52" />
+                                        </DataTrigger>
                                     </DataTemplate.Triggers>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
@@ -210,7 +216,25 @@
                         <DataGridTextColumn Header="{DynamicResource LblEquivalent21}" Binding="{Binding Equivalent21, Converter={StaticResource MoneyFormatConverter}, ConverterParameter='g'}" Width="*" MinWidth="92" ElementStyle="{StaticResource GridCellTextStyle}" />
                         <DataGridTextColumn Header="{DynamicResource LblTotalManufacturing}" Binding="{Binding TotalManufacturing, Converter={StaticResource MoneyFormatConverter}}" Width="1.1*" MinWidth="120" ElementStyle="{StaticResource GridCellTextStyle}" />
                         <DataGridTextColumn Header="{DynamicResource LblTotalImprovement}" Binding="{Binding TotalImprovement, Converter={StaticResource MoneyFormatConverter}}" Width="1.1*" MinWidth="120" ElementStyle="{StaticResource GridCellTextStyle}" />
-                        <DataGridTextColumn Header="{DynamicResource LblItem}" Binding="{Binding ItemName}" Width="1.2*" MinWidth="110" ElementStyle="{StaticResource GridCellTextStyle}" />
+                        <DataGridTemplateColumn Header="{DynamicResource LblItem}" Width="1.2*" MinWidth="110">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock x:Name="TransactionItemText"
+                                               Text="{Binding ItemName}"
+                                               Style="{StaticResource GridCellTextStyle}" />
+                                    <DataTemplate.Triggers>
+                                        <DataTrigger Binding="{Binding Category}" Value="OpeningBalanceManufacturingAdjustment">
+                                            <Setter TargetName="TransactionItemText" Property="Foreground" Value="#7A003C" />
+                                            <Setter TargetName="TransactionItemText" Property="FontWeight" Value="SemiBold" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding Category}" Value="OpeningBalanceImprovementAdjustment">
+                                            <Setter TargetName="TransactionItemText" Property="Foreground" Value="#005E52" />
+                                            <Setter TargetName="TransactionItemText" Property="FontWeight" Value="SemiBold" />
+                                        </DataTrigger>
+                                    </DataTemplate.Triggers>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
                         <DataGridTextColumn Header="{DynamicResource LblNotes}" Binding="{Binding Notes}" Width="1.4*" MinWidth="140" ElementStyle="{StaticResource GridCellTextStyle}" />
                         <DataGridTextColumn Header="{DynamicResource LblCreatedAt}" Binding="{Binding CreatedAt, StringFormat={}{0:yyyy/MM/dd HH:mm}}" Width="1.3*" MinWidth="140" ElementStyle="{StaticResource GridCellTextStyle}" />
                         <DataGridTextColumn Header="{DynamicResource LblLastUpdated}" Binding="{Binding UpdatedAt, StringFormat={}{0:yyyy/MM/dd HH:mm}}" Width="1.3*" MinWidth="140" ElementStyle="{StaticResource GridCellTextStyle}" />

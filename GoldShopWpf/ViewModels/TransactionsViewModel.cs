@@ -237,54 +237,43 @@ public class TransactionsViewModel : ViewModelBase
             var supplierId = SelectedSupplier?.Id > 0 ? SelectedSupplier.Id : (int?)null;
             var requestedPage = CurrentPage;
 
-            var page = await Task.Run(() => AppServices.TransactionService.GetTransactionsPage(supplierId, from, to, requestedPage, PageSize));
-
-            var effectiveTotalPages = Math.Max(page.TotalPages, 1);
-            if (requestedPage > effectiveTotalPages)
-            {
-                CurrentPage = effectiveTotalPages;
-                page = await Task.Run(() => AppServices.TransactionService.GetTransactionsPage(supplierId, from, to, CurrentPage, PageSize));
-            }
-
-            TotalRecords = page.TotalCount;
-            TotalPages = Math.Max(page.TotalPages, 1);
-
             FilteredTransactions.Clear();
             var query = SearchText.Trim().ToLowerInvariant();
-
-            foreach (var transaction in page.Items)
+            var rows = await Task.Run(() =>
             {
-                var item = new TransactionListItem
-                {
-                    Id = transaction.Id,
-                    SupplierId = transaction.SupplierId,
-                    SupplierName = _supplierLookup.TryGetValue(transaction.SupplierId, out var name) ? name : string.Empty,
-                    Date = transaction.Date,
-                    Type = transaction.Type,
-                    Category = transaction.Category,
-                    OriginalWeight = transaction.OriginalWeight,
-                    ItemName = transaction.ItemName ?? string.Empty,
-                    OriginalKarat = transaction.OriginalKarat,
-                    Equivalent21 = transaction.Equivalent21,
-                    ManufacturingPerGram = transaction.ManufacturingPerGram,
-                    ImprovementPerGram = transaction.ImprovementPerGram,
-                    TotalManufacturing = transaction.TotalManufacturing,
-                    TotalImprovement = transaction.TotalImprovement,
-                    Traceability = transaction.Description ?? string.Empty,
-                    Notes = transaction.Notes ?? string.Empty,
-                    CreatedAt = transaction.CreatedAt,
-                    UpdatedAt = transaction.UpdatedAt
-                };
+                var transactions = supplierId.HasValue
+                    ? AppServices.TransactionService.GetTransactions(supplierId.Value, from, to)
+                    : AppServices.TransactionService.GetTransactions(from, to);
+                var adjustments = supplierId.HasValue
+                    ? AppServices.OpeningBalanceAdjustmentService.GetAdjustments(supplierId.Value, from, to)
+                    : AppServices.OpeningBalanceAdjustmentService.GetAdjustments(from, to);
 
-                if (!string.IsNullOrWhiteSpace(query) &&
-                    !item.SupplierName.ToLowerInvariant().Contains(query) &&
-                    !item.ItemName.ToLowerInvariant().Contains(query) &&
-                    !item.Traceability.ToLowerInvariant().Contains(query) &&
-                    !item.Notes.ToLowerInvariant().Contains(query))
-                {
-                    continue;
-                }
+                return transactions
+                    .Select(CreateTransactionListItem)
+                    .Concat(adjustments.Select(CreateAdjustmentListItem))
+                    .Where(item => string.IsNullOrWhiteSpace(query) ||
+                        item.SupplierName.ToLowerInvariant().Contains(query) ||
+                        item.ItemName.ToLowerInvariant().Contains(query) ||
+                        item.Traceability.ToLowerInvariant().Contains(query) ||
+                        item.Notes.ToLowerInvariant().Contains(query))
+                    .OrderByDescending(item => item.Date)
+                    .ThenByDescending(item => item.UpdatedAt)
+                    .ThenByDescending(item => item.Id)
+                    .ToList();
+            });
 
+            var totalRecords = rows.Count;
+            var totalPages = Math.Max((int)Math.Ceiling((double)totalRecords / PageSize), 1);
+            if (requestedPage > totalPages)
+            {
+                CurrentPage = totalPages;
+            }
+
+            TotalRecords = totalRecords;
+            TotalPages = totalPages;
+
+            foreach (var item in rows.Skip((CurrentPage - 1) * PageSize).Take(PageSize))
+            {
                 FilteredTransactions.Add(item);
             }
 
@@ -422,6 +411,17 @@ public class TransactionsViewModel : ViewModelBase
             return;
         }
 
+        if (transaction.IsOpeningBalanceAdjustment)
+        {
+            var notes = string.IsNullOrWhiteSpace(transaction.Notes) ? "-" : transaction.Notes;
+            System.Windows.MessageBox.Show(
+                $"{UiText.L("LblDate")}: {transaction.Date:yyyy/MM/dd}{Environment.NewLine}{UiText.L("LblType")}: {transaction.TypeLabel}{Environment.NewLine}{UiText.L("LblAmount")}: {(transaction.TotalManufacturing + transaction.TotalImprovement):0.####}{Environment.NewLine}{UiText.L("LblNotes")}: {notes}",
+                transaction.TypeLabel,
+                System.Windows.MessageBoxButton.OK,
+                System.Windows.MessageBoxImage.Information);
+            return;
+        }
+
         var dialog = new Views.TransactionWindow(transaction, Suppliers.Where(s => s.Id != AllTradersId).ToList(), isReadOnly: true);
         dialog.ShowDialog();
     }
@@ -430,6 +430,11 @@ public class TransactionsViewModel : ViewModelBase
     {
         var transaction = GetEditableTransaction(parameter);
         if (transaction == null)
+        {
+            return;
+        }
+
+        if (transaction.IsOpeningBalanceAdjustment)
         {
             return;
         }
@@ -507,7 +512,14 @@ public class TransactionsViewModel : ViewModelBase
                 {
                     foreach (var target in deleteTargets)
                     {
-                        AppServices.TransactionService.DeleteTransaction(target.Id);
+                        if (target.IsOpeningBalanceAdjustment)
+                        {
+                            AppServices.OpeningBalanceAdjustmentService.DeleteAdjustment(target.Id);
+                        }
+                        else
+                        {
+                            AppServices.TransactionService.DeleteTransaction(target.Id);
+                        }
                     }
                 });
             }, string.Empty, rethrow: true);
@@ -662,6 +674,72 @@ public class TransactionsViewModel : ViewModelBase
         EditRowCommand.RaiseCanExecuteChanged();
         DeleteRowCommand.RaiseCanExecuteChanged();
         ClearSelectionCommand.RaiseCanExecuteChanged();
+    }
+
+    private TransactionListItem CreateTransactionListItem(SupplierTransaction transaction)
+    {
+        return new TransactionListItem
+        {
+            Id = transaction.Id,
+            SupplierId = transaction.SupplierId,
+            SupplierName = _supplierLookup.TryGetValue(transaction.SupplierId, out var name) ? name : string.Empty,
+            Date = transaction.Date,
+            Type = transaction.Type,
+            Category = transaction.Category,
+            TypeLabel = FormatTransactionType(transaction.Category, transaction.Type),
+            OriginalWeight = transaction.OriginalWeight,
+            ItemName = transaction.ItemName ?? string.Empty,
+            OriginalKarat = transaction.OriginalKarat,
+            Equivalent21 = transaction.Equivalent21,
+            ManufacturingPerGram = transaction.ManufacturingPerGram,
+            ImprovementPerGram = transaction.ImprovementPerGram,
+            TotalManufacturing = transaction.TotalManufacturing,
+            TotalImprovement = transaction.TotalImprovement,
+            Traceability = transaction.Description ?? string.Empty,
+            Notes = transaction.Notes ?? string.Empty,
+            CreatedAt = transaction.CreatedAt,
+            UpdatedAt = transaction.UpdatedAt
+        };
+    }
+
+    private TransactionListItem CreateAdjustmentListItem(OpeningBalanceAdjustment adjustment)
+    {
+        var isManufacturing = adjustment.Type == OpeningBalanceAdjustmentType.Manufacturing;
+        return new TransactionListItem
+        {
+            Id = adjustment.Id,
+            SupplierId = adjustment.SupplierId,
+            SupplierName = _supplierLookup.TryGetValue(adjustment.SupplierId, out var name) ? name : string.Empty,
+            Date = adjustment.AdjustmentDate,
+            IsOpeningBalanceAdjustment = true,
+            AdjustmentType = adjustment.Type,
+            Type = TransactionType.In,
+            Category = isManufacturing ? "OpeningBalanceManufacturingAdjustment" : "OpeningBalanceImprovementAdjustment",
+            TypeLabel = isManufacturing
+                ? UiText.L("LblOpeningBalanceManufacturingAdjustment")
+                : UiText.L("LblOpeningBalanceImprovementAdjustment"),
+            ItemName = isManufacturing
+                ? UiText.L("LblOpeningBalanceManufacturingAdjustment")
+                : UiText.L("LblOpeningBalanceImprovementAdjustment"),
+            TotalManufacturing = isManufacturing ? adjustment.Amount : 0m,
+            TotalImprovement = isManufacturing ? 0m : adjustment.Amount,
+            Traceability = UiText.L("LblOpeningBalanceAdjustmentEntry"),
+            Notes = adjustment.Notes ?? string.Empty,
+            CreatedAt = adjustment.CreatedAt,
+            UpdatedAt = adjustment.UpdatedAt
+        };
+    }
+
+    private static string FormatTransactionType(string category, TransactionType type)
+    {
+        return category switch
+        {
+            TransactionCategories.GoldOutbound => UiText.L("LblGoldOutboundReport"),
+            TransactionCategories.GoldReceipt => UiText.L("LblGoldReceiptReport"),
+            TransactionCategories.FinishedGoldReceipt => UiText.L("LblFinishedGoldReceiptReport"),
+            TransactionCategories.CashPayment => UiText.L("LblCashPaymentReport"),
+            _ => type.ToString()
+        };
     }
 
 }
