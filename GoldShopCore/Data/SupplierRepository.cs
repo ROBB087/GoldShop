@@ -11,7 +11,7 @@ public class SupplierRepository
         using var connection = Database.OpenConnection();
 
         using var command = connection.CreateCommand();
-        command.CommandText = "SELECT Id, Name, Phone, WorkerName, WorkerPhone, Notes, CreatedAt FROM Suppliers ORDER BY Name";
+        command.CommandText = "SELECT Id, Name, Phone, WorkerName, WorkerPhone, Notes, CreatedAt, IsDeleted, DeletedAt FROM Suppliers WHERE IsDeleted = 0 ORDER BY Name";
 
         using var reader = command.ExecuteReader();
         while (reader.Read())
@@ -24,7 +24,9 @@ public class SupplierRepository
                 WorkerName = reader.IsDBNull(3) ? null : reader.GetString(3),
                 WorkerPhone = reader.IsDBNull(4) ? null : reader.GetString(4),
                 Notes = reader.IsDBNull(5) ? null : reader.GetString(5),
-                CreatedAt = DateTime.Parse(reader.GetString(6))
+                CreatedAt = DateTime.Parse(reader.GetString(6)),
+                IsDeleted = !reader.IsDBNull(7) && reader.GetInt32(7) == 1,
+                DeletedAt = reader.IsDBNull(8) ? null : DateTime.Parse(reader.GetString(8))
             });
         }
 
@@ -36,7 +38,7 @@ public class SupplierRepository
         using var connection = Database.OpenConnection();
 
         using var command = connection.CreateCommand();
-        command.CommandText = "SELECT Id, Name, Phone, WorkerName, WorkerPhone, Notes, CreatedAt FROM Suppliers WHERE Id = $id";
+        command.CommandText = "SELECT Id, Name, Phone, WorkerName, WorkerPhone, Notes, CreatedAt, IsDeleted, DeletedAt FROM Suppliers WHERE Id = $id AND IsDeleted = 0";
         command.Parameters.AddWithValue("$id", id);
 
         using var reader = command.ExecuteReader();
@@ -53,7 +55,9 @@ public class SupplierRepository
             WorkerName = reader.IsDBNull(3) ? null : reader.GetString(3),
             WorkerPhone = reader.IsDBNull(4) ? null : reader.GetString(4),
             Notes = reader.IsDBNull(5) ? null : reader.GetString(5),
-            CreatedAt = DateTime.Parse(reader.GetString(6))
+            CreatedAt = DateTime.Parse(reader.GetString(6)),
+            IsDeleted = !reader.IsDBNull(7) && reader.GetInt32(7) == 1,
+            DeletedAt = reader.IsDBNull(8) ? null : DateTime.Parse(reader.GetString(8))
         };
     }
 
@@ -71,8 +75,8 @@ public class SupplierRepository
         using var command = connection.CreateCommand();
         command.Transaction = transaction;
         command.CommandText = @"
-INSERT INTO Suppliers (Name, Phone, WorkerName, WorkerPhone, Notes, CreatedAt)
-VALUES ($name, $phone, $workerName, $workerPhone, $notes, $createdAt);
+INSERT INTO Suppliers (Name, Phone, WorkerName, WorkerPhone, Notes, CreatedAt, IsDeleted, DeletedAt)
+VALUES ($name, $phone, $workerName, $workerPhone, $notes, $createdAt, 0, NULL);
 SELECT last_insert_rowid();
 ";
         command.Parameters.AddWithValue("$name", supplier.Name);
@@ -105,13 +109,17 @@ WHERE Id = $id;
         command.ExecuteNonQuery();
     }
 
-    public void Delete(int id)
+    public void SoftDelete(SqliteConnection connection, SqliteTransaction transaction, int id, DateTime deletedAt)
     {
-        using var connection = Database.OpenConnection();
-
         using var command = connection.CreateCommand();
-        command.CommandText = "DELETE FROM Suppliers WHERE Id = $id;";
+        command.Transaction = transaction;
+        command.CommandText = @"
+UPDATE Suppliers
+SET IsDeleted = 1,
+    DeletedAt = $deletedAt
+WHERE Id = $id;";
         command.Parameters.AddWithValue("$id", id);
+        command.Parameters.AddWithValue("$deletedAt", deletedAt.ToString("yyyy-MM-dd HH:mm:ss"));
         command.ExecuteNonQuery();
     }
 }

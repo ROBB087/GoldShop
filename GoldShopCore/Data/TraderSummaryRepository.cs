@@ -63,7 +63,7 @@ FROM TraderSummaries;";
 
         using var suppliers = connection.CreateCommand();
         suppliers.Transaction = transaction;
-        suppliers.CommandText = "SELECT Id FROM Suppliers ORDER BY Id;";
+        suppliers.CommandText = "SELECT Id FROM Suppliers WHERE IsDeleted = 0 ORDER BY Id;";
         using var supplierReader = suppliers.ExecuteReader();
 
         var supplierIds = new List<int>();
@@ -90,6 +90,15 @@ VALUES
 ON CONFLICT(TraderId) DO NOTHING;";
         command.Parameters.AddWithValue("$traderId", traderId);
         command.Parameters.AddWithValue("$updatedAt", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
+        command.ExecuteNonQuery();
+    }
+
+    public void DeleteTrader(SqliteConnection connection, SqliteTransaction transaction, int traderId)
+    {
+        using var command = connection.CreateCommand();
+        command.Transaction = transaction;
+        command.CommandText = "DELETE FROM TraderSummaries WHERE TraderId = $traderId;";
+        command.Parameters.AddWithValue("$traderId", traderId);
         command.ExecuteNonQuery();
     }
 

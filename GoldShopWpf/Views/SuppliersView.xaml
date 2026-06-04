@@ -426,7 +426,8 @@
                           RowHeight="{Binding TableRowHeight}"
                           ColumnHeaderHeight="{Binding TableHeaderHeight}"
                           SelectionMode="Extended"
-                          SelectionUnit="FullRow">
+                          SelectionUnit="FullRow"
+                          ScrollViewer.HorizontalScrollBarVisibility="Auto">
                     <DataGrid.Columns>
                         <DataGridTemplateColumn Width="56" CanUserSort="False">
                             <DataGridTemplateColumn.HeaderTemplate>

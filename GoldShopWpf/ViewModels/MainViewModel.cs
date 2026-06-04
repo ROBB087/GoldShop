@@ -44,7 +44,6 @@ public class MainViewModel : ViewModelBase
     public RelayCommand ShowNotesCommand { get; }
     public RelayCommand ShowPricingSettingsCommand { get; }
     public RelayCommand ShowBackupCommand { get; }
-    public RelayCommand BackupCommand { get; }
     public RelayCommand ToggleLanguageCommand { get; }
 
     public MainViewModel()
@@ -71,7 +70,6 @@ public class MainViewModel : ViewModelBase
         ShowPricingSettingsCommand = new RelayCommand(_ => Navigate(PricingSettings, L("NavPricingSettings"), "PricingSettings"));
         ShowBackupCommand = new RelayCommand(_ => Navigate(Backup, L("NavBackup"), "Backup"));
 
-        BackupCommand = new RelayCommand(_ => BackupDatabase());
         ToggleLanguageCommand = new RelayCommand(_ => ToggleLanguage());
 
         Suppliers.OpenDetailsRequested += supplier =>
@@ -143,22 +141,6 @@ public class MainViewModel : ViewModelBase
         Notes.Load();
         PricingSettings.Load();
         Statement.ReloadData();
-    }
-
-    private void BackupDatabase()
-    {
-        var dialog = new Microsoft.Win32.SaveFileDialog
-        {
-            Title = UiText.L("MsgSaveBackupDialogTitle"),
-            Filter = UiText.L("FilterSqlite"),
-            FileName = AppServices.BackupService.BuildManualBackupFileName()
-        };
-
-        if (dialog.ShowDialog() == true)
-        {
-            AppServices.BackupService.CreateManualBackup(dialog.FileName);
-            ToastService.ShowSuccess(UiText.L("MsgBackupCreated"));
-        }
     }
 
     private void ToggleLanguage()

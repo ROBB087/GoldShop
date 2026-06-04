@@ -73,6 +73,8 @@
   <sys:String x:Key="LblOpeningBalanceAdjustmentType">نوع التسوية</sys:String>
   <sys:String x:Key="LblOpeningBalanceManufacturingAdjustment">إضافة مصنعية</sys:String>
   <sys:String x:Key="LblOpeningBalanceImprovementAdjustment">إضافة تحسين</sys:String>
+  <sys:String x:Key="LblManufacturingDiscountEntry">خصم مصنعية</sys:String>
+  <sys:String x:Key="LblImprovementDiscountEntry">خصم تحسين</sys:String>
   <sys:String x:Key="LblOpeningBalanceAdjustmentsTotal">إجمالي تسويات أول المدة</sys:String>
   <sys:String x:Key="LblOpeningBalanceAdjustmentEntry">تسوية رصيد أول المدة</sys:String>
   <sys:String x:Key="LblCreatedAt">تاريخ الإنشاء</sys:String>
@@ -157,6 +159,8 @@
   <sys:String x:Key="MsgOpeningBalanceAdjustmentGreaterThanZero">قيمة التسوية يجب أن تكون أكبر من صفر.</sys:String>
   <sys:String x:Key="MsgAdjustmentDateRequired">يرجى اختيار تاريخ التسوية.</sys:String>
   <sys:String x:Key="MsgOpeningBalanceAdjustmentSaved">تم حفظ تسوية رصيد أول المدة بنجاح.</sys:String>
+  <sys:String x:Key="MsgManufacturingAdjustmentSaved">تم حفظ اضافة المصنعيه بنجاح</sys:String>
+  <sys:String x:Key="MsgImprovementAdjustmentSaved">تم حفظ اضافة التحسين بنجاح</sys:String>
   <sys:String x:Key="MsgOpeningBalanceAdjustmentNotFound">لم يتم العثور على تسوية رصيد أول المدة.</sys:String>
   <sys:String x:Key="MsgAmountInvalid">يرجى إدخال قيمة صحيحة.</sys:String>
   <sys:String x:Key="MsgWeightInvalid">يرجى إدخال وزن صحيح.</sys:String>

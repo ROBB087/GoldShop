@@ -9,6 +9,9 @@
         <Style x:Key="NotesCellTextStyle" TargetType="TextBlock" BasedOn="{StaticResource GridCellTextStyle}">
             <Setter Property="ToolTip" Value="{Binding Content}" />
         </Style>
+        <Style x:Key="NotesClientNameTextStyle" TargetType="TextBlock" BasedOn="{StaticResource GridCellTextStyle}">
+            <Setter Property="FontWeight" Value="Bold" />
+        </Style>
         <Style x:Key="GridActionMenu" TargetType="Menu">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
@@ -186,7 +189,7 @@
                                                 SortMemberPath="ClientName"
                                                 Width="1.2*"
                                                 MinWidth="140"
-                                                ElementStyle="{StaticResource GridCellTextStyle}" />
+                                                ElementStyle="{StaticResource NotesClientNameTextStyle}" />
                             <DataGridTemplateColumn Header="{DynamicResource LblNoteContent}" SortMemberPath="Content" Width="2*" MinWidth="220">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>

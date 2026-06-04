@@ -9,4 +9,6 @@ public class Supplier
     public string? WorkerPhone { get; set; }
     public string? Notes { get; set; }
     public DateTime CreatedAt { get; set; }
+    public bool IsDeleted { get; set; }
+    public DateTime? DeletedAt { get; set; }
 }

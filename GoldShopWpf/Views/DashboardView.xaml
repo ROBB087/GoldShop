@@ -391,11 +391,11 @@
 
                                                     <StackPanel Grid.Column="0">
                                                         <StackPanel Orientation="Horizontal">
-                                                            <Border Background="{Binding Type, Converter={StaticResource TransactionTypeToBrushConverter}}"
+                                                            <Border Background="{Binding BadgeBrush}"
                                                                     CornerRadius="999"
                                                                     Padding="10,4"
                                                                     Margin="0,0,10,0">
-                                                                <TextBlock Text="{Binding Category, Converter={StaticResource TransactionCategoryToLabelConverter}}"
+                                                                <TextBlock Text="{Binding CategoryLabel}"
                                                                            Foreground="White"
                                                                            FontSize="11"
                                                                            FontWeight="SemiBold" />

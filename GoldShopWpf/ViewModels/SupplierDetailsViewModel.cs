@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Windows;
+using GoldShopCore.Data;
 using GoldShopCore.Models;
 using GoldShopCore.Services;
 using GoldShopWpf.Services;
@@ -14,7 +15,7 @@ public class SupplierDetailsViewModel : ViewModelBase
     private const int DefaultPageSize = 25;
 
     private SupplierListItem? _supplier;
-    private DateTime? _fromDate = DateTime.Today;
+    private DateTime? _fromDate = DateTime.Today.AddMonths(-1);
     private DateTime? _toDate = DateTime.Today;
     private SupplierListItem? _selectedTrader;
     private TransactionRow? _selectedTransaction;
@@ -435,7 +436,7 @@ public class SupplierDetailsViewModel : ViewModelBase
         ClearFilterCommand = TrackCommand(new AsyncRelayCommand(_ =>
         {
             _suppressDateAutoRefresh = true;
-            FromDate = DateTime.Today;
+            FromDate = DateTime.Today.AddMonths(-1);
             ToDate = DateTime.Today;
             _suppressDateAutoRefresh = false;
             ResetPages();
@@ -600,8 +601,8 @@ public class SupplierDetailsViewModel : ViewModelBase
                     : AppServices.OpeningBalanceAdjustmentService.GetAdjustments(from, to);
                 var discountsPage = AppServices.DiscountService.GetDiscountsPage(supplierId, from, to, requestedDiscountsPage, PageSize);
                 var summary = supplierId.HasValue
-                    ? AppServices.TransactionService.GetSummary(supplierId.Value, from, to)
-                    : AppServices.TransactionService.GetSummaryAll(from, to);
+                    ? AppServices.TransactionService.GetSummary(supplierId.Value, null, null)
+                    : AppServices.TransactionService.GetSummaryAll(null, null);
                 return (transactions, adjustments, discountsPage, summary);
             });
 
@@ -611,7 +612,7 @@ public class SupplierDetailsViewModel : ViewModelBase
                 .Select(CreateTransactionRow)
                 .Concat(pageData.adjustments.Select(CreateAdjustmentRow))
                 .OrderByDescending(row => row.Date)
-                .ThenByDescending(row => row.UpdatedAt)
+                .ThenByDescending(row => row.CreatedAt)
                 .ThenByDescending(row => row.Id)
                 .ToList();
 
@@ -656,7 +657,7 @@ public class SupplierDetailsViewModel : ViewModelBase
                     SupplierName = _supplierLookup.TryGetValue(discount.SupplierId, out var supplierName) ? supplierName : string.Empty,
                     Type = discount.Type,
                     Amount = discount.Amount,
-                    Notes = discount.Notes ?? string.Empty,
+                    Notes = GetDisplayNotes(discount.Notes),
                     CreatedAt = discount.CreatedAt,
                     UpdatedAt = discount.UpdatedAt
                 });
@@ -728,6 +729,14 @@ public class SupplierDetailsViewModel : ViewModelBase
 
         try
         {
+            var beforeInspection = Database.InspectDatabaseFile(Database.DbFilePath, requireCoreTables: false);
+            FileLogService.LogInfo(
+                "Transactions UI flow",
+                $"EntryPoint: SupplierDetailsViewModel.AddTransactionAsync{Environment.NewLine}" +
+                $"RuntimeDatabasePath: {Database.DbFilePath}{Environment.NewLine}" +
+                $"SupplierId: {supplierId.Value}{Environment.NewLine}" +
+                $"TransactionsBeforeUiSave: {beforeInspection.TransactionCount}");
+
             await RunBusyAsync(UiText.L("MsgSavingTransaction"), async () =>
             {
                 await Task.Run(() => AppServices.TransactionService.AddTransaction(
@@ -743,6 +752,14 @@ public class SupplierDetailsViewModel : ViewModelBase
                     Guid.NewGuid().ToString("N")));
             }, string.Empty, rethrow: true);
 
+            var afterInspection = Database.InspectDatabaseFile(Database.DbFilePath, requireCoreTables: false);
+            FileLogService.LogInfo(
+                "Transactions UI flow",
+                $"EntryPoint: SupplierDetailsViewModel.AddTransactionAsync.Complete{Environment.NewLine}" +
+                $"RuntimeDatabasePath: {Database.DbFilePath}{Environment.NewLine}" +
+                $"SupplierId: {supplierId.Value}{Environment.NewLine}" +
+                $"TransactionsAfterUiSave: {afterInspection.TransactionCount}");
+            FinancialDataChangeNotifier.NotifyDataChanged();
             ToastService.ShowSuccess(UiText.L("MsgTransactionSaved"));
             await RequestTraderDataLoadAsync(SelectedTrader?.Id ?? supplierId.Value);
         }
@@ -776,6 +793,7 @@ public class SupplierDetailsViewModel : ViewModelBase
                 await Task.Run(() => AppServices.DiscountService.AddDiscount(Supplier.Id, discountType, amount, notes, FromDate, ToDate));
             }, string.Empty, rethrow: true);
 
+            FinancialDataChangeNotifier.NotifyDataChanged();
             ToastService.ShowSuccess(UiText.L("MsgDiscountSaved"));
             await RequestTraderDataLoadAsync(SelectedTrader?.Id ?? Supplier.Id);
         }
@@ -818,7 +836,8 @@ public class SupplierDetailsViewModel : ViewModelBase
                     notes));
             }, string.Empty, rethrow: true);
 
-            ToastService.ShowSuccess(UiText.L("MsgOpeningBalanceAdjustmentSaved"));
+            FinancialDataChangeNotifier.NotifyDataChanged();
+            ToastService.ShowSuccess(GetOpeningBalanceAdjustmentSavedMessage(adjustmentType));
             await RequestTraderDataLoadAsync(SelectedTrader?.Id ?? Supplier.Id);
         }
         catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
@@ -899,6 +918,7 @@ public class SupplierDetailsViewModel : ViewModelBase
                     notes));
             }, string.Empty, rethrow: true);
 
+            FinancialDataChangeNotifier.NotifyDataChanged();
             ToastService.ShowSuccess(UiText.L("MsgTransactionUpdated", UiText.L("MsgTransactionSaved")));
             await RequestTraderDataLoadAsync(SelectedTrader?.Id ?? Supplier?.Id ?? AllTradersId);
         }
@@ -934,6 +954,11 @@ public class SupplierDetailsViewModel : ViewModelBase
             return;
         }
 
+        var updatedAdjustmentType = dialog.AdjustmentType;
+        var amount = dialog.Amount;
+        var adjustmentDate = dialog.AdjustmentDate;
+        var notes = dialog.Notes;
+
         try
         {
             await RunBusyAsync(UiText.L("MsgSavingDiscount", "Saving adjustment..."), async () =>
@@ -941,13 +966,14 @@ public class SupplierDetailsViewModel : ViewModelBase
                 await Task.Run(() => AppServices.OpeningBalanceAdjustmentService.UpdateAdjustment(
                     transaction.Id,
                     transaction.SupplierId,
-                    dialog.AdjustmentType,
-                    dialog.Amount,
-                    dialog.AdjustmentDate,
-                    dialog.Notes));
+                    updatedAdjustmentType,
+                    amount,
+                    adjustmentDate,
+                    notes));
             }, string.Empty, rethrow: true);
 
-            ToastService.ShowSuccess(UiText.L("MsgOpeningBalanceAdjustmentSaved"));
+            FinancialDataChangeNotifier.NotifyDataChanged();
+            ToastService.ShowSuccess(GetOpeningBalanceAdjustmentSavedMessage(updatedAdjustmentType));
             await RequestTraderDataLoadAsync(SelectedTrader?.Id ?? Supplier?.Id ?? activeTraderId);
         }
         catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
@@ -998,6 +1024,7 @@ public class SupplierDetailsViewModel : ViewModelBase
                 });
             }, string.Empty, rethrow: true);
 
+            FinancialDataChangeNotifier.NotifyDataChanged();
             ToastService.ShowSuccess(deleteTargets.Count == 1
                 ? UiText.L("MsgTransactionDeleted", "Transaction deleted successfully.")
                 : UiText.Format("MsgTransactionsDeleted", deleteTargets.Count));
@@ -1049,6 +1076,7 @@ public class SupplierDetailsViewModel : ViewModelBase
                 await Task.Run(() => AppServices.DiscountService.UpdateDiscount(discount.Id, discount.SupplierId, discountType, amount, notes, FromDate, ToDate));
             }, string.Empty, rethrow: true);
 
+            FinancialDataChangeNotifier.NotifyDataChanged();
             ToastService.ShowSuccess(UiText.L("MsgDiscountUpdated", UiText.L("MsgDiscountSaved")));
             await RequestTraderDataLoadAsync(SelectedTrader?.Id ?? Supplier?.Id ?? AllTradersId);
         }
@@ -1093,6 +1121,7 @@ public class SupplierDetailsViewModel : ViewModelBase
                 });
             }, string.Empty, rethrow: true);
 
+            FinancialDataChangeNotifier.NotifyDataChanged();
             ToastService.ShowSuccess(deleteTargets.Count == 1
                 ? UiText.L("MsgDiscountDeleted", "Discount deleted successfully.")
                 : UiText.Format("MsgDiscountsDeleted", deleteTargets.Count));
@@ -1247,7 +1276,7 @@ public class SupplierDetailsViewModel : ViewModelBase
             Category = transaction.Category,
             TypeLabel = FormatTransactionType(transaction.Category, transaction.Type),
             OriginalWeight = transaction.OriginalWeight,
-            ItemName = transaction.ItemName ?? string.Empty,
+            ItemName = GetDisplayItemName(transaction.ItemName),
             OriginalKarat = transaction.OriginalKarat,
             Equivalent21 = transaction.Equivalent21,
             ManufacturingPerGram = transaction.ManufacturingPerGram,
@@ -1255,7 +1284,7 @@ public class SupplierDetailsViewModel : ViewModelBase
             TotalManufacturing = transaction.TotalManufacturing,
             TotalImprovement = transaction.TotalImprovement,
             Traceability = transaction.Description ?? string.Empty,
-            Notes = transaction.Notes ?? string.Empty,
+            Notes = GetDisplayNotes(transaction.Notes),
             CreatedAt = transaction.CreatedAt,
             UpdatedAt = transaction.UpdatedAt
         };
@@ -1283,7 +1312,7 @@ public class SupplierDetailsViewModel : ViewModelBase
             TotalManufacturing = isManufacturing ? adjustment.Amount : 0m,
             TotalImprovement = isManufacturing ? 0m : adjustment.Amount,
             Traceability = UiText.L("LblOpeningBalanceAdjustmentEntry"),
-            Notes = adjustment.Notes ?? string.Empty,
+            Notes = GetDisplayNotes(adjustment.Notes),
             CreatedAt = adjustment.CreatedAt,
             UpdatedAt = adjustment.UpdatedAt
         };
@@ -1322,6 +1351,17 @@ public class SupplierDetailsViewModel : ViewModelBase
         SelectedDiscount = null;
         RefreshDiscountSelectionState();
     }
+
+    private static string GetDisplayItemName(string? itemName)
+        => string.IsNullOrWhiteSpace(itemName) ? UiText.L("LblUnspecifiedItem") : itemName.Trim();
+
+    private static string GetDisplayNotes(string? notes)
+        => string.IsNullOrWhiteSpace(notes) ? UiText.L("LblNoNotesValue") : notes.Trim();
+
+    private static string GetOpeningBalanceAdjustmentSavedMessage(OpeningBalanceAdjustmentType adjustmentType)
+        => adjustmentType == OpeningBalanceAdjustmentType.Manufacturing
+            ? UiText.L("MsgManufacturingAdjustmentSaved")
+            : UiText.L("MsgImprovementAdjustmentSaved");
 
     private List<SupplierListItem> GetDialogSupplierOptions()
     {

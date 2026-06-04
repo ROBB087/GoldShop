@@ -12,10 +12,13 @@ This produces:
 
 ```text
 publish\client\GoldShop
-publish\installer\GoldShop-Setup.exe
+publish\installer\GoldShop-Setup-<version>.exe
 ```
 
-Deliver `publish\installer\GoldShop-Setup.exe` to the client.
+The folder `publish\client\GoldShop` is the single source of truth for delivery.
+The installer is compiled only from that fresh publish folder.
+
+Deliver the latest `publish\installer\GoldShop-Setup-<version>.exe` to the client.
 
 Do not deliver `GoldShopLicenseTool` or `GoldShopStressTool` to the client.
 
@@ -40,7 +43,7 @@ That folder contains:
 
 On the client machine:
 
-1. Run `GoldShopWpf.exe`
+1. Run `GoldShop.exe`
 2. Copy the `Machine ID` from the activation window
 3. Send that ID to you
 

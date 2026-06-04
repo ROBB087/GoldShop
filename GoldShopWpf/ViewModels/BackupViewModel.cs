@@ -1,5 +1,7 @@
 using GoldShopWpf.Services;
 using System.Windows;
+using GoldShopCore.Data;
+using GoldShopCore.Services;
 
 namespace GoldShopWpf.ViewModels;
 
@@ -28,8 +30,27 @@ public class BackupViewModel : ViewModelBase
             return;
         }
 
-        AppServices.BackupService.CreateManualBackup(dialog.FileName);
-        System.Windows.MessageBox.Show(UiText.L("MsgBackupCreated"), UiText.L("TitleBackup"), System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+        try
+        {
+            var runtimeInspection = Database.InspectDatabaseFile(Database.DbFilePath, requireCoreTables: false);
+            FileLogService.LogInfo(
+                "Backup UI flow",
+                $"Action: BackupDialogConfirmed{Environment.NewLine}" +
+                $"RuntimeDatabasePath: {Database.DbFilePath}{Environment.NewLine}" +
+                $"SelectedBackupDestinationPath: {dialog.FileName}{Environment.NewLine}" +
+                $"LiveTransactionsBeforeBackup: {runtimeInspection.TransactionCount}");
+            AppServices.BackupService.CreateManualBackup(dialog.FileName);
+            System.Windows.MessageBox.Show(UiText.L("MsgBackupCreated"), UiText.L("TitleBackup"), System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+        }
+        catch (Exception ex)
+        {
+            ExceptionReporter.ReportHandled(ex, "Backup creation failed");
+            System.Windows.MessageBox.Show(
+                UiText.LocalizeException(ex.Message),
+                UiText.L("TitleBackup"),
+                System.Windows.MessageBoxButton.OK,
+                System.Windows.MessageBoxImage.Error);
+        }
     }
 
     private void RestoreDatabase()
@@ -58,6 +79,13 @@ public class BackupViewModel : ViewModelBase
 
         try
         {
+            var selectedInspection = Database.InspectDatabaseFile(dialog.FileName, requireCoreTables: false);
+            FileLogService.LogInfo(
+                "Backup UI flow",
+                $"Action: RestoreDialogConfirmed{Environment.NewLine}" +
+                $"RuntimeDatabasePath: {Database.DbFilePath}{Environment.NewLine}" +
+                $"SelectedRestoreSourcePath: {dialog.FileName}{Environment.NewLine}" +
+                $"TransactionsInsideSelectedRestoreFile: {selectedInspection.TransactionCount}");
             AppServices.RestoreDatabase(dialog.FileName);
 
             if (Application.Current?.MainWindow?.DataContext is MainViewModel mainViewModel)
@@ -69,7 +97,7 @@ public class BackupViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            ExceptionReporter.Report(ex, "Restore backup failed");
+            ExceptionReporter.ReportHandled(ex, "Restore backup failed");
             System.Windows.MessageBox.Show(
                 UiText.LocalizeException(ex.Message),
                 UiText.L("TitleBackup"),

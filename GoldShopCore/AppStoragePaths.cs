@@ -3,8 +3,7 @@ namespace GoldShopCore;
 public static class AppStoragePaths
 {
     private const string ProductFolderName = "GoldShop";
-    private static readonly string? RootDirectoryOverride =
-        Environment.GetEnvironmentVariable("GOLDSHOP_APPDATA");
+    private static readonly string? RootDirectoryOverride = ResolveRootDirectoryOverride();
 
     public static string RootDirectory =>
         string.IsNullOrWhiteSpace(RootDirectoryOverride)
@@ -17,11 +16,22 @@ public static class AppStoragePaths
 
     public static string LogDirectory => Path.Combine(RootDirectory, "Logs");
 
+    public static bool IsDevelopmentOverrideActive => !string.IsNullOrWhiteSpace(RootDirectoryOverride);
+
     public static void EnsureDirectories()
     {
         Directory.CreateDirectory(RootDirectory);
         Directory.CreateDirectory(DataDirectory);
         Directory.CreateDirectory(BackupDirectory);
         Directory.CreateDirectory(LogDirectory);
+    }
+
+    private static string? ResolveRootDirectoryOverride()
+    {
+#if DEBUG
+        return Environment.GetEnvironmentVariable("GOLDSHOP_APPDATA");
+#else
+        return null;
+#endif
     }
 }

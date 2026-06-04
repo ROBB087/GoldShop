@@ -1,6 +1,9 @@
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Collections.Specialized;
+using System.Runtime.InteropServices;
+using System.Text;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -14,13 +17,28 @@ namespace GoldShopWpf.Services;
 
 public static class ReportExportService
 {
-    public static string? ExportVisualAsPng(FrameworkElement element, string defaultFileName)
+    private delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
+
+    [DllImport("user32.dll")]
+    private static extern bool EnumWindows(EnumWindowsProc lpEnumFunc, IntPtr lParam);
+
+    [DllImport("user32.dll")]
+    private static extern bool IsWindowVisible(IntPtr hWnd);
+
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+    private static extern int GetWindowText(IntPtr hWnd, StringBuilder lpString, int nMaxCount);
+
+    [DllImport("user32.dll")]
+    private static extern bool SetForegroundWindow(IntPtr hWnd);
+
+    public static string? ExportVisualAsPng(FrameworkElement element, string defaultFileName, string? initialDirectory = null)
     {
         var dialog = new SaveFileDialog
         {
             Title = UiText.L("TitleExportImage"),
             Filter = UiText.L("FilterPng"),
-            FileName = $"{defaultFileName}.png"
+            FileName = $"{defaultFileName}.png",
+            InitialDirectory = initialDirectory
         };
 
         if (dialog.ShowDialog() != true)
@@ -39,6 +57,36 @@ public static class ReportExportService
         var filePath = Path.Combine(folder, $"{defaultFileName}.png");
         SaveElementAsPng(element, filePath);
         return filePath;
+    }
+
+    public static string ExportReceiptAsWhatsAppImage(FrameworkElement element, string supplierName)
+    {
+        var folder = GetReceiptFolder(supplierName);
+        Directory.CreateDirectory(folder);
+
+        var savedAt = DateTime.Now;
+        var fileName = GetReceiptFileName(supplierName, savedAt, "png");
+        var filePath = Path.Combine(folder, fileName);
+
+        SaveElementAsPng(element, filePath);
+        OpenFolder(folder);
+        return filePath;
+    }
+
+    public static string GetReceiptFolder()
+        => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "\u0627\u0644\u0627\u064a\u0635\u0627\u0644\u0627\u062a");
+
+    public static string GetReceiptFolder(string supplierName)
+        => Path.Combine(GetReceiptFolder(), SanitizeFileName(supplierName));
+
+    public static string GetReceiptFileName(string supplierName, DateTime savedAt, string extension)
+        => $"\u0643\u0634\u0641-{SanitizeFileName(supplierName)}-\u062a\u0627\u0631\u064a\u062e-{savedAt.ToString("yyyy-MM-dd-HHmmss", CultureInfo.InvariantCulture)}.{extension.TrimStart('.')}";
+
+    public static void OpenReceiptFolder(string supplierName)
+    {
+        var folder = GetReceiptFolder(supplierName);
+        Directory.CreateDirectory(folder);
+        OpenFolder(folder);
     }
 
     public static string? ExportReportPdf(WeeklyReportViewModel viewModel, string defaultFileName)
@@ -119,6 +167,11 @@ public static class ReportExportService
 
         CopyFileToClipboard(filePath);
 
+        if (TryFocusExistingWhatsAppWindow())
+        {
+            return;
+        }
+
         var opened =
             (HasUriSchemeHandler("whatsapp") && TryOpenUri($"whatsapp://send?phone={normalizedPhone}")) ||
             TryOpenUri($"https://web.whatsapp.com/send?phone={normalizedPhone}") ||
@@ -145,47 +198,62 @@ public static class ReportExportService
 
     private static void SaveElementAsPng(FrameworkElement element, string filePath)
     {
-        element.UpdateLayout();
-
-        var width = Math.Max(1, (int)Math.Ceiling(element.ActualWidth));
-        var height = Math.Max(1, (int)Math.Ceiling(element.ActualHeight));
-
-        if (width == 1 || height == 1)
+        try
         {
+            element.UpdateLayout();
             element.Measure(new System.Windows.Size(double.PositiveInfinity, double.PositiveInfinity));
-            element.Arrange(new Rect(element.DesiredSize));
-            width = Math.Max(1, (int)Math.Ceiling(element.DesiredSize.Width));
-            height = Math.Max(1, (int)Math.Ceiling(element.DesiredSize.Height));
-        }
+            var renderSize = new System.Windows.Size(
+                Math.Max(element.ActualWidth, element.DesiredSize.Width),
+                Math.Max(element.ActualHeight, element.DesiredSize.Height));
+            element.Arrange(new Rect(new Point(0, 0), renderSize));
+            element.UpdateLayout();
 
-        var drawingVisual = new DrawingVisual();
-        using (var drawingContext = drawingVisual.RenderOpen())
-        {
-            if (element.FlowDirection == FlowDirection.RightToLeft)
+            var width = Math.Max(1, (int)Math.Ceiling(renderSize.Width));
+            var height = Math.Max(1, (int)Math.Ceiling(renderSize.Height));
+
+            var drawingVisual = new DrawingVisual();
+            using (var drawingContext = drawingVisual.RenderOpen())
             {
-                // RenderTargetBitmap can mirror RTL visuals; flip once here to preserve the on-screen layout.
-                drawingContext.PushTransform(new ScaleTransform(-1, 1, width / 2d, height / 2d));
+                if (element.FlowDirection == FlowDirection.RightToLeft)
+                {
+                    // RenderTargetBitmap can mirror RTL visuals; flip once here to preserve the on-screen layout.
+                    drawingContext.PushTransform(new ScaleTransform(-1, 1, width / 2d, height / 2d));
+                }
+
+                drawingContext.DrawRectangle(
+                    new VisualBrush(element)
+                    {
+                        Stretch = Stretch.None,
+                        AlignmentX = AlignmentX.Left,
+                        AlignmentY = AlignmentY.Top
+                    },
+                    null,
+                    new Rect(0, 0, width, height));
             }
 
-            drawingContext.DrawRectangle(
-                new VisualBrush(element)
-                {
-                    Stretch = Stretch.None,
-                    AlignmentX = AlignmentX.Left,
-                    AlignmentY = AlignmentY.Top
-                },
-                null,
-                new Rect(0, 0, width, height));
+            var renderTarget = new RenderTargetBitmap(width, height, 96, 96, PixelFormats.Pbgra32);
+            renderTarget.Render(drawingVisual);
+
+            var encoder = new PngBitmapEncoder();
+            encoder.Frames.Add(BitmapFrame.Create(renderTarget));
+
+            using var stream = File.Create(filePath);
+            encoder.Save(stream);
         }
+        finally
+        {
+            RestoreElementLayout(element);
+        }
+    }
 
-        var renderTarget = new RenderTargetBitmap(width, height, 96, 96, PixelFormats.Pbgra32);
-        renderTarget.Render(drawingVisual);
-
-        var encoder = new PngBitmapEncoder();
-        encoder.Frames.Add(BitmapFrame.Create(renderTarget));
-
-        using var stream = File.Create(filePath);
-        encoder.Save(stream);
+    private static void RestoreElementLayout(FrameworkElement element)
+    {
+        var parent = VisualTreeHelper.GetParent(element) as UIElement;
+        element.InvalidateMeasure();
+        element.InvalidateArrange();
+        parent?.InvalidateMeasure();
+        parent?.InvalidateArrange();
+        Window.GetWindow(element)?.UpdateLayout();
     }
 
     private static void SaveReportPdf(WeeklyReportViewModel viewModel, string filePath)
@@ -311,6 +379,35 @@ public static class ReportExportService
         }
     }
 
+    private static bool TryFocusExistingWhatsAppWindow()
+    {
+        IntPtr whatsappWindow = IntPtr.Zero;
+
+        EnumWindows((hWnd, _) =>
+        {
+            if (!IsWindowVisible(hWnd))
+            {
+                return true;
+            }
+
+            var title = new StringBuilder(512);
+            if (GetWindowText(hWnd, title, title.Capacity) == 0)
+            {
+                return true;
+            }
+
+            if (!title.ToString().Contains("WhatsApp", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            whatsappWindow = hWnd;
+            return false;
+        }, IntPtr.Zero);
+
+        return whatsappWindow != IntPtr.Zero && SetForegroundWindow(whatsappWindow);
+    }
+
     private static bool HasUriSchemeHandler(string scheme)
     {
         try
@@ -331,6 +428,26 @@ public static class ReportExportService
             filePath
         };
         Clipboard.SetFileDropList(files);
+    }
+
+    private static void OpenFolder(string folderPath)
+    {
+        Process.Start(new ProcessStartInfo
+        {
+            FileName = "explorer.exe",
+            Arguments = $"\"{folderPath}\"",
+            UseShellExecute = true
+        });
+    }
+
+    private static string SanitizeFileName(string value)
+    {
+        var invalidCharacters = Path.GetInvalidFileNameChars();
+        var sanitized = new string(value.Trim()
+            .Select(character => invalidCharacters.Contains(character) ? '-' : character)
+            .ToArray());
+
+        return string.IsNullOrWhiteSpace(sanitized) ? UiText.L("LblTrader") : sanitized;
     }
 
     private static string? NormalizePhone(string? rawPhone)

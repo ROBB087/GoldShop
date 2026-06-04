@@ -11,6 +11,22 @@ public static class ExceptionReporter
 
     public static void Report(Exception ex, string context)
     {
+        WriteToLog(ex, context);
+
+        MessageBox.Show(
+            $"{context}\n\n{UiText.LocalizeException(ex.Message)}\n\n{UiText.L("MsgErrorLogged")}",
+            UiText.L("TitleApplicationError"),
+            MessageBoxButton.OK,
+            MessageBoxImage.Error);
+    }
+
+    public static void ReportHandled(Exception ex, string context)
+    {
+        WriteToLog(ex, context);
+    }
+
+    private static void WriteToLog(Exception ex, string context)
+    {
         try
         {
             AppStoragePaths.EnsureDirectories();
@@ -30,11 +46,5 @@ public static class ExceptionReporter
         {
             // Best-effort logging only.
         }
-
-        MessageBox.Show(
-            $"{context}\n\n{UiText.LocalizeException(ex.Message)}\n\n{UiText.L("MsgErrorLogged")}",
-            UiText.L("TitleApplicationError"),
-            MessageBoxButton.OK,
-            MessageBoxImage.Error);
     }
 }

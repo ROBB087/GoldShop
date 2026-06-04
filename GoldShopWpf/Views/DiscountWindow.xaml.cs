@@ -53,11 +53,32 @@ public partial class DiscountWindow : Window
             return;
         }
 
+        if (!ConfirmDiscountIfNeeded())
+        {
+            return;
+        }
+
         DialogResult = true;
     }
 
     private void OnCancel(object sender, RoutedEventArgs e)
     {
         DialogResult = false;
+    }
+
+    private bool ConfirmDiscountIfNeeded()
+    {
+        var messageKey = DiscountType == DiscountType.Manufacturing
+            ? "MsgDiscountConfirmManufacturing"
+            : "MsgDiscountConfirmImprovement";
+
+        var result = MessageBox.Show(
+            this,
+            UiText.Format(messageKey, Amount.ToString("0.####", CultureInfo.CurrentCulture)),
+            UiText.L("TitleConfirmDiscount"),
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Question);
+
+        return result == MessageBoxResult.Yes;
     }
 }

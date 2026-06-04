@@ -10,7 +10,7 @@ public class SuppliersViewModel : ViewModelBase
 {
     private string _searchText = string.Empty;
     private SupplierListItem? _selectedSupplier;
-    private bool _isCompactDensity;
+    private bool _isCompactDensity = true;
 
     public ObservableCollection<SupplierListItem> Suppliers { get; } = new();
     public ObservableCollection<SupplierListItem> FilteredSuppliers { get; } = new();

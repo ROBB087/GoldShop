@@ -2,10 +2,10 @@ GoldShop Client Delivery
 ========================
 
 Recommended file to give the client:
-- GoldShop-Setup.exe
+- the latest GoldShop-Setup-<version>.exe in publish\installer
 
 Alternative manual package:
-- all files in this same folder
+- the fresh files in publish\client\GoldShop only
 
 Client activation steps after installation:
 1. Open GoldShop from the desktop or Start Menu shortcut
@@ -16,7 +16,9 @@ Client activation steps after installation:
 
 Important:
 - The installer places the application under the current Windows user profile
+- The installer is built only from the fresh publish in publish\client\GoldShop
 - Application data, backups, and logs are stored automatically in %LocalAppData%\GoldShop
+- The client database is created automatically on first install and preserved on upgrade
 - The activation key is valid only for this device
 - If the client changes device, a new activation key is required
 - Do not delete license files after activation

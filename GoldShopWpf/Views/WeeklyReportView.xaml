@@ -88,7 +88,7 @@
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
                     <TextBlock Grid.Row="0" Text="{DynamicResource LblWeeklyPerformanceTable}" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,14" />
-                    <DataGrid Grid.Row="1" ItemsSource="{Binding Reports}" AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True">
+                    <DataGrid Grid.Row="1" ItemsSource="{Binding Reports}" AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True" ScrollViewer.HorizontalScrollBarVisibility="Auto">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="{DynamicResource LblTrader}" Binding="{Binding SupplierName}" Width="2*" MinWidth="140" ElementStyle="{StaticResource GridCellTextStyle}" />
                             <DataGridTextColumn Header="{DynamicResource LblTotalGold21}" Binding="{Binding TotalGold21, Converter={StaticResource MoneyFormatConverter}, ConverterParameter='g'}" Width="*" MinWidth="110" ElementStyle="{StaticResource GridCellTextStyle}" />

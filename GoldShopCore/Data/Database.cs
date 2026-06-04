@@ -1,15 +1,29 @@
+using GoldShopCore.Services;
 using Microsoft.Data.Sqlite;
 
 namespace GoldShopCore.Data;
 
 public static class Database
 {
-    private const int CurrentSchemaVersion = 9;
+    public const int CurrentSchemaVersion = 10;
+    public const int MinimumSupportedSchemaVersion = 0;
     private static string? _dbFilePathOverride;
+    private static readonly MigrationStep[] MigrationSteps =
+    [
+        new(2, MigrateToVersion2),
+        new(3, MigrateToVersion3),
+        new(4, MigrateToVersion4),
+        new(5, MigrateToVersion5),
+        new(6, MigrateToVersion6),
+        new(7, MigrateToVersion7),
+        new(8, MigrateToVersion8),
+        new(9, MigrateToVersion9),
+        new(10, MigrateToVersion10)
+    ];
 
     public static string DbFilePath => _dbFilePathOverride ?? Path.Combine(AppStoragePaths.DataDirectory, "goldshop.db");
 
-    public static string ConnectionString => $"Data Source={DbFilePath};Pooling=True;Mode=ReadWriteCreate;Cache=Shared";
+    public static string ConnectionString => BuildConnectionString(DbFilePath, SqliteOpenMode.ReadWriteCreate, pooling: true);
 
     public static void SetDbFilePathOverride(string? dbFilePath)
     {
@@ -18,81 +32,54 @@ public static class Database
             : Path.GetFullPath(dbFilePath);
     }
 
-    public static void Initialize()
+    public static DatabaseInitializationResult Initialize()
     {
         AppStoragePaths.EnsureDirectories();
         Directory.CreateDirectory(Path.GetDirectoryName(DbFilePath)!);
+        var databaseAlreadyExisted = File.Exists(DbFilePath);
 
         using var connection = OpenConnection();
         EnsureMetadataTable(connection);
 
-        var version = GetSchemaVersion(connection);
-        if (version > CurrentSchemaVersion)
+        var startingVersion = GetSchemaVersion(connection);
+        if (startingVersion > CurrentSchemaVersion)
         {
-            throw new InvalidOperationException($"Database schema version {version} is newer than this application supports ({CurrentSchemaVersion}).");
+            throw new DatabaseCompatibilityException(
+                $"Database schema version {startingVersion} is newer than this application supports ({CurrentSchemaVersion}).",
+                startingVersion,
+                CurrentSchemaVersion);
         }
+
+        if (startingVersion < MinimumSupportedSchemaVersion)
+        {
+            throw new DatabaseCompatibilityException(
+                $"Database schema version {startingVersion} is older than the minimum supported version ({MinimumSupportedSchemaVersion}).",
+                startingVersion,
+                CurrentSchemaVersion);
+        }
+
+        var version = startingVersion;
+        var appliedMigrations = new List<int>();
 
         if (version < 1)
         {
             CreateCoreTables(connection);
             SetSchemaVersion(connection, 1);
             version = 1;
+            appliedMigrations.Add(1);
         }
 
-        if (version < 2)
+        foreach (var step in MigrationSteps)
         {
-            MigrateToVersion2(connection);
-            SetSchemaVersion(connection, 2);
-            version = 2;
-        }
+            if (version >= step.TargetVersion)
+            {
+                continue;
+            }
 
-        if (version < 3)
-        {
-            MigrateToVersion3(connection);
-            SetSchemaVersion(connection, 3);
-            version = 3;
-        }
-
-        if (version < 4)
-        {
-            MigrateToVersion4(connection);
-            SetSchemaVersion(connection, 4);
-            version = 4;
-        }
-
-        if (version < 5)
-        {
-            MigrateToVersion5(connection);
-            SetSchemaVersion(connection, 5);
-            version = 5;
-        }
-
-        if (version < 6)
-        {
-            MigrateToVersion6(connection);
-            SetSchemaVersion(connection, 6);
-            version = 6;
-        }
-
-        if (version < 7)
-        {
-            MigrateToVersion7(connection);
-            SetSchemaVersion(connection, 7);
-            version = 7;
-        }
-
-        if (version < 8)
-        {
-            MigrateToVersion8(connection);
-            SetSchemaVersion(connection, 8);
-            version = 8;
-        }
-
-        if (version < 9)
-        {
-            MigrateToVersion9(connection);
-            SetSchemaVersion(connection, 9);
-            version = 9;
+            step.Apply(connection);
+            SetSchemaVersion(connection, step.TargetVersion);
+            version = step.TargetVersion;
+            appliedMigrations.Add(step.TargetVersion);
         }
 
         if (version < CurrentSchemaVersion)
@@ -103,6 +90,28 @@ public static class Database
         EnsureCriticalSchema(connection);
         EnsureIndexes(connection);
         EnsureTriggers(connection);
+
+        var firstRunInitializationUsed = !databaseAlreadyExisted || startingVersion < 1;
+        var migrationOrUpgradePathUsed = databaseAlreadyExisted && appliedMigrations.Count > 0;
+        var result = new DatabaseInitializationResult(
+            DbFilePath,
+            databaseAlreadyExisted,
+            startingVersion,
+            version,
+            firstRunInitializationUsed,
+            migrationOrUpgradePathUsed,
+            appliedMigrations);
+        FileLogService.LogInfo(
+            "Database initialization",
+            $"DatabasePath: {DbFilePath}{Environment.NewLine}" +
+            $"DatabaseAlreadyExisted: {databaseAlreadyExisted}{Environment.NewLine}" +
+            $"StartingSchemaVersion: {startingVersion}{Environment.NewLine}" +
+            $"CurrentSchemaVersion: {version}{Environment.NewLine}" +
+            $"FirstRunInitializationUsed: {firstRunInitializationUsed}{Environment.NewLine}" +
+            $"MigrationOrUpgradePathUsed: {migrationOrUpgradePathUsed}{Environment.NewLine}" +
+            $"AppliedMigrations: {(appliedMigrations.Count == 0 ? "(none)" : string.Join(", ", appliedMigrations))}");
+
+        return result;
     }
 
     public static SqliteConnection OpenConnection()
@@ -124,13 +133,115 @@ PRAGMA temp_store = MEMORY;";
         return connection;
     }
 
-    public static void FlushAndReleaseFileHandles()
+    public static DatabaseInspectionResult InspectDatabaseFile(string dbFilePath, bool requireCoreTables)
+    {
+        var fullPath = Path.GetFullPath(dbFilePath);
+        if (!File.Exists(fullPath))
+        {
+            return new DatabaseInspectionResult(fullPath, false, 0, false, false, 0, 0, 0, 0, 0, 0, 0);
+        }
+
+        using var connection = OpenReadOnlyConnection(fullPath);
+        var integrityOk = string.Equals(ExecuteScalarAsString(connection, "PRAGMA integrity_check(1);"), "ok", StringComparison.OrdinalIgnoreCase);
+        var hasCoreTables = HasCoreTables(connection);
+        var schemaVersion = TableExists(connection, "AppMetadata")
+            ? GetSchemaVersion(connection)
+            : 0;
+
+        var result = new DatabaseInspectionResult(
+            fullPath,
+            true,
+            schemaVersion,
+            integrityOk,
+            !requireCoreTables || hasCoreTables,
+            new FileInfo(fullPath).Length,
+            CountIfTableExists(connection, "Suppliers"),
+            CountIfTableExists(connection, "SupplierTransactions"),
+            CountIfTableExists(connection, "Discounts"),
+            CountIfTableExists(connection, "ClientNotes"),
+            CountIfTableExists(connection, "PricingSettings"),
+            CountIfTableExists(connection, "OpeningBalanceAdjustments"));
+
+        return result;
+    }
+
+    public static void ValidateDatabaseFileOrThrow(string dbFilePath, bool requireCoreTables)
     {
         try
         {
-            if (File.Exists(DbFilePath))
+            var inspection = InspectDatabaseFile(dbFilePath, requireCoreTables);
+            if (!inspection.Exists || !inspection.IntegrityOk || !inspection.HasCoreTables)
             {
-                using var connection = OpenConnection();
+                throw new InvalidDataException("The selected backup file is invalid or incomplete.");
+            }
+        }
+        catch (InvalidDataException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidDataException("The selected backup file is invalid or incomplete.", ex);
+        }
+    }
+
+    public static void CreateConsistentBackup(string sourceDbPath, string destinationPath)
+    {
+        var sourcePath = Path.GetFullPath(sourceDbPath);
+        var targetPath = Path.GetFullPath(destinationPath);
+
+        Directory.CreateDirectory(Path.GetDirectoryName(targetPath)!);
+        FlushAndReleaseFileHandles(sourcePath);
+
+        using (var source = OpenReadOnlyConnection(sourcePath))
+        using (var destination = OpenWritableConnection(targetPath))
+        {
+            source.BackupDatabase(destination);
+        }
+
+        ValidateDatabaseFileOrThrow(targetPath, requireCoreTables: true);
+    }
+
+    public static void RestoreFromBackup(string sourcePath, string destinationPath)
+    {
+        var normalizedSourcePath = Path.GetFullPath(sourcePath);
+        var normalizedDestinationPath = Path.GetFullPath(destinationPath);
+        var stagingPath = normalizedDestinationPath + ".restore";
+
+        ValidateDatabaseFileOrThrow(normalizedSourcePath, requireCoreTables: true);
+        FlushAndReleaseFileHandles(normalizedDestinationPath);
+
+        try
+        {
+            DeleteFileIfExists(stagingPath);
+
+            using (var source = OpenReadOnlyConnection(normalizedSourcePath))
+            using (var destination = OpenWritableConnection(stagingPath))
+            {
+                source.BackupDatabase(destination);
+            }
+
+            ValidateDatabaseFileOrThrow(stagingPath, requireCoreTables: true);
+
+            Directory.CreateDirectory(Path.GetDirectoryName(normalizedDestinationPath)!);
+            File.Copy(stagingPath, normalizedDestinationPath, true);
+        }
+        finally
+        {
+            FlushAndReleaseFileHandles(normalizedDestinationPath);
+            DeleteFileIfExists(stagingPath);
+        }
+    }
+
+    public static void FlushAndReleaseFileHandles(string? dbFilePath = null)
+    {
+        var targetPath = Path.GetFullPath(dbFilePath ?? DbFilePath);
+
+        try
+        {
+            if (File.Exists(targetPath))
+            {
+                using var connection = OpenReadWriteConnection(targetPath);
                 using var command = connection.CreateCommand();
                 command.CommandText = "PRAGMA wal_checkpoint(TRUNCATE);";
                 command.ExecuteNonQuery();
@@ -142,8 +253,8 @@ PRAGMA temp_store = MEMORY;";
         }
 
         SqliteConnection.ClearAllPools();
-        DeleteSidecarFile($"{DbFilePath}-wal");
-        DeleteSidecarFile($"{DbFilePath}-shm");
+        DeleteSidecarFile($"{targetPath}-wal");
+        DeleteSidecarFile($"{targetPath}-shm");
     }
 
     private static void EnsureMetadataTable(SqliteConnection connection)
@@ -187,7 +298,9 @@ CREATE TABLE IF NOT EXISTS Suppliers (
     WorkerName TEXT,
     WorkerPhone TEXT,
     Notes TEXT,
-    CreatedAt TEXT NOT NULL
+    CreatedAt TEXT NOT NULL,
+    IsDeleted INTEGER NOT NULL DEFAULT 0,
+    DeletedAt TEXT
 );
 
 CREATE TABLE IF NOT EXISTS ClientNotes (
@@ -468,6 +581,14 @@ WHERE IdempotencyKey IS NOT NULL;";
         transaction.Commit();
     }
 
+    private static void MigrateToVersion10(SqliteConnection connection)
+    {
+        using var transaction = connection.BeginTransaction();
+        EnsureColumn(connection, transaction, "Suppliers", "IsDeleted", "INTEGER NOT NULL DEFAULT 0");
+        EnsureColumn(connection, transaction, "Suppliers", "DeletedAt", "TEXT");
+        transaction.Commit();
+    }
+
     private static void CreateVersion2Tables(SqliteConnection connection)
     {
         using var command = connection.CreateCommand();
@@ -685,6 +806,11 @@ END;";
 
         using var transaction = connection.BeginTransaction();
         EnsureColumn(connection, transaction, "SupplierTransactions", "IdempotencyKey", "TEXT");
+        if (TableExists(connection, "Suppliers"))
+        {
+            EnsureColumn(connection, transaction, "Suppliers", "IsDeleted", "INTEGER NOT NULL DEFAULT 0");
+            EnsureColumn(connection, transaction, "Suppliers", "DeletedAt", "TEXT");
+        }
         transaction.Commit();
     }
 
@@ -732,4 +858,104 @@ END;";
             File.Delete(path);
         }
     }
+
+    private static SqliteConnection OpenReadOnlyConnection(string dbFilePath)
+    {
+        var connection = new SqliteConnection(BuildConnectionString(dbFilePath, SqliteOpenMode.ReadOnly, pooling: false));
+        connection.Open();
+
+        using var pragma = connection.CreateCommand();
+        pragma.CommandText = @"
+PRAGMA foreign_keys = ON;
+PRAGMA query_only = ON;
+PRAGMA busy_timeout = 5000;";
+        pragma.ExecuteNonQuery();
+
+        return connection;
+    }
+
+    private static SqliteConnection OpenWritableConnection(string dbFilePath)
+    {
+        var connection = new SqliteConnection(BuildConnectionString(dbFilePath, SqliteOpenMode.ReadWriteCreate, pooling: false));
+        connection.Open();
+
+        using var pragma = connection.CreateCommand();
+        pragma.CommandText = @"
+PRAGMA foreign_keys = ON;
+PRAGMA busy_timeout = 5000;";
+        pragma.ExecuteNonQuery();
+
+        return connection;
+    }
+
+    private static SqliteConnection OpenReadWriteConnection(string dbFilePath)
+    {
+        var connection = new SqliteConnection(BuildConnectionString(dbFilePath, SqliteOpenMode.ReadWriteCreate, pooling: false));
+        connection.Open();
+
+        using var pragma = connection.CreateCommand();
+        pragma.CommandText = @"
+PRAGMA foreign_keys = ON;
+PRAGMA journal_mode = WAL;
+PRAGMA synchronous = NORMAL;
+PRAGMA busy_timeout = 5000;";
+        pragma.ExecuteNonQuery();
+
+        return connection;
+    }
+
+    private static string BuildConnectionString(string dbFilePath, SqliteOpenMode mode, bool pooling)
+    {
+        var builder = new SqliteConnectionStringBuilder
+        {
+            DataSource = Path.GetFullPath(dbFilePath),
+            Mode = mode,
+            Cache = SqliteCacheMode.Shared,
+            Pooling = pooling
+        };
+
+        return builder.ToString();
+    }
+
+    private static string? ExecuteScalarAsString(SqliteConnection connection, string sql)
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = sql;
+        return command.ExecuteScalar()?.ToString();
+    }
+
+    private static bool HasCoreTables(SqliteConnection connection)
+    {
+        foreach (var tableName in new[] { "Suppliers", "SupplierTransactions", "Discounts", "PricingSettings", "AuditLogs" })
+        {
+            if (!TableExists(connection, tableName))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static int CountIfTableExists(SqliteConnection connection, string tableName)
+    {
+        if (!TableExists(connection, tableName))
+        {
+            return 0;
+        }
+
+        using var command = connection.CreateCommand();
+        command.CommandText = $"SELECT COUNT(*) FROM {tableName};";
+        return Convert.ToInt32(command.ExecuteScalar() ?? 0);
+    }
+
+    private static void DeleteFileIfExists(string path)
+    {
+        if (File.Exists(path))
+        {
+            File.Delete(path);
+        }
+    }
+
+    private sealed record MigrationStep(int TargetVersion, Action<SqliteConnection> Apply);
 }

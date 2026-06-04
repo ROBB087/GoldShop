@@ -116,6 +116,15 @@ public class TransactionService
 
         try
         {
+            var beforeInspection = Database.InspectDatabaseFile(Database.DbFilePath, requireCoreTables: false);
+            FileLogService.LogInfo(
+                "Transaction save",
+                $"Action: AddTransaction{Environment.NewLine}" +
+                $"RuntimeDatabasePath: {Database.DbFilePath}{Environment.NewLine}" +
+                $"SupplierId: {supplierId}{Environment.NewLine}" +
+                $"Category: {category}{Environment.NewLine}" +
+                $"TransactionsBeforeSave: {beforeInspection.TransactionCount}");
+
             using var connection = Database.OpenConnection();
             using var sqliteTransaction = connection.BeginTransaction(IsolationLevel.Serializable);
 
@@ -133,6 +142,13 @@ public class TransactionService
                 _cacheService.SetTraderSummary(summarySnapshot);
 
                 transaction.Id = id;
+                var afterInspection = Database.InspectDatabaseFile(Database.DbFilePath, requireCoreTables: false);
+                FileLogService.LogInfo(
+                    "Transaction save",
+                    $"Action: AddTransactionCommitted{Environment.NewLine}" +
+                    $"RuntimeDatabasePath: {Database.DbFilePath}{Environment.NewLine}" +
+                    $"TransactionId: {id}{Environment.NewLine}" +
+                    $"TransactionsAfterSave: {afterInspection.TransactionCount}");
                 _auditService.Log("SupplierTransaction", id, "Create", null, transaction);
                 return id;
             }

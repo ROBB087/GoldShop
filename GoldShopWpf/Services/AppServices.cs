@@ -18,7 +18,7 @@ public static class AppServices
 
     public static void Initialize()
     {
-        Database.Initialize();
+        var databaseInitialization = Database.Initialize();
 
         var supplierRepository = new SupplierRepository();
         var transactionRepository = new TransactionRepository();
@@ -32,7 +32,7 @@ public static class AppServices
 
         AuditService = new AuditService(auditLogRepository);
 
-        SupplierService = new SupplierService(supplierRepository, transactionRepository, traderSummaryRepository, AuditService, CacheService);
+        SupplierService = new SupplierService(supplierRepository, transactionRepository, discountRepository, openingBalanceAdjustmentRepository, traderSummaryRepository, AuditService, CacheService);
         TransactionService = new TransactionService(transactionRepository, discountRepository, traderSummaryRepository, AuditService, CacheService);
         DiscountService = new DiscountService(discountRepository, traderSummaryRepository, AuditService, CacheService);
         OpeningBalanceAdjustmentService = new OpeningBalanceAdjustmentService(openingBalanceAdjustmentRepository, traderSummaryRepository, AuditService, CacheService);
@@ -50,6 +50,17 @@ public static class AppServices
         });
         CacheService.PreloadTraderSummaries(traderSummaryRepository.GetAll());
         BackupService.EnsureAutomaticBackup();
+
+        FileLogService.LogInfo(
+            "Application services",
+            $"ExecutablePath: {AppRuntimePolicy.CurrentExecutablePath}{Environment.NewLine}" +
+            $"InstallPath: {AppRuntimePolicy.OfficialInstallDirectory}{Environment.NewLine}" +
+            $"RuntimeDataPath: {GoldShopCore.AppStoragePaths.RootDirectory}{Environment.NewLine}" +
+            $"DatabasePath: {databaseInitialization.DatabasePath}{Environment.NewLine}" +
+            $"DatabaseAlreadyExisted: {databaseInitialization.DatabaseAlreadyExisted}{Environment.NewLine}" +
+            $"FirstRunInitializationUsed: {databaseInitialization.FirstRunInitializationUsed}{Environment.NewLine}" +
+            $"MigrationOrUpgradePathUsed: {databaseInitialization.MigrationOrUpgradePathUsed}{Environment.NewLine}" +
+            $"SchemaVersion: {databaseInitialization.CurrentSchemaVersion}");
     }
 
     public static void RestoreDatabase(string sourcePath)

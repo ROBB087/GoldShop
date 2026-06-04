@@ -17,6 +17,11 @@
     <Content Include="Resources\\appicon.ico" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Remove="**\\*.db;**\\*.db-wal;**\\*.db-shm;**\\*.db-journal;**\\*.sqlite;**\\*.sqlite3;**\\*.bak;**\\*.backup" />
+    <None Remove="**\\*.db;**\\*.db-wal;**\\*.db-shm;**\\*.db-journal;**\\*.sqlite;**\\*.sqlite3;**\\*.bak;**\\*.backup" />
+  </ItemGroup>
+
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
@@ -24,6 +29,10 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
+    <AssemblyName>GoldShop</AssemblyName>
+    <RootNamespace>GoldShopWpf</RootNamespace>
+    <AssemblyTitle>GoldShop</AssemblyTitle>
+    <Description>GoldShop desktop application</Description>
     <ApplicationIcon>Resources\appicon.ico</ApplicationIcon>
     <RollForward>LatestMajor</RollForward>
   </PropertyGroup>

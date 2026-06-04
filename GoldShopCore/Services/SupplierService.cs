@@ -7,6 +7,8 @@ public class SupplierService
 {
     private readonly SupplierRepository _supplierRepository;
     private readonly TransactionRepository _transactionRepository;
+    private readonly DiscountRepository _discountRepository;
+    private readonly OpeningBalanceAdjustmentRepository _openingBalanceAdjustmentRepository;
     private readonly TraderSummaryRepository _traderSummaryRepository;
     private readonly AuditService _auditService;
     private readonly CacheService _cacheService;
@@ -14,12 +16,16 @@ public class SupplierService
     public SupplierService(
         SupplierRepository supplierRepository,
         TransactionRepository transactionRepository,
+        DiscountRepository discountRepository,
+        OpeningBalanceAdjustmentRepository openingBalanceAdjustmentRepository,
         TraderSummaryRepository traderSummaryRepository,
         AuditService auditService,
         CacheService cacheService)
     {
         _supplierRepository = supplierRepository;
         _transactionRepository = transactionRepository;
+        _discountRepository = discountRepository;
+        _openingBalanceAdjustmentRepository = openingBalanceAdjustmentRepository;
         _traderSummaryRepository = traderSummaryRepository;
         _auditService = auditService;
         _cacheService = cacheService;
@@ -95,7 +101,18 @@ public class SupplierService
             return;
         }
 
-        _supplierRepository.Delete(id);
+        var deletedAt = DateTime.Now;
+        using var connection = Database.OpenConnection();
+        using var transaction = connection.BeginTransaction();
+        _transactionRepository.SoftDeleteBySupplier(connection, transaction, id, deletedAt);
+        _discountRepository.SoftDeleteBySupplier(connection, transaction, id, deletedAt);
+        _openingBalanceAdjustmentRepository.SoftDeleteBySupplier(connection, transaction, id, deletedAt);
+        _traderSummaryRepository.DeleteTrader(connection, transaction, id);
+        _supplierRepository.SoftDelete(connection, transaction, id, deletedAt);
+        transaction.Commit();
+
+        supplier.IsDeleted = true;
+        supplier.DeletedAt = deletedAt;
         _cacheService.RemoveSupplier(id);
         _cacheService.RemoveTraderSummary(id);
         _auditService.Log("Supplier", id, "Delete", supplier, null);

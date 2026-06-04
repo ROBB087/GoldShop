@@ -1,28 +1,22 @@
 $ErrorActionPreference = "Stop"
 
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
-$solution = Join-Path $root "GoldShop.sln"
 $project = Join-Path $root "GoldShopWpf\GoldShopWpf.csproj"
 $publishRoot = Join-Path $root "publish"
 $clientDir = Join-Path $publishRoot "client\GoldShop"
 $installerRoot = Join-Path $publishRoot "installer"
-$installerBuildDir = Join-Path $installerRoot "build"
-$installerPath = Join-Path $installerRoot "GoldShop-Setup.exe"
-$installerArchivePath = Join-Path $installerBuildDir "app.zip"
+$installerScript = Join-Path $root "installer\GoldShop.iss"
 $readmeSource = Join-Path $root "CLIENT-DELIVERY.txt"
-$installScriptSource = Join-Path $root "installer\install.cmd"
 $versionProps = Join-Path $root "Directory.Build.props"
-$projectsToClean = @(
-    (Join-Path $root "GoldShopCore\GoldShopCore.csproj"),
-    (Join-Path $root "GoldShopWpf\GoldShopWpf.csproj"),
-    (Join-Path $root "GoldShopStressTool\GoldShopStressTool.csproj"),
-    (Join-Path $root "GoldShopLicenseTool\GoldShopLicenseTool.csproj")
-)
-$projectsToBuild = @(
-    (Join-Path $root "GoldShopCore\GoldShopCore.csproj"),
-    (Join-Path $root "GoldShopStressTool\GoldShopStressTool.csproj"),
-    (Join-Path $root "GoldShopLicenseTool\GoldShopLicenseTool.csproj"),
-    (Join-Path $root "GoldShopWpf\GoldShopWpf.csproj")
+$setupIcon = Join-Path $root "GoldShopWpf\Resources\appicon.ico"
+$releaseBinDir = Join-Path $root "GoldShopWpf\bin\Release"
+$releaseObjDir = Join-Path $root "GoldShopWpf\obj\Release"
+$coreReleaseBinDir = Join-Path $root "GoldShopCore\bin\Release"
+$coreReleaseObjDir = Join-Path $root "GoldShopCore\obj\Release"
+$isccCandidates = @(
+    "C:\Program Files (x86)\Inno Setup 6\ISCC.exe",
+    "C:\Program Files\Inno Setup 6\ISCC.exe",
+    (Join-Path $env:LocalAppData "Programs\Inno Setup 6\ISCC.exe")
 )
 
 [Environment]::SetEnvironmentVariable("DOTNET_CLI_HOME", (Join-Path $root ".dotnet-cli"), "Process")
@@ -35,25 +29,38 @@ if ([string]::IsNullOrWhiteSpace($version)) {
     throw "Unable to read VersionPrefix from $versionProps."
 }
 
-Write-Host "Cleaning solution in Release mode..."
-foreach ($projectToClean in $projectsToClean) {
-    dotnet clean $projectToClean -c Release
-    if ($LASTEXITCODE -ne 0) { throw "dotnet clean failed for $projectToClean." }
+$iscc = $isccCandidates | Where-Object { Test-Path $_ } | Select-Object -First 1
+if ([string]::IsNullOrWhiteSpace($iscc)) {
+    throw "Inno Setup compiler (ISCC.exe) was not found. Install Inno Setup 6 first."
 }
 
-Write-Host "Building solution in Release mode..."
-foreach ($projectToBuild in $projectsToBuild) {
-    dotnet build $projectToBuild -c Release -p:Platform=x64 --no-restore
-    if ($LASTEXITCODE -ne 0) { throw "dotnet build failed for $projectToBuild." }
+if (Test-Path $publishRoot) {
+    Remove-Item -LiteralPath $publishRoot -Recurse -Force
 }
 
-if (Test-Path $clientDir) {
-    Remove-Item -LiteralPath $clientDir -Recurse -Force
+foreach ($path in @($releaseBinDir, $releaseObjDir, $coreReleaseBinDir, $coreReleaseObjDir)) {
+    if (Test-Path $path) {
+        Remove-Item -LiteralPath $path -Recurse -Force
+    }
 }
 
-Write-Host "Publishing client package..."
+New-Item -ItemType Directory -Path $clientDir -Force | Out-Null
+New-Item -ItemType Directory -Path $installerRoot -Force | Out-Null
+
+Write-Host "Restoring GoldShop dependencies..."
+dotnet restore $project -r win-x64 -p:Platform=x64
+if ($LASTEXITCODE -ne 0) { throw "dotnet restore failed." }
+
+Write-Host "Building GoldShop release build..."
+dotnet build $project -c Release -r win-x64 --self-contained true --nologo --no-restore -p:Platform=x64
+if ($LASTEXITCODE -ne 0) { throw "dotnet build failed." }
+
+Write-Host "Publishing GoldShop release build..."
 dotnet publish $project -c Release -r win-x64 --self-contained true `
+    --nologo `
     --no-restore `
+    --no-build `
+    -p:Platform=x64 `
     -p:PublishSingleFile=false `
     -p:PublishReadyToRun=false `
     -p:DebugType=None `
@@ -63,67 +70,51 @@ if ($LASTEXITCODE -ne 0) { throw "dotnet publish failed." }
 
 Copy-Item -LiteralPath $readmeSource -Destination (Join-Path $clientDir "README.txt") -Force
 
-if (Test-Path $installerBuildDir) {
-    Remove-Item -LiteralPath $installerBuildDir -Recurse -Force
+$forbiddenDataFiles = Get-ChildItem -Path $clientDir -Recurse -File | Where-Object {
+    $_.Name -match '\.db($|-)|\.db-wal$|\.db-shm$|\.db-journal$|\.sqlite$|\.sqlite3$|\.bak$|\.backup$'
+}
+if ($forbiddenDataFiles) {
+    $artifactList = ($forbiddenDataFiles | ForEach-Object FullName) -join [Environment]::NewLine
+    throw "Publish output contains forbidden database or backup artifacts, which is not allowed:`n$artifactList"
 }
 
-New-Item -ItemType Directory -Path $installerRoot -Force | Out-Null
-New-Item -ItemType Directory -Path $installerBuildDir -Force | Out-Null
-Compress-Archive -Path (Join-Path $clientDir "*") -DestinationPath $installerArchivePath -CompressionLevel Optimal
-Copy-Item -LiteralPath $installScriptSource -Destination (Join-Path $installerBuildDir "install.cmd") -Force
-
-$sedPath = Join-Path $installerBuildDir "GoldShopInstaller.sed"
-
-$sedLines = @(
-    "[Version]",
-    "Class=IEXPRESS",
-    "SEDVersion=3",
-    "",
-    "[Options]",
-    "PackagePurpose=InstallApp",
-    "ShowInstallProgramWindow=0",
-    "HideExtractAnimation=1",
-    "UseLongFileName=1",
-    "InsideCompressed=0",
-    "CAB_FixedSize=0",
-    "CAB_ResvCodeSigning=0",
-    "RebootMode=N",
-    "InstallPrompt=",
-    "DisplayLicense=",
-    "FinishMessage=GoldShop installation completed successfully.",
-    "TargetName=$installerPath",
-    "FriendlyName=GoldShop Setup $version",
-    "AppLaunched=install.cmd",
-    "PostInstallCmd=<None>",
-    "AdminQuietInstCmd=install.cmd",
-    "UserQuietInstCmd=install.cmd",
-    "SourceFiles=SourceFiles",
-    "",
-    "[Strings]",
-    "CompressionType=MSZIP",
-    "InstallPrompt=",
-    "FriendlyName=GoldShop Setup $version",
-    "FinishMessage=GoldShop installation completed successfully.",
-    "FILE0=""app.zip""",
-    "FILE1=""install.cmd""",
-    "",
-    "[SourceFiles]",
-    "SourceFiles0=$installerBuildDir",
-    "",
-    "[SourceFiles0]"
-)
-
-$sedLines += "%FILE0%="
-$sedLines += "%FILE1%="
-Set-Content -LiteralPath $sedPath -Value $sedLines -Encoding ASCII
-
-Write-Host "Building installer package..."
-& iexpress.exe /N $sedPath | Out-Null
-if ($LASTEXITCODE -ne 0 -or -not (Test-Path $installerPath)) {
-    throw "IExpress installer creation failed."
+$runtimeDataDirectories = @("Data", "Backups", "Logs", "Security") |
+    ForEach-Object { Join-Path $clientDir $_ } |
+    Where-Object { Test-Path $_ }
+if ($runtimeDataDirectories) {
+    $directoryList = $runtimeDataDirectories -join [Environment]::NewLine
+    throw "Publish output contains runtime data directories, which is not allowed:`n$directoryList"
 }
+
+$forbiddenPayloadFiles = Get-ChildItem -Path $clientDir -Recurse -File | Where-Object {
+    $_.Name -in @("GoldShop.runtimeconfig.dev.json", "GoldShopWpf.runtimeconfig.dev.json")
+}
+if ($forbiddenPayloadFiles) {
+    $fileList = ($forbiddenPayloadFiles | ForEach-Object FullName) -join [Environment]::NewLine
+    throw "Publish output contains development-only payload files, which is not allowed:`n$fileList"
+}
+
+$expectedExecutable = Join-Path $clientDir "GoldShop.exe"
+if (-not (Test-Path $expectedExecutable)) {
+    throw "Expected published executable was not found at $expectedExecutable."
+}
+
+$outputBaseFilename = "GoldShop-Setup-v$version"
+
+Write-Host "Building Inno Setup installer..."
+& $iscc `
+    "/DAppName=GoldShop" `
+    "/DAppPublisher=GoldShop" `
+    "/DAppVersion=$version" `
+    "/DSourceDir=$clientDir" `
+    "/DOutputDir=$installerRoot" `
+    "/DOutputBaseFilename=$outputBaseFilename" `
+    "/DAppExeName=GoldShop.exe" `
+    "/DSetupIconFile=$setupIcon" `
+    $installerScript
+if ($LASTEXITCODE -ne 0) { throw "Inno Setup compilation failed." }
 
 Write-Host ""
 Write-Host "Release build completed."
 Write-Host "Published client folder: $clientDir"
-Write-Host "Installer package: $installerPath"
+Write-Host "Installer package: $(Join-Path $installerRoot ($outputBaseFilename + '.exe'))"

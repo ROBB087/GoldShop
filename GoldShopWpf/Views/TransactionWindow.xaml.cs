@@ -10,11 +10,14 @@ namespace GoldShopWpf.Views;
 public partial class TransactionWindow : Window
 {
     private readonly bool _isReadOnly;
+    private readonly TransactionListItem? _sourceTransaction;
     private readonly decimal _defaultManufacturingPerGram;
     private readonly decimal _defaultManufacturingPerGram24;
     private readonly decimal _defaultImprovementPerGram;
     private bool _skipNextDefaultManufacturingApply;
+    private bool _skipNextDefaultImprovementApply;
     private bool _suspendDefaultManufacturingSync;
+    private string? _lastCategory;
     private sealed record CategoryOption(string Label, string Category);
     public event EventHandler? Cancelled;
 
@@ -66,7 +69,9 @@ public partial class TransactionWindow : Window
         InitializeComponent();
         DialogWindowLayout.Apply(this);
         _isReadOnly = isReadOnly;
+        _sourceTransaction = transaction;
         _skipNextDefaultManufacturingApply = transaction != null;
+        _skipNextDefaultImprovementApply = transaction != null;
         _defaultManufacturingPerGram = defaultManufacturingPerGram.GetValueOrDefault();
         _defaultManufacturingPerGram24 = defaultManufacturingPerGram24.GetValueOrDefault();
         _defaultImprovementPerGram = defaultImprovementPerGram.GetValueOrDefault();
@@ -115,6 +120,8 @@ public partial class TransactionWindow : Window
         var category = TransactionCategory;
         var isCashPayment = category == TransactionCategories.CashPayment;
         var isLegacyGoldReceipt = category == TransactionCategories.GoldReceipt;
+        var firstLoad = _lastCategory == null;
+        var preserveExistingCashPaymentValues = firstLoad && _sourceTransaction?.Category == TransactionCategories.CashPayment;
 
         WeightLabel.Visibility = isCashPayment ? Visibility.Collapsed : Visibility.Visible;
         WeightText.Visibility = isCashPayment ? Visibility.Collapsed : Visibility.Visible;
@@ -142,6 +149,12 @@ public partial class TransactionWindow : Window
             WeightText.Text = "0";
             ItemText.Text = string.Empty;
             KaratCombo.SelectedItem = 21;
+
+            if (!preserveExistingCashPaymentValues)
+            {
+                ManufacturingText.Text = string.Empty;
+                ImprovementText.Text = string.Empty;
+            }
         }
         else
         {
@@ -150,6 +163,7 @@ public partial class TransactionWindow : Window
         }
 
         UpdatePreview();
+        _lastCategory = category;
     }
 
     private void UpdatePreview()
@@ -217,12 +231,89 @@ public partial class TransactionWindow : Window
         try
         {
             TransactionService.Validate(TransactionCategory, OriginalWeight, OriginalKarat, ManufacturingPerGram, ImprovementPerGram);
+
+            if (!ConfirmCashPaymentIfNeeded())
+            {
+                return;
+            }
+
+            if (!ConfirmZeroChargesIfNeeded())
+            {
+                return;
+            }
+
             DialogResult = true;
         }
         catch (ArgumentException ex)
         {
             MessageBox.Show(this, UiText.LocalizeException(ex.Message), UiText.L("TitleValidation"), MessageBoxButton.OK, MessageBoxImage.Warning);
         }
+    }
+
+    private bool ConfirmZeroChargesIfNeeded()
+    {
+        var category = TransactionCategory;
+        if (!TransactionCategories.SupportsCharges(category) || category == TransactionCategories.CashPayment || category == TransactionCategories.GoldReceipt)
+        {
+            return true;
+        }
+
+        if (ManufacturingPerGram != 0m && ImprovementPerGram != 0m)
+        {
+            return true;
+        }
+
+        var message = ManufacturingPerGram == 0m && ImprovementPerGram == 0m
+            ? UiText.L("MsgZeroChargesBothConfirm")
+            : ManufacturingPerGram == 0m
+                ? UiText.L("MsgZeroManufacturingConfirm")
+                : UiText.L("MsgZeroImprovementConfirm");
+
+        var result = MessageBox.Show(
+            this,
+            message,
+            UiText.L("TitleConfirmCharges"),
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Question);
+
+        return result == MessageBoxResult.Yes;
+    }
+
+    private bool ConfirmCashPaymentIfNeeded()
+    {
+        if (TransactionCategory != TransactionCategories.CashPayment)
+        {
+            return true;
+        }
+
+        var manufacturingAmount = ManufacturingPerGram;
+        var improvementAmount = ImprovementPerGram;
+        string message;
+
+        if (manufacturingAmount > 0m && improvementAmount > 0m)
+        {
+            message = UiText.Format(
+                "MsgCashPaymentConfirmBoth",
+                FormatAmount(improvementAmount),
+                FormatAmount(manufacturingAmount));
+        }
+        else if (manufacturingAmount > 0m)
+        {
+            message = UiText.Format("MsgCashPaymentConfirmManufacturing", FormatAmount(manufacturingAmount));
+        }
+        else
+        {
+            message = UiText.Format("MsgCashPaymentConfirmImprovement", FormatAmount(improvementAmount));
+        }
+
+        var result = MessageBox.Show(
+            this,
+            message,
+            UiText.L("TitleConfirmSettlement"),
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Question);
+
+        return result == MessageBoxResult.Yes;
     }
 
     private bool TryValidateDecimal(System.Windows.Controls.TextBox textBox, bool allowHidden, string resourceKey)
@@ -293,7 +384,13 @@ public partial class TransactionWindow : Window
 
     private void ApplyDefaultImprovement()
     {
-        if (_skipNextDefaultManufacturingApply || _suspendDefaultManufacturingSync || _isReadOnly || !TransactionCategories.SupportsCharges(TransactionCategory) || TransactionCategory == TransactionCategories.CashPayment)
+        if (_skipNextDefaultImprovementApply)
+        {
+            _skipNextDefaultImprovementApply = false;
+            return;
+        }
+
+        if (_suspendDefaultManufacturingSync || _isReadOnly || !TransactionCategories.SupportsCharges(TransactionCategory) || TransactionCategory == TransactionCategories.CashPayment)
         {
             return;
         }
@@ -308,6 +405,9 @@ public partial class TransactionWindow : Window
 
     private static decimal ParseDecimal(string text)
         => decimal.TryParse(text, NumberStyles.Number, CultureInfo.CurrentCulture, out var value) ? value : 0m;
+
+    private static string FormatAmount(decimal amount)
+        => decimal.Abs(amount).ToString("0.####", CultureInfo.CurrentCulture);
 
     private static string GetManufacturingText(TransactionListItem? transaction, decimal defaultValue)
     {

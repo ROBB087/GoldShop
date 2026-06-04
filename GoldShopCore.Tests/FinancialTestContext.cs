@@ -27,7 +27,7 @@ internal sealed class FinancialTestContext : IDisposable
         AdjustmentRepository = new OpeningBalanceAdjustmentRepository();
         SupplierRepository = new SupplierRepository();
 
-        SupplierService = new SupplierService(SupplierRepository, TransactionRepository, TraderSummaryRepository, AuditService, Cache);
+        SupplierService = new SupplierService(SupplierRepository, TransactionRepository, DiscountRepository, AdjustmentRepository, TraderSummaryRepository, AuditService, Cache);
         TransactionService = new TransactionService(TransactionRepository, DiscountRepository, TraderSummaryRepository, AuditService, Cache);
         DiscountService = new DiscountService(DiscountRepository, TraderSummaryRepository, AuditService, Cache);
         OpeningBalanceAdjustmentService = new OpeningBalanceAdjustmentService(AdjustmentRepository, TraderSummaryRepository, AuditService, Cache);

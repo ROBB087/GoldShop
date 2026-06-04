@@ -137,6 +137,23 @@ WHERE Id = $id;";
         command.ExecuteNonQuery();
     }
 
+    public void SoftDeleteBySupplier(SqliteConnection connection, SqliteTransaction transaction, int supplierId, DateTime deletedAt)
+    {
+        using var command = connection.CreateCommand();
+        command.Transaction = transaction;
+        command.CommandText = @"
+UPDATE SupplierTransactions
+SET IsDeleted = 1,
+    DeletedAt = $deletedAt,
+    UpdatedAt = $updatedAt
+WHERE SupplierId = $supplierId
+  AND IsDeleted = 0;";
+        command.Parameters.AddWithValue("$supplierId", supplierId);
+        command.Parameters.AddWithValue("$deletedAt", deletedAt.ToString("yyyy-MM-dd HH:mm:ss"));
+        command.Parameters.AddWithValue("$updatedAt", deletedAt.ToString("yyyy-MM-dd HH:mm:ss"));
+        command.ExecuteNonQuery();
+    }
+
     public TraderSummary GetSummary(int supplierId, DateTime? from, DateTime? to)
     {
         if (!from.HasValue && !to.HasValue)

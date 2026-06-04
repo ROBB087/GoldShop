@@ -52,6 +52,47 @@
                                 <TextBlock Text="{DynamicResource LblTo}" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource MutedTextBrush}" Margin="0,0,0,6" />
                                 <DatePicker SelectedDate="{Binding ToDate}" Margin="0" />
                             </StackPanel>
+                            <Border MinWidth="250"
+                                    Margin="0,18,0,8"
+                                    Padding="14,12"
+                                    Background="#FFFAF4"
+                                    BorderBrush="#E7D6AE"
+                                    BorderThickness="1"
+                                    CornerRadius="18">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Orientation="Horizontal">
+                                        <CheckBox IsChecked="{Binding ShowNotesInTable}"
+                                                  VerticalAlignment="Center"
+                                                  Margin="0,0,10,0" />
+                                        <TextBlock Text="{DynamicResource LblShowNotesInReceiptTable}"
+                                                   VerticalAlignment="Center"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="#4F3A08" />
+                                    </StackPanel>
+                                    <Border Grid.Column="1"
+                                            Width="28"
+                                            Height="28"
+                                            Margin="12,0,0,0"
+                                            Background="#FFF3D8"
+                                            BorderBrush="#E7D6AE"
+                                            BorderThickness="1"
+                                            CornerRadius="14"
+                                            ToolTip="{DynamicResource TooltipShowNotesInReceiptTable}"
+                                            ToolTipService.InitialShowDelay="150"
+                                            ToolTipService.ShowDuration="60000">
+                                        <materialDesign:PackIcon Kind="InformationOutline"
+                                                                 Width="16"
+                                                                 Height="16"
+                                                                 HorizontalAlignment="Center"
+                                                                 VerticalAlignment="Center"
+                                                                 Foreground="#8A6C00" />
+                                    </Border>
+                                </Grid>
+                            </Border>
                         </WrapPanel>
                     </StackPanel>
 
@@ -73,7 +114,7 @@
             </Border>
 
             <Border Style="{StaticResource CardContainer}"
-                    MaxWidth="860"
+                    MaxWidth="1080"
                     HorizontalAlignment="Center"
                     BorderBrush="#E7ECF2"
                     Background="#FFFDFC">
@@ -130,15 +171,28 @@
                               AutoGenerateColumns="False"
                               CanUserAddRows="False"
                               IsReadOnly="True"
+                              HeadersVisibility="Column"
+                              GridLinesVisibility="Horizontal"
+                              CanUserResizeRows="False"
+                              EnableRowVirtualization="False"
+                              ScrollViewer.CanContentScroll="False"
+                              ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                              ScrollViewer.VerticalScrollBarVisibility="Disabled"
                               ColumnHeaderStyle="{StaticResource ReceiptGridHeaderStyle}"
                               Margin="0,0,0,18">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="{DynamicResource LblDate}" Binding="{Binding Date, StringFormat={}{0:yyyy/MM/dd}}" Width="1.15*" MinWidth="108" ElementStyle="{StaticResource GridCellTextStyle}" />
                             <DataGridTextColumn Header="{DynamicResource LblType}" Binding="{Binding Type}" Width="1.35*" MinWidth="118" ElementStyle="{StaticResource GridCellTextStyle}" />
-                            <DataGridTextColumn Header="{DynamicResource LblItem}" Binding="{Binding Item}" Width="1.45*" MinWidth="130" ElementStyle="{StaticResource GridCellTextStyle}" />
+                            <DataGridTextColumn Header="{DynamicResource LblItem}" Binding="{Binding Item}" Width="1.25*" MinWidth="120" ElementStyle="{StaticResource GridCellTextStyle}" />
                             <DataGridTextColumn Header="{DynamicResource LblEquivalent21}" Binding="{Binding Weight, StringFormat={}{0:0.####}}" Width="1.1*" MinWidth="118" ElementStyle="{StaticResource GridCellTextStyle}" />
                             <DataGridTextColumn Header="{DynamicResource LblTotalManufacturing}" Binding="{Binding Manufacturing, StringFormat={}{0:0.##}}" Width="1.2*" MinWidth="132" ElementStyle="{StaticResource GridCellTextStyle}" />
                             <DataGridTextColumn Header="{DynamicResource LblTotalImprovement}" Binding="{Binding Improvement, StringFormat={}{0:0.##}}" Width="1.2*" MinWidth="128" ElementStyle="{StaticResource GridCellTextStyle}" />
+                            <DataGridTextColumn x:Name="NotesColumn"
+                                                Header="{DynamicResource LblNotes}"
+                                                Binding="{Binding Notes}"
+                                                Width="1.8*"
+                                                MinWidth="220"
+                                                ElementStyle="{StaticResource GridCellTextStyle}" />
                         </DataGrid.Columns>
                     </DataGrid>
 
@@ -148,7 +202,7 @@
                             CornerRadius="20"
                             Padding="18">
                         <StackPanel>
-                            <TextBlock Text="{DynamicResource ReceiptSummary}" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,14" />
+                            <TextBlock Text="{Binding SummaryPeriodTitle}" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,12" />
 
                             <Grid Margin="0,0,0,10">
                                 <Grid.ColumnDefinitions>
@@ -184,6 +238,45 @@
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Text="{DynamicResource LblNetTotalReport}" Foreground="{StaticResource MutedTextBrush}" FontWeight="SemiBold" />
                                 <TextBlock Grid.Column="1" Text="{Binding NetTotalDisplay}" FontWeight="Bold" FontSize="18" />
+                            </Grid>
+
+                            <Separator Margin="0,16,0,14" />
+                            <TextBlock Text="{Binding OverallSummaryTitle}" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,12" />
+
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="{DynamicResource LblTotalGoldReport}" Foreground="{StaticResource MutedTextBrush}" />
+                                <TextBlock Grid.Column="1" Text="{Binding OverallTotalGoldDisplay}" FontWeight="SemiBold" />
+                            </Grid>
+
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="{DynamicResource LblTotalManufacturingReport}" Foreground="{StaticResource MutedTextBrush}" />
+                                <TextBlock Grid.Column="1" Text="{Binding OverallTotalManufacturingDisplay}" FontWeight="SemiBold" />
+                            </Grid>
+
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="{DynamicResource LblTotalImprovement}" Foreground="{StaticResource MutedTextBrush}" />
+                                <TextBlock Grid.Column="1" Text="{Binding OverallTotalImprovementDisplay}" FontWeight="SemiBold" />
+                            </Grid>
+
+                            <Grid Margin="0,10,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="{DynamicResource LblNetTotalReport}" Foreground="{StaticResource MutedTextBrush}" FontWeight="SemiBold" />
+                                <TextBlock Grid.Column="1" Text="{Binding OverallNetTotalDisplay}" FontWeight="Bold" FontSize="18" />
                             </Grid>
                         </StackPanel>
                     </Border>

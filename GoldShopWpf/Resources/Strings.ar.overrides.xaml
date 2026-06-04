@@ -2,6 +2,7 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:sys="clr-namespace:System;assembly=mscorlib">
   <sys:String x:Key="LblItem">الصنف</sys:String>
+  <sys:String x:Key="LblUnspecifiedItem">غير محدد</sys:String>
   <sys:String x:Key="LblSelectAllRecords">تحديد كل السجلات الظاهرة</sys:String>
   <sys:String x:Key="LblSelectedCount">المحدد: {0}</sys:String>
   <sys:String x:Key="BtnExportImage">تصدير كصورة</sys:String>
@@ -30,6 +31,10 @@
   <sys:String x:Key="LblGoldReceiptReport">استلام ذهب كسر</sys:String>
   <sys:String x:Key="LblFinishedGoldReceiptReport">استلام مشغولات</sys:String>
   <sys:String x:Key="LblCashPaymentReport">استلام نقدية</sys:String>
+  <sys:String x:Key="MsgWeightPositive">الوزن يجب أن يكون أكبر من صفر.</sys:String>
+  <sys:String x:Key="MsgZeroManufacturingConfirm">المصنعية مسجلة بصفر في هذه الحركة. هل تريد المتابعة؟</sys:String>
+  <sys:String x:Key="MsgZeroImprovementConfirm">التحسين مسجل بصفر في هذه الحركة. هل تريد المتابعة؟</sys:String>
+  <sys:String x:Key="MsgZeroChargesBothConfirm">المصنعية والتحسين مسجلان بصفر في هذه الحركة. هل تريد المتابعة؟</sys:String>
   <sys:String x:Key="LblTraderDetailsSub">ملخص فوري مع صفحات للحركات والخصومات للتاجر المحدد.</sys:String>
   <sys:String x:Key="LblTransactionsTab">الحركات</sys:String>
   <sys:String x:Key="LblDiscountsTab">الخصومات</sys:String>
@@ -58,6 +63,8 @@
   <sys:String x:Key="MsgLoadingTraderDetails">جاري تحميل تفاصيل التاجر...</sys:String>
   <sys:String x:Key="MsgSavingTransaction">جاري حفظ الحركة...</sys:String>
   <sys:String x:Key="MsgTransactionSaved">تم حفظ الحركة بنجاح.</sys:String>
+  <sys:String x:Key="MsgManufacturingAdjustmentSaved">تم حفظ اضافة المصنعيه بنجاح</sys:String>
+  <sys:String x:Key="MsgImprovementAdjustmentSaved">تم حفظ اضافة التحسين بنجاح</sys:String>
   <sys:String x:Key="MsgDiscountSaved">تم حفظ الخصم بنجاح.</sys:String>
   <sys:String x:Key="MsgSupplierSaved">تم حفظ بيانات التاجر بنجاح.</sys:String>
   <sys:String x:Key="MsgSupplierDeleted">تم حذف التاجر بنجاح.</sys:String>
@@ -91,4 +98,22 @@
   <sys:String x:Key="MsgWhatsAppMissingPhone">لا يوجد رقم هاتف صالح للمشاركة عبر WhatsApp لهذا التاجر.</sys:String>
   <sys:String x:Key="MsgWhatsAppOpenFailed">تعذر فتح WhatsApp بشكل مباشر. تم تحديد الملف المصدّر للمشاركة يدويًا.</sys:String>
   <sys:String x:Key="MsgWhatsAppReadyToPaste">تم فتح محادثة WhatsApp. ملف الكشف جاهز للإلصاق (Ctrl+V) للإرفاق.</sys:String>
+  <sys:String x:Key="MsgAppAlreadyRunning">GoldShop مفتوح بالفعل. استخدم النافذة المفتوحة.</sys:String>
+  <sys:String x:Key="MsgStartupValidationFailed">تعذر بدء التطبيق بشكل آمن.</sys:String>
+  <sys:String x:Key="MsgUnofficialAppCopy">هذه النسخة ليست النسخة المثبتة الرسمية. يرجى تشغيل أحدث نسخة من: {0}</sys:String>
+  <sys:String x:Key="MsgOutdatedAppVersion">هذه النسخة قديمة ولا يمكنها فتح قاعدة البيانات الحالية. إصدار القاعدة: {0}. المدعوم: {1}. يرجى تشغيل أحدث نسخة مثبتة.</sys:String>
+  <sys:String x:Key="MsgInvalidBackupFile">ملف النسخة الاحتياطية المحدد غير صالح أو غير مكتمل.</sys:String>
+  <sys:String x:Key="MsgRestoreCouldNotContinue">لم يمكن متابعة استعادة قاعدة البيانات بأمان.</sys:String>
+  <sys:String x:Key="LblShowNotesInReceiptTable">إظهار الملاحظات في الجدول</sys:String>
+  <sys:String x:Key="TooltipShowNotesInReceiptTable">فعّل هذا الخيار لإظهار ملاحظات الحركات داخل جدول الكشف حتى تظهر للعميل بوضوح.</sys:String>
+  <sys:String x:Key="LblNoNotesValue">لا يوجد ملاحظات</sys:String>
+  <sys:String x:Key="TitleConfirmCharges">تأكيد الرسوم</sys:String>
+  <sys:String x:Key="TitleConfirmSettlement">تأكيد السداد</sys:String>
+  <sys:String x:Key="TitleConfirmDiscount">تأكيد الخصم</sys:String>
+  <sys:String x:Key="MsgZeroChargesConfirm">المصنعية أو التحسين مسجلة بقيمة 0 في هذه الحركة. هل أنت متأكد من المتابعة؟</sys:String>
+  <sys:String x:Key="MsgCashPaymentConfirmBoth">هل أنت متأكد من سداد {0} للتحسين و{1} للمصنعية؟</sys:String>
+  <sys:String x:Key="MsgCashPaymentConfirmManufacturing">هل أنت متأكد من سداد {0} للمصنعية؟</sys:String>
+  <sys:String x:Key="MsgCashPaymentConfirmImprovement">هل أنت متأكد من سداد {0} للتحسين؟</sys:String>
+  <sys:String x:Key="MsgDiscountConfirmManufacturing">هل أنت متأكد من تسجيل خصم {0} من المصنعية؟</sys:String>
+  <sys:String x:Key="MsgDiscountConfirmImprovement">هل أنت متأكد من تسجيل خصم {0} من التحسين؟</sys:String>
 </ResourceDictionary>

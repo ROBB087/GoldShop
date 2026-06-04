@@ -8,6 +8,11 @@ namespace GoldShopWpf.ViewModels;
 
 public class DashboardViewModel : ViewModelBase
 {
+    private static readonly Brush OutTransactionBrush = CreateFrozenBrush(212, 175, 55);
+    private static readonly Brush InTransactionBrush = CreateFrozenBrush(46, 125, 50);
+    private static readonly Brush AdjustmentBrush = CreateFrozenBrush(36, 87, 197);
+    private static readonly Brush DiscountBrush = CreateFrozenBrush(194, 65, 12);
+
     private decimal _totalGold21;
     private int _supplierCount;
     private decimal _totalManufacturing;
@@ -141,6 +146,7 @@ public class DashboardViewModel : ViewModelBase
         RefreshCommand = new RelayCommand(_ => Load());
         AddSupplierCommand = new RelayCommand(_ => OpenQuickAddSupplier?.Invoke());
         AddTransactionCommand = new RelayCommand(_ => OpenQuickAddTransaction?.Invoke());
+        FinancialDataChangeNotifier.DataChanged += HandleFinancialDataChanged;
         Load();
     }
 
@@ -226,27 +232,31 @@ public class DashboardViewModel : ViewModelBase
         var isArabic = LocalizationService.CurrentLanguage == "ar";
         var traderNames = suppliers.ToDictionary(item => item.Id, item => item.Name);
         var recentTransactions = transactionService.GetTransactionsPage(null, null, null, 1, 10).Items;
+        var recentAdjustments = AppServices.OpeningBalanceAdjustmentService.GetAdjustments(null, null);
+        var recentDiscounts = AppServices.DiscountService.GetDiscounts(null, null);
+        var recentItems = new List<(DateTime SortDate, int SortId, DashboardRecentTransactionItem Item)>();
 
         RecentTransactions.Clear();
+
         foreach (var transaction in recentTransactions)
         {
             var isCashPayment = transaction.Category == TransactionCategories.CashPayment;
             var metricDisplay = isCashPayment
-                ? isArabic
-                    ? $"{Math.Abs(transaction.TotalManufacturing + transaction.TotalImprovement):0.##} ج.م"
-                    : $"{Math.Abs(transaction.TotalManufacturing + transaction.TotalImprovement):0.##} EGP"
+                ? FormatCurrency(Math.Abs(transaction.TotalManufacturing + transaction.TotalImprovement), isArabic)
                 : $"{transaction.Equivalent21:0.####} g";
 
             var detailsLine = isCashPayment
                 ? isArabic ? "سداد مصنعية وتحسين" : "Manufacturing and refining settlement"
                 : $"{transaction.OriginalWeight:0.####} g • {transaction.OriginalKarat}K";
 
-            RecentTransactions.Add(new DashboardRecentTransactionItem
+            recentItems.Add((transaction.Date, transaction.Id, new DashboardRecentTransactionItem
             {
                 TraderName = traderNames.TryGetValue(transaction.SupplierId, out var traderName)
                     ? traderName
                     : isArabic ? "تاجر غير معروف" : "Unknown trader",
                 Category = transaction.Category,
+                CategoryLabel = GetTransactionCategoryLabel(transaction.Category),
+                BadgeBrush = transaction.Type == TransactionType.Out ? OutTransactionBrush : InTransactionBrush,
                 Type = transaction.Type,
                 ItemName = string.IsNullOrWhiteSpace(transaction.ItemName)
                     ? isArabic ? "بدون صنف" : "No item"
@@ -254,7 +264,63 @@ public class DashboardViewModel : ViewModelBase
                 DetailsLine = detailsLine,
                 MetricDisplay = metricDisplay,
                 DateDisplay = transaction.Date.ToString("yyyy/MM/dd")
-            });
+            }));
+        }
+
+        foreach (var adjustment in recentAdjustments)
+        {
+            recentItems.Add((adjustment.AdjustmentDate, adjustment.Id, new DashboardRecentTransactionItem
+            {
+                TraderName = traderNames.TryGetValue(adjustment.SupplierId, out var traderName)
+                    ? traderName
+                    : isArabic ? "تاجر غير معروف" : "Unknown trader",
+                Category = adjustment.Type == OpeningBalanceAdjustmentType.Manufacturing
+                    ? "OpeningBalanceManufacturingAdjustment"
+                    : "OpeningBalanceImprovementAdjustment",
+                CategoryLabel = adjustment.Type == OpeningBalanceAdjustmentType.Manufacturing
+                    ? UiText.L("LblOpeningBalanceManufacturingAdjustment")
+                    : UiText.L("LblOpeningBalanceImprovementAdjustment"),
+                BadgeBrush = AdjustmentBrush,
+                Type = TransactionType.In,
+                ItemName = isArabic ? "بدون صنف" : "No item",
+                DetailsLine = string.IsNullOrWhiteSpace(adjustment.Notes)
+                    ? UiText.L("LblOpeningBalanceAdjustmentEntry")
+                    : adjustment.Notes!,
+                MetricDisplay = FormatCurrency(adjustment.Amount, isArabic),
+                DateDisplay = adjustment.AdjustmentDate.ToString("yyyy/MM/dd")
+            }));
+        }
+
+        foreach (var discount in recentDiscounts)
+        {
+            recentItems.Add((discount.CreatedAt, discount.Id, new DashboardRecentTransactionItem
+            {
+                TraderName = traderNames.TryGetValue(discount.SupplierId, out var traderName)
+                    ? traderName
+                    : isArabic ? "تاجر غير معروف" : "Unknown trader",
+                Category = discount.Type == DiscountType.Manufacturing
+                    ? "ManufacturingDiscount"
+                    : "ImprovementDiscount",
+                CategoryLabel = discount.Type == DiscountType.Manufacturing
+                    ? UiText.L("LblManufacturingDiscountEntry")
+                    : UiText.L("LblImprovementDiscountEntry"),
+                BadgeBrush = DiscountBrush,
+                Type = TransactionType.Out,
+                ItemName = isArabic ? "بدون صنف" : "No item",
+                DetailsLine = string.IsNullOrWhiteSpace(discount.Notes)
+                    ? UiText.L("LblDiscounts")
+                    : discount.Notes!,
+                MetricDisplay = FormatCurrency(discount.Amount, isArabic),
+                DateDisplay = discount.CreatedAt.ToString("yyyy/MM/dd")
+            }));
+        }
+
+        foreach (var recentItem in recentItems
+                     .OrderByDescending(item => item.SortDate)
+                     .ThenByDescending(item => item.SortId)
+                     .Take(10))
+        {
+            RecentTransactions.Add(recentItem.Item);
         }
 
         UpdateVisibleRecentTransactions();
@@ -278,5 +344,45 @@ public class DashboardViewModel : ViewModelBase
         OnPropertyChanged(nameof(RecentTransactionsSub));
         OnPropertyChanged(nameof(EmptyRecentTransactionsTitle));
         OnPropertyChanged(nameof(EmptyRecentTransactionsSub));
+    }
+
+    private void HandleFinancialDataChanged()
+    {
+        if (Application.Current?.Dispatcher is not { } dispatcher)
+        {
+            Load();
+            return;
+        }
+
+        if (dispatcher.CheckAccess())
+        {
+            Load();
+            return;
+        }
+
+        _ = dispatcher.InvokeAsync(Load);
+    }
+
+    private static string FormatCurrency(decimal amount, bool isArabic)
+        => isArabic ? $"{amount:0.##} ج.م" : $"{amount:0.##} EGP";
+
+    private static string GetTransactionCategoryLabel(string category)
+    {
+        var normalized = TransactionCategories.Normalize(category, TransactionType.Out);
+        return normalized switch
+        {
+            TransactionCategories.GoldOutbound => UiText.L("LblGoldOutboundReport"),
+            TransactionCategories.GoldReceipt => UiText.L("LblGoldReceiptReport"),
+            TransactionCategories.FinishedGoldReceipt => UiText.L("LblFinishedGoldReceiptReport"),
+            TransactionCategories.CashPayment => UiText.L("LblCashPaymentReport"),
+            _ => string.Empty
+        };
+    }
+
+    private static Brush CreateFrozenBrush(byte red, byte green, byte blue)
+    {
+        var brush = new SolidColorBrush(Color.FromRgb(red, green, blue));
+        brush.Freeze();
+        return brush;
     }
 }

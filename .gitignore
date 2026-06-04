@@ -17,6 +17,8 @@
 
 # Local publish output
 publish/
+publish-*/
+artifacts/
 
 # Local .NET SDK/tooling caches
 .dotnet/

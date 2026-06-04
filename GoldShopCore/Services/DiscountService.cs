@@ -54,6 +54,7 @@ public class DiscountService
         {
             using var connection = Database.OpenConnection();
             using var sqliteTransaction = connection.BeginTransaction();
+            EnsureDiscountWithinAvailableBalance(connection, sqliteTransaction, supplierId, type, roundedAmount);
             var id = _discountRepository.Add(connection, sqliteTransaction, discount);
             var summarySnapshot = _traderSummaryRepository.ApplyDiscountInsert(connection, sqliteTransaction, discount);
             sqliteTransaction.Commit();
@@ -100,6 +101,7 @@ public class DiscountService
         {
             using var connection = Database.OpenConnection();
             using var sqliteTransaction = connection.BeginTransaction();
+            EnsureDiscountWithinAvailableBalance(connection, sqliteTransaction, supplierId, type, roundedAmount, existing);
             _discountRepository.Update(connection, sqliteTransaction, updated);
 
             var affectedTraderIds = new HashSet<int> { existing.SupplierId, updated.SupplierId };
@@ -162,4 +164,39 @@ public class DiscountService
 
     public List<SupplierDiscountSummaryRow> GetSupplierDiscountSummaries(DateTime? from, DateTime? to)
         => _discountRepository.GetSupplierDiscountSummaries(from, to);
+
+    private void EnsureDiscountWithinAvailableBalance(
+        Microsoft.Data.Sqlite.SqliteConnection connection,
+        Microsoft.Data.Sqlite.SqliteTransaction transaction,
+        int supplierId,
+        DiscountType type,
+        decimal amount,
+        DiscountRecord? discountBeingReplaced = null)
+    {
+        var snapshot = _traderSummaryRepository.GetByTrader(connection, transaction, supplierId);
+        if (snapshot == null)
+        {
+            throw new ArgumentException("Trader was not found.", nameof(supplierId));
+        }
+
+        var total = type == DiscountType.Manufacturing
+            ? snapshot.TotalManufacturing
+            : snapshot.TotalImprovement;
+        var existingDiscounts = type == DiscountType.Manufacturing
+            ? snapshot.ManufacturingDiscounts
+            : snapshot.ImprovementDiscounts;
+
+        if (discountBeingReplaced != null
+            && discountBeingReplaced.SupplierId == supplierId
+            && discountBeingReplaced.Type == type)
+        {
+            existingDiscounts -= discountBeingReplaced.Amount;
+        }
+
+        var available = decimal.Round(total - existingDiscounts, 4, MidpointRounding.AwayFromZero);
+        if (amount > available)
+        {
+            throw new ArgumentException("Discount amount cannot exceed the available balance for this trader.", nameof(amount));
+        }
+    }
 }

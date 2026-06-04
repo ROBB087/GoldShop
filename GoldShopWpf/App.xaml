@@ -628,6 +628,7 @@
                 <Setter Property="SelectionMode" Value="Single" />
                 <Setter Property="SelectionUnit" Value="FullRow" />
                 <Setter Property="CanUserResizeRows" Value="False" />
+                <Setter Property="CanUserReorderColumns" Value="False" />
                 <Setter Property="FlowDirection" Value="{DynamicResource AppFlowDirection}" />
                 <Setter Property="HorizontalAlignment" Value="Stretch" />
                 <Setter Property="VerticalAlignment" Value="Stretch" />

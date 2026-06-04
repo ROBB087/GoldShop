@@ -57,6 +57,7 @@
   <sys:String x:Key="LblTransactionCategory">Transaction</sys:String>
   <sys:String x:Key="LblDescription">Details</sys:String>
   <sys:String x:Key="LblItem">Item</sys:String>
+  <sys:String x:Key="LblUnspecifiedItem">Unspecified</sys:String>
   <sys:String x:Key="LblAmount">Amount</sys:String>
   <sys:String x:Key="LblWeight">Weight (g)</sys:String>
   <sys:String x:Key="LblKarat">Karat</sys:String>
@@ -84,6 +85,8 @@
   <sys:String x:Key="LblOpeningBalanceAdjustmentType">Adjustment Type</sys:String>
   <sys:String x:Key="LblOpeningBalanceManufacturingAdjustment">Manufacturing Addition</sys:String>
   <sys:String x:Key="LblOpeningBalanceImprovementAdjustment">Improvement Addition</sys:String>
+  <sys:String x:Key="LblManufacturingDiscountEntry">Manufacturing Discount</sys:String>
+  <sys:String x:Key="LblImprovementDiscountEntry">Improvement Discount</sys:String>
   <sys:String x:Key="LblOpeningBalanceAdjustmentsTotal">Opening Balance Adjustments Total</sys:String>
   <sys:String x:Key="LblOpeningBalanceAdjustmentEntry">Opening balance adjustment</sys:String>
   <sys:String x:Key="LblCreatedAt">Created At</sys:String>
@@ -124,6 +127,7 @@
   <sys:String x:Key="LblTopGoldSub">Top traders by gold position in the selected period.</sys:String>
   <sys:String x:Key="LblStatementSub">Generate a polished printable trader statement for any date range.</sys:String>
   <sys:String x:Key="LblStatementPreview">Statement Preview</sys:String>
+  <sys:String x:Key="LblShowNotesInReceiptTable">Show notes in the table</sys:String>
   <sys:String x:Key="LblGoldMovementReportTitle">Gold Movement Report</sys:String>
   <sys:String x:Key="LblCompanyName">Gold Shop</sys:String>
   <sys:String x:Key="LblModernReportSub">A clean ERP-style report workspace for exports, review, and operational totals.</sys:String>
@@ -179,6 +183,7 @@
   <sys:String x:Key="LblLastActivity">Last Activity</sys:String>
   <sys:String x:Key="LblPurity">Karat</sys:String>
   <sys:String x:Key="LblNotes">Notes</sys:String>
+  <sys:String x:Key="LblNoNotesValue">No notes</sys:String>
   <sys:String x:Key="LblStatementTitle">Trader Statement</sys:String>
   <sys:String x:Key="LblNoSupplier">Select a trader to generate a statement.</sys:String>
   <sys:String x:Key="LblAllSuppliers">All traders</sys:String>
@@ -190,6 +195,7 @@
   <sys:String x:Key="TooltipSupplierDetails">Trader details page</sys:String>
   <sys:String x:Key="TooltipWeeklyReport">Trader report</sys:String>
   <sys:String x:Key="TooltipStatement">Printable statement</sys:String>
+  <sys:String x:Key="TooltipShowNotesInReceiptTable">Enable this option to show transaction notes inside the receipt table so they are visible to the client.</sys:String>
   <sys:String x:Key="TooltipNotes">Notes notebook</sys:String>
   <sys:String x:Key="TooltipPricingSettings">Manage pricing defaults</sys:String>
   <sys:String x:Key="TooltipBackup">Backup database</sys:String>
@@ -198,6 +204,9 @@
   <sys:String x:Key="TooltipCancel">Cancel and close</sys:String>
   <sys:String x:Key="TitleValidation">Validation</sys:String>
   <sys:String x:Key="TitleConfirmDelete">Confirm Delete</sys:String>
+  <sys:String x:Key="TitleConfirmCharges">Confirm Charges</sys:String>
+  <sys:String x:Key="TitleConfirmSettlement">Confirm Settlement</sys:String>
+  <sys:String x:Key="TitleConfirmDiscount">Confirm Discount</sys:String>
   <sys:String x:Key="TitleBackup">Backup</sys:String>
   <sys:String x:Key="TitleExportImage">Export Image</sys:String>
   <sys:String x:Key="TitleExportPdf">Export PDF</sys:String>
@@ -221,6 +230,12 @@
   <sys:String x:Key="SubNoteWindow">Capture, revise, and keep client notes in one dedicated workspace.</sys:String>
   <sys:String x:Key="MsgFromBeforeTo">From date must be before To date.</sys:String>
   <sys:String x:Key="MsgBackupCreated">Backup created.</sys:String>
+  <sys:String x:Key="MsgAppAlreadyRunning">GoldShop is already running. Please use the open window.</sys:String>
+  <sys:String x:Key="MsgStartupValidationFailed">The app could not start safely.</sys:String>
+  <sys:String x:Key="MsgUnofficialAppCopy">This copy of the app is not the official installed version. Please run the latest installed version from: {0}</sys:String>
+  <sys:String x:Key="MsgOutdatedAppVersion">This copy of the app is outdated and cannot open the current database. Database schema: {0}. Supported schema: {1}. Please run the latest installed version.</sys:String>
+  <sys:String x:Key="MsgInvalidBackupFile">The selected backup file is invalid or incomplete.</sys:String>
+  <sys:String x:Key="MsgRestoreCouldNotContinue">Database restore could not continue safely.</sys:String>
   <sys:String x:Key="MsgReportSaved">Report saved to: {0}</sys:String>
   <sys:String x:Key="MsgShareReport">Gold Shop report saved at:</sys:String>
   <sys:String x:Key="MsgWhatsAppManualShare">WhatsApp was opened with a draft message. Attach the exported image manually because Click to Chat does not send local files.</sys:String>
@@ -263,10 +278,19 @@
   <sys:String x:Key="MsgDefaultRefiningNonNegative">Default refining value must be zero or greater.</sys:String>
   <sys:String x:Key="MsgCashPaymentRequired">Enter a manufacturing payment, a refining payment, or both.</sys:String>
   <sys:String x:Key="MsgWeightPositive">Weight must be greater than zero.</sys:String>
+  <sys:String x:Key="MsgZeroManufacturingConfirm">Manufacturing is set to 0 for this transaction. Do you want to continue?</sys:String>
+  <sys:String x:Key="MsgZeroImprovementConfirm">Improvement is set to 0 for this transaction. Do you want to continue?</sys:String>
+  <sys:String x:Key="MsgZeroChargesBothConfirm">Manufacturing and improvement are both set to 0 for this transaction. Do you want to continue?</sys:String>
   <sys:String x:Key="MsgKaratSupported">Karat must be one of the supported values: 18, 21, 24.</sys:String>
   <sys:String x:Key="MsgManufacturingValueNonNegative">Manufacturing value must be zero or greater.</sys:String>
   <sys:String x:Key="MsgRefiningValueNonNegative">Refining value must be zero or greater.</sys:String>
   <sys:String x:Key="MsgGoldReceiptNoCharges">Gold receipt cannot include manufacturing or refining values.</sys:String>
+  <sys:String x:Key="MsgZeroChargesConfirm">Manufacturing or improvement is set to 0 for this gold transaction. Are you sure you want to continue?</sys:String>
+  <sys:String x:Key="MsgCashPaymentConfirmBoth">Are you sure you want to settle {0} for improvement and {1} for manufacturing?</sys:String>
+  <sys:String x:Key="MsgCashPaymentConfirmManufacturing">Are you sure you want to settle {0} for manufacturing?</sys:String>
+  <sys:String x:Key="MsgCashPaymentConfirmImprovement">Are you sure you want to settle {0} for improvement?</sys:String>
+  <sys:String x:Key="MsgDiscountConfirmManufacturing">Are you sure you want to register a manufacturing discount of {0}?</sys:String>
+  <sys:String x:Key="MsgDiscountConfirmImprovement">Are you sure you want to register an improvement discount of {0}?</sys:String>
   <sys:String x:Key="MsgDiscountExceedsTotal">Discount cannot exceed the available total.</sys:String>
   <sys:String x:Key="MsgTransactionsImmutable">Historical transactions are immutable and cannot be changed.</sys:String>
   <sys:String x:Key="MsgDiscountsImmutable">Discount records are immutable and cannot be deleted.</sys:String>
@@ -296,6 +320,8 @@
   <sys:String x:Key="MsgTransactionSaved">Transaction saved successfully.</sys:String>
   <sys:String x:Key="MsgDiscountSaved">Discount saved successfully.</sys:String>
   <sys:String x:Key="MsgOpeningBalanceAdjustmentSaved">Opening balance adjustment saved successfully.</sys:String>
+  <sys:String x:Key="MsgManufacturingAdjustmentSaved">Manufacturing addition saved successfully.</sys:String>
+  <sys:String x:Key="MsgImprovementAdjustmentSaved">Improvement addition saved successfully.</sys:String>
   <sys:String x:Key="MsgOpeningBalanceAdjustmentNotFound">Opening balance adjustment was not found.</sys:String>
   <sys:String x:Key="MsgSupplierSaved">Trader saved successfully.</sys:String>
   <sys:String x:Key="MsgSupplierDeleted">Trader deleted successfully.</sys:String>
